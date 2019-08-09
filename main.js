@@ -96,7 +96,9 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                 rolls[x] = d6(explode);
                 if (tn > -1 && rolls[x] >= tn) successes++;
               }
-              var output = 'Rolled ' +successes+ ' successes (' +rolls+ ')' ;
+              var successsoutput = "";
+              if (successes > 0) { successoutput = successes + ' successes'; }
+              var output = 'Rolled ' +successesoutput+ ' (' +rolls+ ')' ;
               //logger.info(output);
               bot.sendMessage({to: channelID, message: output});
             break;
