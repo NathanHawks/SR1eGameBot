@@ -8,13 +8,18 @@ function d6(explode=false) {
 
 var Discord = require('discord.io');
 var logger = require('winston');
-var auth = require('./auth.json');
+var token = null;
+if (process.env.hasOwnProperty('TOKEN')) { token = process.env.TOKEN}
+else {
+  var auth = require('./auth.json');
+  token = auth.token;
+}
 // Configure logger
 logger.remove(logger.transports.Console);
 logger.add(new logger.transports.Console, { colorize: true });
 logger.level = 'debug';
 // Connect to Discord
-var bot = new Discord.Client({ token: auth.token, autorun: true });
+var bot = new Discord.Client({ token: token, autorun: true });
 bot.on('ready', function (evt) {
     logger.info('Connected; Logged in as: ['+ bot.username + '] (' + bot.id + ')');
     bot.setPresence({game:{name:'!help for help'}});
