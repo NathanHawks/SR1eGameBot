@@ -33,7 +33,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
             default:
               // it's a dice roll; get setup ===================================
               //logger.info('cmd = ' + cmd + '; message = ' + message);
-              // how many dice, and do we explode
+              // SETUP: how many dice, and do we explode?
               var minusone = cmd.length-1;
               var minustwo = cmd.length-2;
               var lastchar = cmd.substring(minusone, 1+minusone);
@@ -47,20 +47,20 @@ bot.on('message', function (user, userID, channelID, message, evt) {
               else {
                 howmany = cmd.substring(0, 1+minusone);
               }
-              // was a TN given
+              // SETUP: was a TN given?
               var tngiven = false;
               var tn = -1;
               for (x = 0; x < args.length; x++) {
                 var firsttwo = args[x].substring(0,2);
                 firsttwo = firsttwo.toLowerCase();
-                logger.info('firsttwo = ' + firsttwo);
+                //logger.info('firsttwo = ' + firsttwo);
                 if (firsttwo == 'tn') {
-                  logger.info('TN found: ' + args[x]);
+                  //logger.info('TN found: ' + args[x]);
                   tn = args[x].substring(2, args[x].length);
-                  logger.info('TN is: ' + tn);
+                  //logger.info('TN is: ' + tn);
                 }
               }
-              // Roll dem bones ================================================
+              // GO: Roll dem bones ============================================
               //logger.info('Dice to roll: ' + howmany + '; explode = ' + explode);
               var successes = 0;
               var rolls = [];
