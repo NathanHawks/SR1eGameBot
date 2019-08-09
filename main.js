@@ -26,9 +26,31 @@ bot.on('message', function (user, userID, channelID, message, evt) {
         var args = message.substring(1).split(' ');
         var cmd = args[0];
         args = args.splice(1);
+        cmd = cmd.toLowerCase();
         switch(cmd) {
-            case 'demo-roll':
-              bot.sendMessage({to: channelID, message: d6(true)});
+            case 'help':
+              bot.sendMessage({to: channelID, message: 'GameBot usage:\n'
+                + '!***X***         Roll ***X***d6 *without* exploding 6\'s'
+                + '  ***example:*** !5   rolls 5d6 without exploding\n'
+                + '!X***!***        Roll ***X***d6 ***with*** exploding 6\'s'
+                + '  ***example:*** !5!  rolls 5d6 with exploding\n'
+                + '!X ***tnY***     Roll *without* exploding 6\'s against Target Number ***Y***'
+                + '  ***example:*** !5 tn4   rolls 5d6 w/o exploding vs TN4\n'
+                + '!X! ***tnY***     Roll ***with*** exploding 6\'s against Target Number ***Y***'
+                + '  ***example:*** !5! tn4   rolls 5d6 w/ exploding vs TN4\n'
+                + '\n'
+                + '***NO SPACE between "TN" and number;*** example:\n'
+                + '  !5! TN4     is correct\n'
+                + '  !5! TN 4    won\'t work\n'
+                + '\n'
+                + 'Notes are OK at the end of the command, but ***not*** before or in the middle\n'
+                + 'examples:\n'
+                + '  !3! TN4 (resist wagemage sorcery)      works\n'
+                + '  (resist wagemage sorcery) !3! TN4      won\'t work\n'
+                + '  !3! (resist wagemage sorcery) TN4      won\'t work\n'
+                + '\n'
+                + 'I\'m sorry I can\'t always be online. Working on it!'
+              });
             break;
             default:
               // it's a dice roll; get setup ===================================
