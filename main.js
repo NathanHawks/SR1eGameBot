@@ -9,7 +9,7 @@ function d6(explode=false) {
 var Discord = require('discord.io');
 var logger = require('winston');
 var token = null;
-if (process.env.hasOwnProperty('TOKEN')) { token = process.env.TOKEN}
+if (process.env.hasOwnProperty('TOKEN')) { token = process.env.TOKEN; }
 else {
   var auth = require('./auth.json');
   token = auth.token;
