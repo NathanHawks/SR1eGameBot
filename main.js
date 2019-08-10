@@ -6,6 +6,13 @@ function d6(explode=false) {
     return roll;
 }
 
+/* Credit to
+ stackoverflow.com/questions/1063007/how-to-sort-an-array-of-integers-correctly
+*/
+function sortNumber(a, b) {
+  return a - b;
+}
+
 var Discord = require('discord.io');
 var logger = require('winston');
 
@@ -94,9 +101,12 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                 rolls[x] = d6(explode);
                 if (tn > -1 && rolls[x] >= tn) successes++;
               }
+              // Convenience, or hiding terrible RNG? you decide! (it's both)
+              rolls.sort(sortNumber);
+              // prep output and ... put it out
               var successsoutput = "";
-              if (successes > 0) { successsoutput = successes + ' successes'; }
-              var output = 'Rolled ' +successsoutput+ ' (' +rolls+ ')' ;
+              if (successes > 0) { successsoutput = successes + ' successes '; }
+              var output = 'Rolled ' +successsoutput+ '(' +rolls+ ')' ;
               //logger.info(output);
               bot.sendMessage({to: channelID, message: output});
             break;
