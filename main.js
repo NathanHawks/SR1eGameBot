@@ -62,18 +62,16 @@ bot.on('message', function (user, userID, channelID, message, evt) {
               // it's a dice roll; get setup ===================================
               //logger.info('cmd = ' + cmd + '; message = ' + message);
               // SETUP: how many dice, and do we explode?
-              var minusone = cmd.length-1;
-              var minustwo = cmd.length-2;
-              var lastchar = cmd.substring(minusone, 1+minusone);
+              var lastchar = cmd.substring(cmd.length-1, cmd.length);
               //logger.info('lastchar = ' + lastchar);
               var explode = false;
               var howmany = 0;
               if (lastchar == '!') {
                 explode = true;
-                howmany = cmd.substring(0, 1+minustwo);
+                howmany = cmd.substring(0, cmd.length-1);
               }
               else {
-                howmany = cmd.substring(0, 1+minusone);
+                howmany = cmd.substring(0, cmd.length);
               }
               // SETUP: was a TN given?
               var tngiven = false;
