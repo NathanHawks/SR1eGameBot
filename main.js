@@ -9,8 +9,8 @@ function d6(explode=false) {
 /* Credit to
  stackoverflow.com/questions/1063007/how-to-sort-an-array-of-integers-correctly
 */
-function sortNumber(a, b) {
-  return a - b;
+function sortNumberDesc(a, b) {
+  return b - a;
 }
 
 var Discord = require('discord.io');
@@ -102,7 +102,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                 if (tn > -1 && rolls[x] >= tn) successes++;
               }
               // Convenience, or hiding terrible RNG? you decide! (it's both)
-              rolls.sort(sortNumber);
+              rolls.sort(sortNumberDesc);
               // prep output and ... put it out
               var successsoutput = "";
               if (successes > 0) { successsoutput = successes + ' successes '; }
