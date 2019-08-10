@@ -31,3 +31,7 @@ examples:
 <pre>  !3! TN4 (resist wagemage sorcery)      works
   (resist wagemage sorcery) !3! TN4      won't work
   !3! (resist wagemage sorcery) TN4      won't work</pre>
+
+## Legal
+
+This software is released as-is under the terms of the UnLicense; it is available to the public domain.
