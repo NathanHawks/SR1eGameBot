@@ -61,8 +61,6 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                 + '  !3! TN4 (resist wagemage sorcery)      works\n'
                 + '  (resist wagemage sorcery) !3! TN4      won\'t work\n'
                 + '  !3! (resist wagemage sorcery) TN4      won\'t work\n'
-                + '\n'
-                + 'I\'m sorry I can\'t always be online. Working on it!'
               });
             break;
             default:
