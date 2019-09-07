@@ -120,7 +120,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
               // prep output and ... put it out
               var successoutput = "";
               if (successes > 0) { successoutput = successes + ' successes '; }
-              var output = user + ' rolled ' +successoutput+ '(' +rolls+ ') ' + note;
+              var output = "@" + user + ' rolled ' +successoutput+ '(' +rolls+ ') ' + note;
               //logger.info(output);
               bot.sendMessage({to: channelID, message: output});
             break;
