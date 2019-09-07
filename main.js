@@ -116,9 +116,9 @@ bot.on('message', function (user, userID, channelID, message, evt) {
               // Convenience, or hiding terrible RNG? you decide! (it's both)
               rolls.sort(sortNumberDesc);
               // prep output and ... put it out
-              var successsoutput = "";
-              if (successes > 0) { successsoutput = successes + ' successes '; }
-              var output = user + ' rolled ' +successsoutput+ '(' +rolls+ ') ' + note;
+              var successoutput = "";
+              if (successes > 0) { successoutput = successes + ' successes '; }
+              var output = user + ' rolled ' +successoutput+ '(' +rolls+ ') ' + note;
               //logger.info(output);
               bot.sendMessage({to: channelID, message: output});
             break;
