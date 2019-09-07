@@ -106,6 +106,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                 }
               }
               if (note !== "") note = "(" + note + ")";
+              else if (tn > 0) note = "(TN" + tn + ")";
               // GO: Roll dem bones ============================================
               //logger.info('Dice to roll: ' + howmany + '; explode = ' + explode);
               var successes = 0;
