@@ -91,14 +91,14 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                   //logger.info('TN is: ' + tn);
                 }
               }
-              // SETUP: anything remaining is a note; I wanna pass it thru
+              // SETUP: anything remaining is a note; prepare to pass it thru
               var notegiven = false;
               var note = "";
               var spacer = "";
               for (x = 0; x < args.length; x++) {
                 var firsttwo = args[x]. substring(0,2);
                 firsttwo = firsttwo.toLowerCase();
-                if (firsttwo !== 'tn') {
+                if (firsttwo !== 'tn' || notegiven == true) {
                   notegiven = true;
                   spacer = (note !== "") ? " " : "";
                   note += spacer + args[x];
