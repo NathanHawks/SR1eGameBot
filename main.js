@@ -59,8 +59,9 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                 + 'Notes are OK, and your TN can be in the middle of the note\n'
                 + 'examples:\n'
                 + '  !3! TN4 resist wagemage sorcery      works\n'
-                + '  resist wagemage sorcery !3! TN4      won\'t work\n'
                 + '  !3! resist wagemage sorcery TN4      works\n'
+                + '  !3! resist TN4 wagemage sorcery      works\n'
+                + '  resist wagemage sorcery !3! TN4      won\'t work\n'
               });
             break;
             default:
