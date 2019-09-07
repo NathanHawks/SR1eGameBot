@@ -53,7 +53,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                 + '  ***example:*** !5! tn4   rolls 5d6 w/ exploding vs TN4\n'
                 + '\n'
                 + '***NO SPACE between "TN" and number;*** example:\n'
-                + '  !5! TN4     is correct\n'
+                + '  !5! TN4     works\n'
                 + '  !5! TN 4    won\'t work\n'
                 + '\n'
                 + 'Notes are OK, and your TN can be in the middle of the note\n'
