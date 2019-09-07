@@ -94,12 +94,14 @@ bot.on('message', function (user, userID, channelID, message, evt) {
               // SETUP: anything remaining is a note; I wanna pass it thru
               var notegiven = false;
               var note = "";
+              var spacer = "";
               for (x = 0; x < args.length; x++) {
                 var firsttwo = args[x]. substring(0,2);
                 firsttwo = firsttwo.toLowerCase();
                 if (firsttwo !== 'tn') {
                   notegiven = true;
-                  note += " " + args[x];
+                  spacer = (note !== "") ? " " : "";
+                  note += spacer + args[x];
                 }
               }
               if (note !== "") note = "(" + note + ")";
@@ -116,7 +118,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
               // prep output and ... put it out
               var successsoutput = "";
               if (successes > 0) { successsoutput = successes + ' successes '; }
-              var output = user + ' rolled ' +successsoutput+ '(' +rolls+ ')' + note;
+              var output = user + ' rolled ' +successsoutput+ '(' +rolls+ ') ' + note;
               //logger.info(output);
               bot.sendMessage({to: channelID, message: output});
             break;
