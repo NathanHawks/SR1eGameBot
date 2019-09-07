@@ -56,11 +56,11 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                 + '  !5! TN4     is correct\n'
                 + '  !5! TN 4    won\'t work\n'
                 + '\n'
-                + 'Notes are OK at the end of the command, but ***not*** before or in the middle\n'
+                + 'Notes are OK, and your TN can be in the middle of the note\n'
                 + 'examples:\n'
-                + '  !3! TN4 (resist wagemage sorcery)      works\n'
-                + '  (resist wagemage sorcery) !3! TN4      won\'t work\n'
-                + '  !3! (resist wagemage sorcery) TN4      won\'t work\n'
+                + '  !3! TN4 resist wagemage sorcery      works\n'
+                + '  resist wagemage sorcery !3! TN4      won\'t work\n'
+                + '  !3! resist wagemage sorcery TN4      works\n'
               });
             break;
             default:
