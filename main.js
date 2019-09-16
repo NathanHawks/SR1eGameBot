@@ -71,6 +71,7 @@ bot.on('message', (msg) => {
               );
             break;
             default:
+              msg.react(':die:');
               // it's a dice roll; get setup ===================================
               //logger.info('cmd = ' + cmd + '; message = ' + message);
               // SETUP: how many dice, and do we explode?
