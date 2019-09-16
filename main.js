@@ -8,28 +8,39 @@ function d6(explode=false) {
 // Credit to stackoverflow.com/questions/1063007/how-to-sort-an-array-of-integers-correctly
 function sortNumberDesc(a, b) { return b - a; }
 
-var Discord = require('discord.io');
-var logger = require('winston');
+// Libs
+// disabled: var Discord = require('discord.io');
+const Discord = require('discord.js'); // new hotness
+var logger = require('winston'); // why not
 
+// load auth token (this must be configured in heroku)
 var token = null;
 if (process.env.hasOwnProperty('TOKEN')) { token = process.env.TOKEN; }
 else {
   var auth = require('./auth.json');
   token = auth.token;
 }
+
 // Configure logger
 logger.remove(logger.transports.Console);
 logger.add(new logger.transports.Console, { colorize: true });
 logger.level = 'debug';
+
 // Connect to Discord
-var bot = new Discord.Client({ token: token, autorun: true });
-bot.on('ready', function (evt) {
-    logger.info('Connected; Logged in as: ['+ bot.username + '] (' + bot.id + ')');
+// old way: var bot = new Discord.Client({ token: token, autorun: true });
+// new way
+var bot = new Discord.Client();
+bot.login(token);
+
+bot.on('ready', () => {
+    logger.info('Connected; Logged in as: ['+ bot.user.tag + ']');
     bot.setPresence({game:{name:'!help for help'}});
 });
+
 // Setup message handler
-bot.on('message', function (user, userID, channelID, message, evt) {
+bot.on('message', (msg) => {
     // check if message starts with `!`
+    var message = msg.content;
     if (message.substring(0, 1) == '!') {
         var args = message.substring(1).split(' ');
         var cmd = args[0];
@@ -37,7 +48,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
         cmd = cmd.toLowerCase();
         switch(cmd) {
             case 'help':
-              bot.sendMessage({to: channelID, message: 'GameBot usage:\n'
+              bot.reply({to: channelID, message: 'GameBot usage:\n'
                 + '!***X***         Roll ***X***d6 *without* exploding 6\'s'
                 + '  ***example:*** !5   rolls 5d6 without exploding\n'
                 + '!X***!***        Roll ***X***d6 ***with*** exploding 6\'s'
@@ -117,7 +128,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
               if (successes > 0) { successoutput = successes + ' successes '; }
               var output = user + ' rolled ' +successoutput+ '(' +rolls+ ') ' + note;
               //logger.info(output);
-              bot.sendMessage({to: channelID, message: output});
+              bot.reply({to: channelID, message: output});
             break;
          }
      }
