@@ -24,7 +24,8 @@ NO SPACE between "TN" and number; example:
 Notes are OK, and your TN can even be in the middle of the note.
 
 examples:
-<pre>!3! TN4 resist wagemage sorcery      works
+<pre>
+  !3! TN4 resist wagemage sorcery      works
   !3! resist wagemage sorcery TN4      works
   !3! resist TN4 wagemage sorcery      works
   resist wagemage sorcery !3! TN4      won't work</pre>
