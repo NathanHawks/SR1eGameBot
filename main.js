@@ -1,17 +1,12 @@
+// THe dice-rolling function
 function d6(explode=false) {
     var roll = Math.floor(Math.random() * 6 + 1);
-    if (roll == 6 && explode == true) {
-        roll += d6(true);
-    }
+    if (roll == 6 && explode == true) roll += d6(true); }
     return roll;
 }
 
-/* Credit to
- stackoverflow.com/questions/1063007/how-to-sort-an-array-of-integers-correctly
-*/
-function sortNumberDesc(a, b) {
-  return b - a;
-}
+// Credit to stackoverflow.com/questions/1063007/how-to-sort-an-array-of-integers-correctly
+function sortNumberDesc(a, b) { return b - a; }
 
 var Discord = require('discord.io');
 var logger = require('winston');
