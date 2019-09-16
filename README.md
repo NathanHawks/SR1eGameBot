@@ -1,10 +1,6 @@
 # SR1eGameBot
 A discord dicebot for SR1e, which may someday have additional tools to help run Shadowrun 1st Edition over Discord. 
 
-## Rolling Dice
-
-Command format is intentionally similar to, without conflicting with, that of Exploding Dice (the SR5 dice roller by Haze).
-
 ### Roll Dice
 
 <pre>!X         Roll Xd6 without exploding 6's
@@ -25,12 +21,13 @@ NO SPACE between "TN" and number; example:
 
 ### Adding Notes to the Command
 
-Notes are OK at the end of the command, but not before or in the middle.
+Notes are OK, and your TN can even be in the middle of the note.
 
 examples:
-<pre>  !3! TN4 (resist wagemage sorcery)      works
-  (resist wagemage sorcery) !3! TN4      won't work
-  !3! (resist wagemage sorcery) TN4      won't work</pre>
+<pre>!3! TN4 resist wagemage sorcery      works
+  !3! resist wagemage sorcery TN4      works
+  !3! resist TN4 wagemage sorcery      works
+  resist wagemage sorcery !3! TN4      won't work</pre>
 
 ## Legal
 
