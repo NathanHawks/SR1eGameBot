@@ -1,11 +1,11 @@
-// THe dice-rolling function
+// The dice-rolling function
 function d6(explode=false) {
     var roll = Math.floor(Math.random() * 6 + 1);
-    if (roll == 6 && explode == true) roll += d6(true); }
+    if (roll == 6 && explode == true) roll += d6(true);
     return roll;
 }
 
-// Credit to stackoverflow.com/questions/1063007/how-to-sort-an-array-of-integers-correctly
+/* Credit to stackoverflow.com/questions/1063007/how-to-sort-an-array-of-integers-correctly */
 function sortNumberDesc(a, b) { return b - a; }
 
 // Libs
@@ -34,7 +34,7 @@ bot.login(token);
 
 bot.on('ready', () => {
     logger.info('Connected; Logged in as: ['+ bot.user.tag + ']');
-    bot.setPresence({game:{name:'!help for help'}});
+    bot.user.setPresence({game:{name:'!help for help'}});
 });
 
 // Setup message handler
@@ -48,7 +48,7 @@ bot.on('message', (msg) => {
         cmd = cmd.toLowerCase();
         switch(cmd) {
             case 'help':
-              bot.reply({to: channelID, message: 'GameBot usage:\n'
+              msg.reply('GameBot usage:\n'
                 + '!***X***         Roll ***X***d6 *without* exploding 6\'s'
                 + '  ***example:*** !5   rolls 5d6 without exploding\n'
                 + '!X***!***        Roll ***X***d6 ***with*** exploding 6\'s'
@@ -68,7 +68,7 @@ bot.on('message', (msg) => {
                 + '  !3! resist wagemage sorcery TN4      works\n'
                 + '  !3! resist TN4 wagemage sorcery      works\n'
                 + '  resist wagemage sorcery !3! TN4      won\'t work\n'
-              });
+              );
             break;
             default:
               // it's a dice roll; get setup ===================================
@@ -126,9 +126,9 @@ bot.on('message', (msg) => {
               // prep output and ... put it out
               var successoutput = "";
               if (successes > 0) { successoutput = successes + ' successes '; }
-              var output = user + ' rolled ' +successoutput+ '(' +rolls+ ') ' + note;
+              var output = ' you rolled ' +successoutput+ '(' +rolls+ ') ' + note;
               //logger.info(output);
-              bot.reply({to: channelID, message: output});
+              msg.reply(output);
             break;
          }
      }
