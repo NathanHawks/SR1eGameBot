@@ -152,18 +152,10 @@ function handleMessage(msg, user=msg.author) {
             var note = "";
             var spacer = "";
             for (x = 0; x < args.length; x++) {
-              var firsttwo = args[x]. substring(0,2);
-              var firstthree = args[x].substring(0,3);
-              firsttwo = firsttwo.toLowerCase();
-              firstthree = firstthree.toLowerCase();
-              if (
-                (firsttwo !== 'tn' && firsttwo !== 'vs' && firstthree !== 'otn')
-                || notegiven == true
-              ) {
-                notegiven = true;
-                spacer = (note !== "") ? " " : "";
-                note += spacer + args[x];
-              }
+              // for this complex command, repeat everything verbatim as a note
+              notegiven = true;
+              spacer = (note !== "") ? " " : "";
+              note += spacer + args[x];
             }
             if (note !== "") note = "(" + note + ")";
             else if (tn > 0) note = "(TN" + tn + ")";
@@ -192,7 +184,7 @@ function handleMessage(msg, user=msg.author) {
               var successoutput = '';
               if (successes > osuccesses) { successoutput = (successes-osuccesses) + ' net successes '; }
               else if (successes == osuccesses) { successoutput = '0 net successes'; }
-              else if (osuccesses > successes) successoutput = (osuccesses-successes) + ' *fewer* successes than your opponent! '
+              else if (osuccesses > successes) { successoutput = (osuccesses-successes) + ' *fewer* successes than the opponent! '; }
               output = user + ' rolled ' +successoutput+ '('+rolls+') vs ('+orolls+') ' + note;
             }
             else {
