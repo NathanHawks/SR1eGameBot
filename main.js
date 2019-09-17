@@ -191,6 +191,8 @@ function handleMessage(msg, user=msg.author) {
             if (opposed) {
               var successoutput = '';
               if (successes > osuccesses) { successoutput = (successes-osuccesses) + ' net successes '; }
+              else if (successes == osuccesses) { successoutput = '0 net successes'; }
+              else if (osuccesses > successes) successoutput = (osuccesses-successes) + ' *fewer* successes than your opponent! '
               output = user + ' rolled ' +successoutput+ '('+rolls+') vs ('+orolls+') ' + note;
             }
             else {
