@@ -37,11 +37,11 @@ Remove and re-add your "reaction" to keep re-rolling that roll.
 
 ### Opposed Rolls
 
-!A! tnB vsX! otnY
+<pre>!A! tnB vsX! otnY
    Roll Ad6 (exploding) with tn B, opposed by Xd6 (exploding) with opponent's tn Y
    vsX = the number of dice the opponent throws (vsX! for exploding dice)
    otnY = the opponent's target number
-  example: !5! tn3 vs6! otn4    Roll 5d6 (exploding) with TN 3, against 6d6 (exploding) with TN 4
+  example: !5! tn3 vs6! otn4    Roll 5d6 (exploding) with TN 3, against 6d6 (exploding) with TN 4</pre>
 
 ## Legal
 
