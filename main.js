@@ -129,7 +129,7 @@ function handleMessage(msg, user=msg.author) {
               var firstthree = args[x].substring(0,3);
               firsttwo = firsttwo.toLowerCase();
               firstthree = firstthree.toLowerCase();
-              if (firsttwo == 'vs') {
+              if (firsttwo == 'vs' && args[x].length > 2 && firstthree !== "vs.") {
                 opposed = true;
                 var lastchar = args[x].substring(args[x].length-1, args[x].length);
                 if (lastchar == '!') {
