@@ -1,6 +1,8 @@
 # SR1eGameBot
 A discord dicebot for SR1e, which may someday have additional tools to help run Shadowrun 1st Edition over Discord. 
 
+[Click here to deploy the bot on your server](https://discordapp.com/oauth2/authorize?client_id=609274260007026689&scope=bot&permissions=0).
+
 ### Roll Dice
 
 <pre>!X         Roll Xd6 without exploding 6's
