@@ -30,6 +30,19 @@ examples:
   !3! resist TN4 wagemage sorcery      works
   resist wagemage sorcery !3! TN4      won't work</pre>
 
+### Reroll
+
+Anyone can click the :game_die: reaction to reroll your roll.
+Remove and re-add your "reaction" to keep re-rolling that roll.
+
+### Opposed Rolls
+
+!A! tnB vsX! otnY
+   Roll Ad6 (exploding) with tn B, opposed by Xd6 (exploding) with opponent's tn Y
+   vsX = the number of dice the opponent throws (vsX! for exploding dice)
+   otnY = the opponent's target number
+  example: !5! tn3 vs6! otn4    Roll 5d6 (exploding) with TN 3, against 6d6 (exploding) with TN 4
+
 ## Legal
 
 This software is released as-is under the terms of the UnLicense; it is available to the public domain.
