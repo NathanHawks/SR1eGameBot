@@ -68,7 +68,7 @@ function handleHelpCommand(msg) {
     + '  !3! resist TN4 wagemage sorcery      works\n'
     + '  resist wagemage sorcery !3! TN4      won\'t work\n'
     + '\n'
-    + 'Anyone can click the :game_die: reaction to reroll your roll.\n'
+    + 'Anyone can click the :game_die: reaction to reroll any *recent* roll.\n'
     + 'Remove and re-add your "reaction" to keep re-rolling that roll.\n'
     + '\n'
     + 'Opposed Rolls:\n'
