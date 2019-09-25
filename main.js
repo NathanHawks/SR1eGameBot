@@ -117,10 +117,10 @@ function handleMessage(msg, user=msg.author) {
               firsttwo = firsttwo.toLowerCase();
               if (firsttwo == 'tn') {
                 tn = args[x].substring(2, args[x].length);
-                if (isNaN(Number(tn))) {
+                if (isNaN(Number(tn)) || tn < 2) {
                   var y = x + 1;
                   var tmptn = args[y];
-                  if (!isNaN(Number(tmptn))) tn = tmptn;
+                  if (!isNaN(Number(tmptn)) && tmptn > 1) tn = tmptn;
                   else tn = -1;
                  }
               }
