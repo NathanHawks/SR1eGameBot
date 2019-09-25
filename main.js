@@ -145,15 +145,15 @@ function handleMessage(msg, user=msg.author) {
                 else {
                   opponentdice = args[x].substring(2, args[x].length);
                 }
-                if (isNaN(Number(otn)) || otn < 2) {
-                  var y = x + 1;
-                  var tmptn = args[y];
-                  if (!isNaN(Number(tmptn)) && tmptn > 1) otn = tmptn;
-                  else otn = -1;
-                 }
               }
               else if (firstthree == 'otn') {
                 opponenttn = args[x].substring(3, args[x].length);
+              }
+              if (isNaN(Number(opponenttn)) || opponenttn < 2) {
+                var y = x + 1;
+                var tmptn = args[y];
+                if (!isNaN(Number(tmptn)) && tmptn > 1) opponenttn = tmptn;
+                else opponenttn = -1;
               }
             }
             logger.info('OD: ' + opponentdice + '; OTN: ' + opponenttn + '; OX ' + opposedexplode);
