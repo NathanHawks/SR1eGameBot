@@ -69,7 +69,7 @@ function handleHelpCommand(msg) {
     + '  resist wagemage sorcery !3! TN4      won\'t work\n'
     + '\n'
     + 'Anyone can click the :game_die: reaction to reroll any *recent* roll.\n'
-    + 'Remove and re-add your "reaction" to keep re-rolling that roll.\n'
+    + 'Remove and re-add your reaction to keep re-rolling that roll.\n'
     + '\n'
     + 'Opposed Rolls:\n'
     + '!A! tnB ***vsX!*** ***otnY***\n'
@@ -117,6 +117,7 @@ function handleMessage(msg, user=msg.author) {
               firsttwo = firsttwo.toLowerCase();
               if (firsttwo == 'tn') {
                 tn = args[x].substring(2, args[x].length);
+                if (tn !== Number(tn)) { tn = -1; }
               }
             }
             // SETUP: is this an opposed roll?
