@@ -120,7 +120,7 @@ function handleMessage(msg, user=msg.author) {
                 if (isNaN(Number(tn))) {
                   var y = x + 1;
                   var tmptn = args[y];
-                  if (!isNaN(Number(tmptn))) tn == tmptn;
+                  if (!isNaN(Number(tmptn))) tn = tmptn;
                   else tn = -1;
                  }
               }
