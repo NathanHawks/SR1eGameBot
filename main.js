@@ -144,12 +144,6 @@ function handleMessage(msg, user=msg.author) {
                 else {
                   opponentdice = args[x].substring(2, args[x].length);
                 }
-                if (isNaN(Number(opponentdice)) || opponentdice < 1) {
-                  var y = x + 1;
-                  var tmpdice = args[y];
-                  if (!isNaN(Number(tmpdice)) && tmpdice > 0) opponentdice = tmpdice;
-                  else opponentdice = -1;
-                }
               }
               else if (firstthree == 'otn') {
                 opponenttn = args[x].substring(3, args[x].length);
