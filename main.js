@@ -117,7 +117,11 @@ function handleMessage(msg, user=msg.author) {
               firsttwo = firsttwo.toLowerCase();
               if (firsttwo == 'tn') {
                 tn = args[x].substring(2, args[x].length);
-                if (tn !== Number(tn)) { tn = -1; }
+                if (tn !== Number(tn)) {
+                  var tmptn = args[x+1];
+                  if (tmptn == Number(tn)) tn == tmptn;
+                  else tn = -1;
+                 }
               }
             }
             // SETUP: is this an opposed roll?
