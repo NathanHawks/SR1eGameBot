@@ -160,7 +160,7 @@ function handleMessage(msg, user=msg.author) {
 
             // SETUP: anything remaining is a note; prepare to pass it thru
             var notegiven = false;
-            var note = "";
+            var note = cmd;
             var spacer = "";
             for (x = 0; x < args.length; x++) {
               // for this complex command, repeat everything verbatim as a note
