@@ -110,7 +110,6 @@ function handleMessage(msg, user=msg.author) {
               howmany = cmd.substring(0, cmd.length);
             }
             // SETUP: was a TN given?
-            var tngiven = false;
             var tn = -1;
             for (x = 0; x < args.length; x++) {
               var firsttwo = args[x].substring(0,2);
@@ -145,6 +144,12 @@ function handleMessage(msg, user=msg.author) {
                 else {
                   opponentdice = args[x].substring(2, args[x].length);
                 }
+                if (isNaN(Number(opponentdice)) || opponentdice < 1) {
+                  var y = x + 1;
+                  var tmpdice = args[y];
+                  if (!isNaN(Number(tmpdice)) && tmpdice > 0) opponentdice = tmpdice;
+                  else opponentdice = -1;
+                }
               }
               else if (firstthree == 'otn') {
                 opponenttn = args[x].substring(3, args[x].length);
@@ -159,12 +164,10 @@ function handleMessage(msg, user=msg.author) {
             logger.info('OD: ' + opponentdice + '; OTN: ' + opponenttn + '; OX ' + opposedexplode);
 
             // SETUP: anything remaining is a note; prepare to pass it thru
-            var notegiven = false;
             var note = cmd;
             var spacer = "";
             for (x = 0; x < args.length; x++) {
               // for this complex command, repeat everything verbatim as a note
-              notegiven = true;
               spacer = (note !== "") ? " " : "";
               note += spacer + args[x];
             }
