@@ -5,7 +5,23 @@ function d6(explode=false) {
     return roll;
 }
 
-/* Credit to stackoverflow.com/questions/1063007/how-to-sort-an-array-of-integers-correctly */
+function firstTwoLC(ofWhat) {
+  var r = ofWhat.substring(0,2);
+  r = r.toLowerCase();
+  return r;
+}
+function firstThreeLC(ofWhat) {
+  var r = ofWhat.substring(0,3);
+  r = r.toLowerCase();
+  return r;
+}
+function lastChar(ofWhat) {
+  var r = ofWhat.substring(ofWhat.length-1, ofWhat.length);
+  return r;
+}
+/* Credit to
+  stackoverflow.com/questions/1063007/how-to-sort-an-array-of-integers-correctly
+*/
 function sortNumberDesc(a, b) { return b - a; }
 
 // Libs
@@ -39,17 +55,16 @@ bot.on('ready', () => {
 bot.on('messageReactionAdd', (reaction, user) => {
   if ((reaction.emoji == '🎲' || reaction.emoji == 'game_die' ||
         reaction.emoji == ':game_die:') && user.username !== 'GameBot') {
-    //reaction.message.channel.send(user.username + ' wants to re-roll ' + reaction.message.content);
     handleMessage(reaction.message, user);
   }
 });
 
-function handleRollCommand(msg) {
+function handleRollCommand(msg, cmd) {
   // provide reroll ui (dice reaction)
   msg.react('🎲');
   // get setup ===================================
   // SETUP: how many dice, and do we explode?
-  var lastchar = cmd.substring(cmd.length-1, cmd.length);
+  var lastchar = lastChar(cmd);
   var isTest = false;
   var howmany = 0;
   if (lastchar == '!') {
@@ -62,8 +77,7 @@ function handleRollCommand(msg) {
   // SETUP: was a TN given?
   var tn = -1;
   for (x = 0; x < args.length; x++) {
-    var firsttwo = args[x].substring(0,2);
-    firsttwo = firsttwo.toLowerCase();
+    var firsttwo = firstTwoLC(args[x]);
     if (firsttwo == 'tn') {
       tn = args[x].substring(2, args[x].length);
       if (isNaN(Number(tn)) || tn < 2) {
@@ -75,37 +89,36 @@ function handleRollCommand(msg) {
     }
   }
   // SETUP: is this an opposed roll?
-  var isOpposed = false;
-  var opponentdice = -1;
-  var opponenttn = -1;
-  var isOpposedTest = false;
+  var isOpposedBool = false;
+  var opponentDiceInt = -1;
+  var opponentTNInt = -1;
+  var isOpposedTestBool = false;
   for (x = 0; x < args.length; x++) {
-    var firsttwo = args[x].substring(0,2);
-    var firstthree = args[x].substring(0,3);
-    firsttwo = firsttwo.toLowerCase();
-    firstthree = firstthree.toLowerCase();
+    var firsttwo = firstTwoLC(args[x]);
+    var firstthree = firstThreeLC(args[x]);
     if (firsttwo == 'vs' && args[x].length > 2 && firstthree !== "vs.") {
-      isOpposed = true;
-      var lastchar = args[x].substring(args[x].length-1, args[x].length);
+      isOpposedBool = true;
+      var lastchar = lastChar(args[x]);
       if (lastchar == '!') {
-        isOpposedTest = true;
-        opponentdice = args[x].substring(2, args[x].length-1);
+        isOpposedTestBool = true;
+        opponentDiceInt = args[x].substring(2, args[x].length-1);
       }
       else {
-        opponentdice = args[x].substring(2, args[x].length);
+        opponentDiceInt = args[x].substring(2, args[x].length);
       }
     }
     else if (firstthree == 'otn') {
-      opponenttn = args[x].substring(3, args[x].length);
+      opponentTNInt = args[x].substring(3, args[x].length);
     }
-    if (isNaN(Number(opponenttn)) || opponenttn < 2) {
+    if (isNaN(Number(opponentTNInt)) || opponentTNInt < 2) {
       var y = x + 1;
       var tmptn = args[y];
-      if (!isNaN(Number(tmptn)) && tmptn > 1) opponenttn = tmptn;
-      else opponenttn = -1;
+      if (!isNaN(Number(tmptn)) && tmptn > 1) opponentTNInt = tmptn;
+      else opponentTNInt = -1;
     }
   }
-  logger.info('OD: ' + opponentdice + '; OTN: ' + opponenttn + '; OX ' + isOpposedTest);
+  logger.info('OD: ' + opponentDiceInt + '; OTN: ' + opponentTNInt
+    + '; OX ' + isOpposedTestBool);
 
   // SETUP: anything remaining is a note; prepare to pass it thru
   var note = cmd;
@@ -118,43 +131,56 @@ function handleRollCommand(msg) {
   if (note !== "") note = "(" + note + ")";
   else if (tn > 0) note = "(TN" + tn + ")";
   // GO: Roll dem bones ============================================
-  var successes = 0;
+  var successesInt = 0;
   var rolls = [];
   for (x = 0; x < howmany; x++) {
     rolls[x] = d6(isTest);
-    if (tn > -1 && rolls[x] >= tn) successes++;
+    if (tn > -1 && rolls[x] >= tn) successesInt++;
   }
   // Convenience, or hiding terrible RNG? you decide! (it's both)
   rolls.sort(sortNumberDesc);
   // handle opposed roll
-  if (isOpposed) {
-    var osuccesses = 0;
+  if (isOpposedBool) {
+    var opponentSuccessesInt = 0;
     var orolls = [];
-    for (x = 0; x < opponentdice; x++) {
-      orolls[x] = d6(isOpposedTest);
-      if (opponenttn > -1 && orolls[x] >= opponenttn) osuccesses++;
+    for (x = 0; x < opponentDiceInt; x++) {
+      orolls[x] = d6(isOpposedTestBool);
+      if (opponentTNInt > -1 && orolls[x] >= opponentTNInt)
+        opponentSuccessesInt++;
     }
     orolls.sort(sortNumberDesc);
   }
   // prep output and ... put it out
   //
   var output = '';
-  if (isOpposed) {
-    var successoutput = '';
-    if (successes > osuccesses) { successoutput = (successes-osuccesses) + ' net successes '; }
-    else if (successes == osuccesses) { successoutput = '0 net successes'; }
-    else if (osuccesses > successes) { successoutput = (osuccesses-successes) + ' *fewer* successes than the opponent! '; }
-    output = user + ' rolled ' +successoutput+ '('+rolls+') vs ('+orolls+') ' + note;
+  if (isOpposedBool) {
+    var successesFormattedString = '';
+    if (successesInt > opponentSuccessesInt) {
+      successesFormattedString = (successesInt-opponentSuccessesInt)
+      + ' net successes ';
+    }
+    else if (successesInt == opponentSuccessesInt) {
+      successesFormattedString = '0 net successes';
+    }
+    else if (opponentSuccessesInt > successesInt) {
+      successesFormattedString = (opponentSuccessesInt-successesInt)
+      + ' *fewer* successes than the opponent! ';
+    }
+    output = user + ' rolled ' + successesFormattedString
+    + '('+rolls+') vs ('+orolls+') ' + note;
   }
   else {
-    var successoutput = "";
-    if (successes > 0) { successoutput = successes + ' successes '; }
-    output = user + ', you rolled ' +successoutput+ '(' +rolls+ ') ' + note;
+    var successesFormattedString = "";
+    if (successesInt > 0) {
+      successesFormattedString = successesInt + ' successes ';
+    }
+    output = user + ', you rolled ' + successesFormattedString
+    + '(' +rolls+ ') ' + note;
   }
   msg.channel.send(output);
   // no return
 }
-function handleHelpCommand(msg) {
+function handleHelpCommand(msg, cmd) {
   msg.reply('GameBot usage:\n'
     + '!***X***         Roll ***X***d6 *without* exploding 6\'s'
     + '  ***example:*** !5   rolls 5d6 without exploding\n'
@@ -194,10 +220,10 @@ function handleMessage(msg, user=msg.author) {
       cmd = cmd.toLowerCase();
       switch(cmd) {
           case 'help':
-            handleHelpCommand(msg);
+            handleHelpCommand(msg, cmd);
           break;
           default:
-            handleRollCommand(msg);
+            handleRollCommand(msg, cmd);
           break;
        }
    }
