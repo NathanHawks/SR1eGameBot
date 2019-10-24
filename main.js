@@ -59,7 +59,7 @@ bot.on('messageReactionAdd', (reaction, user) => {
   }
 });
 
-function handleRollCommand(msg, cmd) {
+function handleRollCommand(msg, cmd, args) {
   // provide reroll ui (dice reaction)
   msg.react('🎲');
   // get setup ===================================
@@ -180,7 +180,7 @@ function handleRollCommand(msg, cmd) {
   msg.channel.send(output);
   // no return
 }
-function handleHelpCommand(msg, cmd) {
+function handleHelpCommand(msg, cmd, args) {
   msg.reply('GameBot usage:\n'
     + '!***X***         Roll ***X***d6 *without* exploding 6\'s'
     + '  ***example:*** !5   rolls 5d6 without exploding\n'
@@ -220,10 +220,10 @@ function handleMessage(msg, user=msg.author) {
       cmd = cmd.toLowerCase();
       switch(cmd) {
           case 'help':
-            handleHelpCommand(msg, cmd);
+            handleHelpCommand(msg, cmd, args);
           break;
           default:
-            handleRollCommand(msg, cmd);
+            handleRollCommand(msg, cmd, args);
           break;
        }
    }
