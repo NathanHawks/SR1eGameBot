@@ -4,7 +4,6 @@ function d6(explode=false) {
     if (roll == 6 && explode == true) roll += d6(true);
     return roll;
 }
-
 function firstTwoLC(ofWhat) {
   var r = ofWhat.substring(0,2);
   r = r.toLowerCase();
@@ -18,6 +17,25 @@ function firstThreeLC(ofWhat) {
 function lastChar(ofWhat) {
   var r = ofWhat.substring(ofWhat.length-1, ofWhat.length);
   return r;
+}
+function getTNFromArgs(args) {
+  var tn = -1;
+  for (x = 0; x < args.length; x++) {
+    var firsttwo = firstTwoLC(args[x]);
+    if (firsttwo == 'tn') {
+      // peel off the number after "tn"
+      tn = args[x].substring(2, args[x].length);
+      // if there wasn't a number, look ahead to next arg
+      if (isNaN(Number(tn)) || tn < 2) {
+        var y = x + 1;
+        var tmptn = args[y];
+        // if it's a number, use it
+        if (!isNaN(Number(tmptn)) && tmptn > 1) tn = tmptn;
+        else tn = -1;
+       }
+    }
+  }
+  return tn;
 }
 /* Credit to
   stackoverflow.com/questions/1063007/how-to-sort-an-array-of-integers-correctly
@@ -59,40 +77,72 @@ bot.on('messageReactionAdd', (reaction, user) => {
   }
 });
 
+function makeOpposedOutput(isOpposedBool, successesInt, opponentSuccessesInt, user,
+  rollsIntArr, opponentRollsIntArr, note) {
+  var successesFormattedString = '';
+  if (successesInt > opponentSuccessesInt) {
+    successesFormattedString = (successesInt-opponentSuccessesInt)
+    + ' net successes ';
+  }
+  else if (successesInt == opponentSuccessesInt) {
+    successesFormattedString = '0 net successes';
+  }
+  else if (opponentSuccessesInt > successesInt) {
+    successesFormattedString = (opponentSuccessesInt-successesInt)
+    + ' *fewer* successes than the opponent! ';
+  }
+  var r = user + ' rolled ' + successesFormattedString
+  + '('+rollsIntArr+') vs ('+opponentRollsIntArr+') ' + note;
+  return r;
+}
+function prepRollNote(cmd, args, tnInt) {
+  var note = cmd;
+  var spacer = "";
+  for (x = 0; x < args.length; x++) {
+    // for this complex command, repeat everything verbatim as a note
+    spacer = (note !== "") ? " " : "";
+    note += spacer + args[x];
+  }
+  if (note !== "") note = "(" + note + ")";
+  else if (tnInt > 0) note = "(TN" + tnInt + ")";
+  return note;
+}
+function rollDice(numDiceInt, isTestBool, tnInt) {
+  var rollsIntArr = [];
+  var successesInt = 0;
+  for (x = 0; x < numDiceInt; x++) {
+    rollsIntArr[x] = d6(isTestBool);
+    if (tnInt > -1 && rollsIntArr[x] >= tnInt)
+      successesInt++;
+  }
+  // Convenience, or hiding terrible RNG? you decide! (it's both)
+  rollsIntArr.sort(sortNumberDesc);
+  return {successesInt,rollsIntArr};
+}
+// handle rolls, tests, & opposed tests
 function handleRollCommand(msg, cmd, args, user) {
   // provide reroll ui (dice reaction)
   msg.react('🎲');
   // get setup ===================================
   // SETUP: how many dice, and do we explode?
+  var isTestBool = false;
+  var numDiceInt = 0;
   var lastchar = lastChar(cmd);
-  var isTest = false;
-  var howmany = 0;
   if (lastchar == '!') {
-    isTest = true;
-    howmany = cmd.substring(0, cmd.length-1);
+    isTestBool = true;
+    numDiceInt = cmd.substring(0, cmd.length-1);
   }
   else {
-    howmany = cmd.substring(0, cmd.length);
+    numDiceInt = cmd.substring(0, cmd.length);
   }
   // SETUP: was a TN given?
-  var tn = -1;
-  for (x = 0; x < args.length; x++) {
-    var firsttwo = firstTwoLC(args[x]);
-    if (firsttwo == 'tn') {
-      tn = args[x].substring(2, args[x].length);
-      if (isNaN(Number(tn)) || tn < 2) {
-        var y = x + 1;
-        var tmptn = args[y];
-        if (!isNaN(Number(tmptn)) && tmptn > 1) tn = tmptn;
-        else tn = -1;
-       }
-    }
-  }
+  var tnInt = getTNFromArgs(args);
   // SETUP: is this an opposed roll?
   var isOpposedBool = false;
   var opponentDiceInt = -1;
   var opponentTNInt = -1;
   var isOpposedTestBool = false;
+  // check every arg
   for (x = 0; x < args.length; x++) {
     var firsttwo = firstTwoLC(args[x]);
     var firstthree = firstThreeLC(args[x]);
@@ -117,57 +167,31 @@ function handleRollCommand(msg, cmd, args, user) {
       else opponentTNInt = -1;
     }
   }
-  logger.info('OD: ' + opponentDiceInt + '; OTN: ' + opponentTNInt
-    + '; OX ' + isOpposedTestBool);
-
   // SETUP: anything remaining is a note; prepare to pass it thru
-  var note = cmd;
-  var spacer = "";
-  for (x = 0; x < args.length; x++) {
-    // for this complex command, repeat everything verbatim as a note
-    spacer = (note !== "") ? " " : "";
-    note += spacer + args[x];
-  }
-  if (note !== "") note = "(" + note + ")";
-  else if (tn > 0) note = "(TN" + tn + ")";
-  // GO: Roll dem bones ============================================
-  var successesInt = 0;
-  var rolls = [];
-  for (x = 0; x < howmany; x++) {
-    rolls[x] = d6(isTest);
-    if (tn > -1 && rolls[x] >= tn) successesInt++;
-  }
-  // Convenience, or hiding terrible RNG? you decide! (it's both)
-  rolls.sort(sortNumberDesc);
+  var note = prepRollNote(cmd, args, tnInt);
+  // GO: Roll the bones ============================================
+  //var successesInt = 0;
+  //var rollsIntArr = [];
+  var {successesInt,rollsIntArr} = rollDice(numDiceInt, isTestBool, tnInt);
+
   // handle opposed roll
   if (isOpposedBool) {
     var opponentSuccessesInt = 0;
-    var orolls = [];
+    var opponentRollsIntArr = [];
+    // rollDice(opponentDiceInt, isOpposedTestBool, opponentTNInt);
     for (x = 0; x < opponentDiceInt; x++) {
-      orolls[x] = d6(isOpposedTestBool);
-      if (opponentTNInt > -1 && orolls[x] >= opponentTNInt)
+      opponentRollsIntArr[x] = d6(isOpposedTestBool);
+      if (opponentTNInt > -1 && opponentRollsIntArr[x] >= opponentTNInt)
         opponentSuccessesInt++;
     }
-    orolls.sort(sortNumberDesc);
+    opponentRollsIntArr.sort(sortNumberDesc);
   }
-  // prep output and ... put it out
+  // prep output and deliver it
   //
   var output = '';
   if (isOpposedBool) {
-    var successesFormattedString = '';
-    if (successesInt > opponentSuccessesInt) {
-      successesFormattedString = (successesInt-opponentSuccessesInt)
-      + ' net successes ';
-    }
-    else if (successesInt == opponentSuccessesInt) {
-      successesFormattedString = '0 net successes';
-    }
-    else if (opponentSuccessesInt > successesInt) {
-      successesFormattedString = (opponentSuccessesInt-successesInt)
-      + ' *fewer* successes than the opponent! ';
-    }
-    output = user + ' rolled ' + successesFormattedString
-    + '('+rolls+') vs ('+orolls+') ' + note;
+    output = makeOpposedOutput(isOpposedBool, successesInt, opponentSuccessesInt, user,
+      rollsIntArr, opponentRollsIntArr, note);
   }
   else {
     var successesFormattedString = "";
@@ -175,7 +199,7 @@ function handleRollCommand(msg, cmd, args, user) {
       successesFormattedString = successesInt + ' successes ';
     }
     output = user + ', you rolled ' + successesFormattedString
-    + '(' +rolls+ ') ' + note;
+    + '(' +rollsIntArr+ ') ' + note;
   }
   msg.channel.send(output);
   // no return
