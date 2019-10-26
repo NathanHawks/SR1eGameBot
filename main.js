@@ -41,44 +41,42 @@ function getTNFromArgs(args) {
   stackoverflow.com/questions/1063007/how-to-sort-an-array-of-integers-correctly
 */
 function sortNumberDesc(a, b) { return b - a; }
-
-// Libs
-// disabled: var Discord = require('discord.io');
-const Discord = require('discord.js'); // new hotness
-var logger = require('winston'); // why not
-
-// load auth token (this must be configured in heroku)
-var token = null;
-if (process.env.hasOwnProperty('TOKEN')) { token = process.env.TOKEN; }
-else {
-  var auth = require('./auth.json');
-  token = auth.token;
-}
-
-// Configure logger
-logger.remove(logger.transports.Console);
-logger.add(new logger.transports.Console, { colorize: true });
-logger.level = 'debug';
-
-// Connect to Discord
-var bot = new Discord.Client();
-bot.login(token);
-
-bot.on('ready', () => {
-    logger.info('Connected; Logged in as: ['+ bot.user.tag + ']');
-    bot.user.setPresence({game:{name:'!help for help'}});
-});
-
-// Setup reaction handler
-bot.on('messageReactionAdd', (reaction, user) => {
-  if ((reaction.emoji == '🎲' || reaction.emoji == 'game_die' ||
-        reaction.emoji == ':game_die:') && user.username !== 'GameBot') {
-    handleMessage(reaction.message, user);
+function getOpposedSetupArr(args) {
+  var isOpposedBool = false;
+  var opponentDiceInt = -1;
+  var opponentTNInt = -1;
+  var isOpposedTestBool = false;
+  // check every arg for opponent dice & opponent TN
+  for (x = 0; x < args.length; x++) {
+    var firsttwo = firstTwoLC(args[x]);
+    var firstthree = firstThreeLC(args[x]);
+    if (firsttwo == 'vs' && args[x].length > 2 && firstthree !== "vs.") {
+      isOpposedBool = true;
+      var lastchar = lastChar(args[x]);
+      if (lastchar == '!') {
+        isOpposedTestBool = true;
+        opponentDiceInt = args[x].substring(2, args[x].length-1);
+      }
+      else {
+        opponentDiceInt = args[x].substring(2, args[x].length);
+      }
+    }
+    else if (firstthree == 'otn') {
+      opponentTNInt = args[x].substring(3, args[x].length);
+    }
+    // if no TN yet, lookahead
+    if (isNaN(Number(opponentTNInt)) || opponentTNInt < 2) {
+      var y = x + 1;
+      var tmptn = args[y];
+      if (!isNaN(Number(tmptn)) && tmptn > 1) opponentTNInt = tmptn;
+      else opponentTNInt = -1;
+    }
   }
-});
-
-function makeOpposedOutput(isOpposedBool, successesInt, opponentSuccessesInt, user,
-  rollsIntArr, opponentRollsIntArr, note) {
+  return [isOpposedBool,opponentDiceInt,opponentTNInt,isOpposedTestBool];
+}
+function makeOpposedOutput(isOpposedBool, successesInt, opponentSuccessesInt,
+  user, rollsIntArr, opponentRollsIntArr, note)
+{
   var successesFormattedString = '';
   if (successesInt > opponentSuccessesInt) {
     successesFormattedString = (successesInt-opponentSuccessesInt)
@@ -117,13 +115,49 @@ function rollDice(numDiceInt, isTestBool, tnInt) {
   }
   // Convenience, or hiding terrible RNG? you decide! (it's both)
   rollsIntArr.sort(sortNumberDesc);
-  return {successesInt,rollsIntArr};
+  return [successesInt,rollsIntArr];
 }
+
+// Libs
+// disabled: var Discord = require('discord.io');
+const Discord = require('discord.js'); // new hotness
+var logger = require('winston'); // why not
+
+// load auth token (this must be configured in heroku)
+var token = null;
+if (process.env.hasOwnProperty('TOKEN')) { token = process.env.TOKEN; }
+else {
+  var auth = require('./auth.json');
+  token = auth.token;
+}
+
+// Configure logger
+logger.remove(logger.transports.Console);
+logger.add(new logger.transports.Console, { colorize: true });
+logger.level = 'debug';
+
+// Connect to Discord
+var bot = new Discord.Client();
+bot.login(token);
+
+bot.on('ready', () => {
+    logger.info('Connected; Logged in as: ['+ bot.user.tag + ']');
+    bot.user.setPresence({game:{name:'!help for help'}});
+});
+
+// Setup reaction handler
+bot.on('messageReactionAdd', (reaction, user) => {
+  if ((reaction.emoji == '🎲' || reaction.emoji == 'game_die' ||
+        reaction.emoji == ':game_die:') && user.username !== 'GameBot') {
+    handleMessage(reaction.message, user);
+  }
+});
+
 // handle rolls, tests, & opposed tests
 function handleRollCommand(msg, cmd, args, user) {
   // provide reroll ui (dice reaction)
   msg.react('🎲');
-  // get setup ===================================
+
   // SETUP: how many dice, and do we explode?
   var isTestBool = false;
   var numDiceInt = 0;
@@ -135,63 +169,38 @@ function handleRollCommand(msg, cmd, args, user) {
   else {
     numDiceInt = cmd.substring(0, cmd.length);
   }
+
   // SETUP: was a TN given?
   var tnInt = getTNFromArgs(args);
+
   // SETUP: is this an opposed roll?
-  var isOpposedBool = false;
-  var opponentDiceInt = -1;
-  var opponentTNInt = -1;
-  var isOpposedTestBool = false;
-  // check every arg
-  for (x = 0; x < args.length; x++) {
-    var firsttwo = firstTwoLC(args[x]);
-    var firstthree = firstThreeLC(args[x]);
-    if (firsttwo == 'vs' && args[x].length > 2 && firstthree !== "vs.") {
-      isOpposedBool = true;
-      var lastchar = lastChar(args[x]);
-      if (lastchar == '!') {
-        isOpposedTestBool = true;
-        opponentDiceInt = args[x].substring(2, args[x].length-1);
-      }
-      else {
-        opponentDiceInt = args[x].substring(2, args[x].length);
-      }
-    }
-    else if (firstthree == 'otn') {
-      opponentTNInt = args[x].substring(3, args[x].length);
-    }
-    if (isNaN(Number(opponentTNInt)) || opponentTNInt < 2) {
-      var y = x + 1;
-      var tmptn = args[y];
-      if (!isNaN(Number(tmptn)) && tmptn > 1) opponentTNInt = tmptn;
-      else opponentTNInt = -1;
-    }
-  }
+  var retarr = getOpposedSetupArr(args);
+  var isOpposedBool = retarr[0];
+  var opponentDiceInt = retarr[1];
+  var opponentTNInt = retarr[2];
+  var isOpposedTestBool = retarr[3];
+
   // SETUP: anything remaining is a note; prepare to pass it thru
   var note = prepRollNote(cmd, args, tnInt);
+
   // GO: Roll the bones ============================================
-  //var successesInt = 0;
-  //var rollsIntArr = [];
-  var {successesInt,rollsIntArr} = rollDice(numDiceInt, isTestBool, tnInt);
+  var retarr = rollDice(numDiceInt, isTestBool, tnInt);
+  var successesInt = retarr[0];
+  var rollsIntArr = retarr[1];
 
   // handle opposed roll
   if (isOpposedBool) {
-    var opponentSuccessesInt = 0;
-    var opponentRollsIntArr = [];
-    // rollDice(opponentDiceInt, isOpposedTestBool, opponentTNInt);
-    for (x = 0; x < opponentDiceInt; x++) {
-      opponentRollsIntArr[x] = d6(isOpposedTestBool);
-      if (opponentTNInt > -1 && opponentRollsIntArr[x] >= opponentTNInt)
-        opponentSuccessesInt++;
-    }
-    opponentRollsIntArr.sort(sortNumberDesc);
+    var retarr = rollDice(opponentDiceInt, isOpposedTestBool, opponentTNInt);
+    var opponentSuccessesInt = retarr[0];
+    var opponentRollsIntArr = retarr[1];
   }
+
   // prep output and deliver it
-  //
   var output = '';
   if (isOpposedBool) {
-    output = makeOpposedOutput(isOpposedBool, successesInt, opponentSuccessesInt, user,
-      rollsIntArr, opponentRollsIntArr, note);
+    output = makeOpposedOutput(isOpposedBool, successesInt,
+      opponentSuccessesInt, user, rollsIntArr, opponentRollsIntArr, note
+    );
   }
   else {
     var successesFormattedString = "";
@@ -201,6 +210,8 @@ function handleRollCommand(msg, cmd, args, user) {
     output = user + ', you rolled ' + successesFormattedString
     + '(' +rollsIntArr+ ') ' + note;
   }
+
+  // post results
   msg.channel.send(output);
   // no return
 }
