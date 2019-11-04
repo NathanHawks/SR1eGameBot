@@ -1,3 +1,15 @@
+// set true to activate warning messages
+var isMaintenanceModeBool = true;
+// set status message to send as warning when isMaintenanceModeBool is true
+var maintenanceStatusMessage = '\nBee-boop... **oh hey! I\'m in maintenance'
++ ' mode** right now. I might miss a roll now and then. Also rerolls will go'
++ ' wonky each time I reboot.\nEverything seems ok... this was a test of the'
++ ' warning message. ;)';
+// conditionally add warning message
+function addMaintenanceStatusMessage(output) {
+  var r = output + " " + maintenanceStatusMessage;
+  return r;
+}
 // The dice-rolling function
 function d6(explode=false) {
     var roll = Math.floor(Math.random() * 6 + 1);
@@ -209,6 +221,8 @@ function handleRollCommand(msg, cmd, args, user) {
 
   // avoid false positives e.g. when chatting about Astral Tabeltop dice formats
   if (numDiceInt > 0) {
+    // modify output for maintenance mode status
+    output = addMaintenanceStatusMessage(output);
     // post results
     msg.channel.send(output);
     // provide reroll ui (dice reaction)
@@ -217,7 +231,7 @@ function handleRollCommand(msg, cmd, args, user) {
   }
 }
 function handleHelpCommand(msg, cmd, args, user) {
-  msg.reply('GameBot usage:\n'
+  var output = 'GameBot usage:\n'
     + '!***X***         Roll ***X***d6 *without* exploding 6\'s'
     + '  ***example:*** !5   rolls 5d6 without exploding\n'
     + '!X***!***        Roll ***X***d6 ***with*** exploding 6\'s'
@@ -242,8 +256,9 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '   Roll *A*d6 (exploding) with tn *B*, opposed by *X*d6 (exploding) with opponent\'s tn *Y*\n'
     + '   vs*X* = the number of dice the opponent throws (vs*X*! for exploding dice)\n'
     + '   otn*Y* = the opponent\'s target number\n'
-    + '  ***example:*** !5! tn3 vs6! otn4    Roll 5d6 (exploding) with TN 3, against 6d6 (exploding) with TN 4\n'
-  );
+    + '  ***example:*** !5! tn3 vs6! otn4    Roll 5d6 (exploding) with TN 3, against 6d6 (exploding) with TN 4\n';
+  output = addMaintenanceStatusMessage(output);
+  msg.reply(output);
 }
 
 function handleMessage(msg, user=msg.author) {
