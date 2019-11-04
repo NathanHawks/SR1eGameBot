@@ -145,7 +145,7 @@ bot.on('ready', () => {
     bot.user.setPresence({game:{name:'!help for help'}});
 });
 
-// Setup reaction handler
+// Setup reaction handler (when UI for triggering re-roll is clicked)
 bot.on('messageReactionAdd', (reaction, user) => {
   if ((reaction.emoji == '🎲' || reaction.emoji == 'game_die' ||
         reaction.emoji == ':game_die:') && user.username !== 'GameBot') {
@@ -155,8 +155,6 @@ bot.on('messageReactionAdd', (reaction, user) => {
 
 // handle rolls, tests, & opposed tests
 function handleRollCommand(msg, cmd, args, user) {
-  // provide reroll ui (dice reaction)
-  msg.react('🎲');
 
   // SETUP: how many dice, and do we explode?
   var isTestBool = false;
@@ -187,16 +185,14 @@ function handleRollCommand(msg, cmd, args, user) {
   var retarr = rollDice(numDiceInt, isTestBool, tnInt);
   var successesInt = retarr[0];
   var rollsIntArr = retarr[1];
-
+  var output = '';
   // handle opposed roll
   if (isOpposedBool) {
     var retarr = rollDice(opponentDiceInt, isOpposedTestBool, opponentTNInt);
     var opponentSuccessesInt = retarr[0];
     var opponentRollsIntArr = retarr[1];
   }
-
-  // prep output and deliver it
-  var output = '';
+  // prep output and deliver it ====================================
   if (isOpposedBool) {
     output = makeOpposedOutput(isOpposedBool, successesInt,
       opponentSuccessesInt, user, rollsIntArr, opponentRollsIntArr, note
@@ -211,9 +207,14 @@ function handleRollCommand(msg, cmd, args, user) {
     + '(' +rollsIntArr+ ') ' + note;
   }
 
-  // post results
-  msg.channel.send(output);
-  // no return
+  // avoid false positives e.g. when chatting about Astral Tabeltop dice formats
+  if (numDiceInt > 0) {
+    // post results
+    msg.channel.send(output);
+    // provide reroll ui (dice reaction)
+    msg.react('🎲');
+    // no return
+  }
 }
 function handleHelpCommand(msg, cmd, args, user) {
   msg.reply('GameBot usage:\n'
