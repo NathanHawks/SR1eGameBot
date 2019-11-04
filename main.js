@@ -1,10 +1,8 @@
 // set true to activate warning messages
 var isMaintenanceModeBool = true;
 // set status message to send as warning when isMaintenanceModeBool is true
-var maintenanceStatusMessage = '\nBee-boop... **oh hey! I\'m in maintenance'
-+ ' mode** right now. I might miss a roll now and then. Also rerolls will go'
-+ ' wonky each time I reboot.\nEverything seems ok... this was a test of the'
-+ ' warning message. ;)';
+var maintenanceStatusMessage = '\n**Bzzt. Hoi! I\'m testing maintenance'
++ ' mode.** If I forget rerolls, it means I rebooted the bot. Psshht! -Astro';
 // conditionally add warning message
 function addMaintenanceStatusMessage(output) {
   var r = output + " " + maintenanceStatusMessage;
