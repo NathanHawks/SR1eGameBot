@@ -4,6 +4,7 @@ var isMaintenanceModeBool = true;
 var maintenanceStatusMessage = '\n**Bzzt. Hoi! The bot\'s in maintenance'
 + ' mode.** If it forgets rerolls faster than normal, it means I rebooted the'
 + ' bot. Psshht! -Astro';
+
 // conditionally add warning message
 function addMaintenanceStatusMessage(output) {
   var r = output + " " + maintenanceStatusMessage;
