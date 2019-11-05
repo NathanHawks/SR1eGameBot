@@ -10,12 +10,12 @@ var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
 
 */
 + ' Psshht! -Astro';
-
 // conditionally add warning message
 function addMaintenanceStatusMessage(output) {
   var r = output + " " + maintenanceStatusMessage;
   return r;
 }
+// ====== other functions ==========================================
 // The dice-rolling function
 function d6(explode=false) {
     var roll = Math.floor(Math.random() * 6 + 1);
@@ -135,19 +135,65 @@ function rollDice(numDiceInt, isTestBool, tnInt) {
   rollsIntArr.sort(sortNumberDesc);
   return [successesInt,rollsIntArr];
 }
-
+// ============= main script =======================================
 // Libs
 // disabled: var Discord = require('discord.io');
 const Discord = require('discord.js'); // new hotness
+const ftp = require("basic-ftp");
 var logger = require('winston'); // why not
 
-// load auth token (this must be configured in heroku)
+// load auth & other tokens (this must be configured in heroku)
 var token = null;
-if (process.env.hasOwnProperty('TOKEN')) { token = process.env.TOKEN; }
+var ftpSecret = null;
+var ftpHost = null;
+var ftpUser = null;
+if (process.env.hasOwnProperty('TOKEN')) {
+  token = process.env.TOKEN;
+  ftpSecret = process.env.FTPSECRET;
+  ftpHost = process.env.FTPHOST;
+  ftpUser = process.env.FTPUSER;
+  ftpLocalDir = process.env.FTPLOCALDIR;
+  ftpRemoteDir = process.env.FTPREMOTEDIR;
+}
 else {
   var auth = require('./auth.json');
   token = auth.token;
+  ftpSecret = auth.ftpSecret;
+  ftpHost = auth.ftpHost;
+  ftpUser = auth.ftpUser;
+  ftpLocalDir = auth.ftpLocalDir;
+  ftpRemoteDir = auth.ftpRemoteDir;
 }
+
+// configure FTP
+require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create();
+
+              example();
+
+              async function example() {
+                  const client = new ftp.Client();
+                  client.ftp.verbose = true;
+                  try {
+                      await client.access({
+                          host: ftpHost,
+                          servername: ftpHost,
+                          user: ftpUser,
+                          password: ftpSecret,
+                          secure: false,
+                          secureOptions: function checkServerIdentity(servername, cert) { return undefined; }
+                      });
+                      console.log(await client.list());
+                      console.log(await client.cd(ftpRemoteDir));
+                      await client.uploadFrom(ftpLocalDir+"BOOP", "BOOP_FTP");
+                      // can't download to heroku
+                      // await client.downloadTo(ftpLocalDir+"BOOP_FTP.txt", "BOOP_FTP");
+                  }
+                  catch(err) {
+                      console.log(err);
+                  }
+                  client.close();
+              }
+
 
 // Configure logger
 logger.remove(logger.transports.Console);
