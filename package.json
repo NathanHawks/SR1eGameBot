@@ -5,6 +5,7 @@
   "main": "main.js",
   "author": "Nathan Hawks",
   "dependencies": {
+    "basic-ftp": "^4.4.1",
     "discord.js": "^11.5.1",
     "winston": "^3.2.1"
   }
