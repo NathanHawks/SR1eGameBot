@@ -2,7 +2,7 @@
 var isMaintenanceModeBool = true;
 // set status message to send as warning when isMaintenanceModeBool is true
 var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
-+ 'I\'m trying to fully fix it; Heroku is being stubborn, refusing to restart.'
++ 'We\'re back! Further disruption may occur as I prep for initiative.'
 /*
 + 'The bot\'s in maintenance'
 + ' mode.** If it forgets rerolls faster than normal, it means I rebooted the'
