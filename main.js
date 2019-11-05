@@ -1,5 +1,5 @@
 // set true to activate warning messages
-var isMaintenanceModeBool = true;
+var isMaintenanceModeBool = false;
 // set status message to send as warning when isMaintenanceModeBool is true
 var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
 + 'We\'re back! Further disruption may occur as I prep for initiative.'
@@ -165,6 +165,7 @@ else {
   ftpRemoteDir = auth.ftpRemoteDir;
 }
 
+/*
 // configure FTP
 require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create();
 
@@ -193,7 +194,7 @@ require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create(
                   }
                   client.close();
               }
-
+*/
 
 // Configure logger
 logger.remove(logger.transports.Console);
