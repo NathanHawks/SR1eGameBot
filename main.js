@@ -1,5 +1,5 @@
 // set true to activate warning messages
-var isMaintenanceModeBool = false;
+var isMaintenanceModeBool = true;
 // set status message to send as warning when isMaintenanceModeBool is true
 var maintenanceStatusMessage = '\n**Bzzt. Hoi! The bot\'s in maintenance'
 + ' mode.** If it forgets rerolls faster than normal, it means I rebooted the'
