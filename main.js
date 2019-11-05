@@ -1,8 +1,16 @@
 // set true to activate warning messages
-var isMaintenanceModeBool = false;
+var isMaintenanceModeBool = true;
 // set status message to send as warning when isMaintenanceModeBool is true
-var maintenanceStatusMessage = '\n**Bzzt. Hoi! I\'m testing maintenance'
-+ ' mode.** If I forget rerolls, it means I rebooted the bot. Psshht! -Astro';
+var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
++ 'I\'m trying to fully fix it; Heroku is being stubborn, refusing to restart.'
+/*
++ 'The bot\'s in maintenance'
++ ' mode.** If it forgets rerolls faster than normal, it means I rebooted the'
++ ' bot.
+
+*/
++ ' Psshht! -Astro';
+
 // conditionally add warning message
 function addMaintenanceStatusMessage(output) {
   var r = output + " " + maintenanceStatusMessage;
