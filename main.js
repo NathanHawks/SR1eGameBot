@@ -172,7 +172,7 @@ require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create(
 
               async function example() {
                   const client = new ftp.Client();
-                  client.ftp.verbose = true;
+                  client.ftp.verbose = false;
                   try {
                       await client.access({
                           host: ftpHost,
