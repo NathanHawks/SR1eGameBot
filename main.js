@@ -165,7 +165,7 @@ else {
   ftpRemoteDir = auth.ftpRemoteDir;
 }
 
-
+/*
 // configure FTP
 require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create();
 
@@ -194,6 +194,7 @@ require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create(
                   }
                   client.close();
               }
+*/
 
 // Configure logger
 logger.remove(logger.transports.Console);
