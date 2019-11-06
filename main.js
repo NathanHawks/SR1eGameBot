@@ -147,7 +147,7 @@ if (process.env.hasOwnProperty('TOKEN')) {
   token = process.env.TOKEN;
 }
 else {
-  var auth = require('./auth.json');
+  var auth = require('./discordauth.json');
   token = auth.token;
 }
 
