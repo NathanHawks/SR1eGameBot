@@ -139,62 +139,17 @@ function rollDice(numDiceInt, isTestBool, tnInt) {
 // Libs
 // disabled: var Discord = require('discord.io');
 const Discord = require('discord.js'); // new hotness
-const ftp = require("basic-ftp");
 var logger = require('winston'); // why not
 
 // load auth & other tokens (this must be configured in heroku)
 var token = null;
-var ftpSecret = null;
-var ftpHost = null;
-var ftpUser = null;
 if (process.env.hasOwnProperty('TOKEN')) {
   token = process.env.TOKEN;
-  ftpSecret = process.env.FTPSECRET;
-  ftpHost = process.env.FTPHOST;
-  ftpUser = process.env.FTPUSER;
-  ftpLocalDir = process.env.FTPLOCALDIR;
-  ftpRemoteDir = process.env.FTPREMOTEDIR;
 }
 else {
   var auth = require('./auth.json');
   token = auth.token;
-  ftpSecret = auth.ftpSecret;
-  ftpHost = auth.ftpHost;
-  ftpUser = auth.ftpUser;
-  ftpLocalDir = auth.ftpLocalDir;
-  ftpRemoteDir = auth.ftpRemoteDir;
 }
-
-/*
-// configure FTP
-require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create();
-
-              example();
-
-              async function example() {
-                  const client = new ftp.Client();
-                  client.ftp.verbose = false;
-                  try {
-                      await client.access({
-                          host: ftpHost,
-                          servername: ftpHost,
-                          user: ftpUser,
-                          password: ftpSecret,
-                          secure: false,
-                          secureOptions: function checkServerIdentity(servername, cert) { return undefined; }
-                      });
-                      console.log(await client.list());
-                      console.log(await client.cd(ftpRemoteDir));
-                      await client.uploadFrom(ftpLocalDir+"BOOP", "BOOP_FTP");
-                      // can't download to heroku
-                      // await client.downloadTo(ftpLocalDir+"BOOP_FTP.txt", "BOOP_FTP");
-                  }
-                  catch(err) {
-                      console.log(err);
-                  }
-                  client.close();
-              }
-*/
 
 // Configure logger
 logger.remove(logger.transports.Console);
