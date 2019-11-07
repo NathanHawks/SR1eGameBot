@@ -1,14 +1,14 @@
 // set true to activate warning messages
-var isMaintenanceModeBool = false;
+var isMaintenanceModeBool = true;
 // set status message to send as warning when isMaintenanceModeBool is true
 var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
-+ 'We\'re back! Further disruption may occur as I prep for initiative.'
 /*
-+ 'The bot\'s in maintenance'
-+ ' mode.** If it forgets rerolls faster than normal, it means I rebooted the'
-+ ' bot.
++ 'We\'re back! Occasional disruptions may occur as I prep for initiative.'
 
++ 'The bot\'s in maintenance mode.** If it forgets rerolls faster than normal, '
++ 'it means I rebooted the bot.'
 */
++ ' Actively testing some ideas; the bot will reboot often, thus the 🎲 icon will often fail.'
 + ' Psshht! -Astro';
 // conditionally add warning message
 function addMaintenanceStatusMessage(output) {
@@ -147,7 +147,7 @@ if (process.env.hasOwnProperty('TOKEN')) {
   token = process.env.TOKEN;
 }
 else {
-  var auth = require('./auth.json');
+  var auth = require('./discordauth.json');
   token = auth.token;
 }
 
@@ -225,6 +225,7 @@ function handleRollCommand(msg, cmd, args, user) {
     }
     output = user + ', you rolled ' + successesFormattedString
     + '(' +rollsIntArr+ ') ' + note;
+    console.log(output);
   }
 
   // avoid false positives e.g. when chatting about Astral Tabeltop dice formats
@@ -268,6 +269,21 @@ function handleHelpCommand(msg, cmd, args, user) {
   output = addMaintenanceStatusMessage(output);
   msg.reply(output);
 }
+function handleSetGMCommand(msg, cmd, args, user) {
+  // serverID.userID.gmWhoIsGM STRING
+  // without flag: set self as GM
+  msg.reply(`User ${user}, ID: ${user.id}\n`
+    + `Channel ${msg.channel}, ID: ${msg.channel.id}\n`
+    + `Server ${msg.channel.guild}, ID: ${msg.channel.guild.id}\n\n`
+    + `<@${user.id}>\n`
+    + `${args[0]}\n`
+    + args[0].substring(3, args[0].length-1) // <-- gets userID from arg
+  );
+  // ensure folder/subfolder chain: (root)/UserData/ServerID/ChannelID/UserID
+}
+function handleSetPlayersCommand(msg, cmd, args, user) {
+  // serverID.userID.gmPlayers ARRAY
+}
 
 function handleMessage(msg, user=msg.author) {
   // check if message starts with `!`
@@ -280,6 +296,12 @@ function handleMessage(msg, user=msg.author) {
       switch(cmd) {
           case 'help':
             handleHelpCommand(msg, cmd, args, user);
+          break;
+          case 'setgm':
+            handleSetGMCommand(msg, cmd, args, user);
+          break;
+          case 'setplayers':
+            handleSetPlayersCommand(msg, cmd, args, user);
           break;
           default:
             handleRollCommand(msg, cmd, args, user);
