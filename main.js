@@ -12,7 +12,9 @@ var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
 + ' Psshht! -Astro';
 // conditionally add warning message
 function addMaintenanceStatusMessage(output) {
-  var r = output + " " + maintenanceStatusMessage;
+  var r = "";
+  if (isMaintenanceModeBool == true) r = output + " " + maintenanceStatusMessage;
+  else r = output;
   return r;
 }
 // ====== other functions ==========================================
