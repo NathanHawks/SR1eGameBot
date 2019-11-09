@@ -15,7 +15,304 @@ function addMaintenanceStatusMessage(output) {
   var r = output + " " + maintenanceStatusMessage;
   return r;
 }
-// ====== other functions ==========================================
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+// ====== GOOGLE = google = Google =================================
+const fs = require('fs');
+const readline = require('readline');
+const {google} = require('googleapis');
+
+// If modifying these scopes, delete googletoken.json.
+const G_SCOPES = ['https://www.googleapis.com/auth/drive.appdata',
+                'https://www.googleapis.com/auth/drive.file'];
+// The file googletoken.json stores the user's access and refresh tokens, and is
+// created automatically when the authorization flow completes for the first
+// time.
+const G_TOKEN_PATH = 'googletoken.json';
+
+// internal setup
+// system folder(s)
+global.folderID = {UserData : null};
+// a way to get recently created folder IDs per channel
+global.lastCreatedFolder = { };
+// semaphores per channel id, to avoid race conditions
+global.lock = { };
+// config (debugging flags, etc)
+global.config = {
+  // debugging options
+  skipInitInitiative:                 false,
+  deleteUserDataIfFoundOnStartup:     false,
+  listAllFilesOnStartup:              true,
+  createASubfolderOnStartup:          false,
+  deleteAllFilesOnStartup:            false,
+};
+
+// Load client secrets from a local file.
+fs.readFile('googlecredentials.json', (err, content) => {
+  if (err) return console.log('Error loading client secret file:', err);
+  // Authorize a client with credentials, then call the Google Drive API.
+  authorize(JSON.parse(content), initInitiative);
+});
+
+// =========== google's library functions ==========================
+/**
+ * Create an OAuth2 client with the given credentials, and then execute the
+ * given callback function.
+ * @param {Object} credentials The authorization client credentials.
+ * @param {function} callback The callback to call with the authorized client.
+ */
+function authorize(credentials, callback) {
+  const {client_secret, client_id, redirect_uris} = credentials.installed;
+  const oAuth2Client = new google.auth.OAuth2(
+      client_id, client_secret, redirect_uris[0]);
+
+  // Check if we have previously stored a token.
+  fs.readFile(G_TOKEN_PATH, (err, token) => {
+    if (err) return getAccessToken(oAuth2Client, callback);
+    oAuth2Client.setCredentials(JSON.parse(token));
+    callback(oAuth2Client);
+  });
+}
+
+/**
+ * Get and store new token after prompting for user authorization, and then
+ * execute the given callback with the authorized OAuth2 client.
+ * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
+ * @param {getEventsCallback} callback The callback for the authorized client.
+ */
+function getAccessToken(oAuth2Client, callback) {
+  const authUrl = oAuth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: G_SCOPES,
+  });
+  console.log('Authorize this app by visiting this url:', authUrl);
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  rl.question('Enter the code from that page here: ', (code) => {
+    rl.close();
+    oAuth2Client.getToken(code, (err, token) => {
+      if (err) return console.error('Error retrieving access token', err);
+      oAuth2Client.setCredentials(token);
+      // Store the token to disk for later program executions
+      fs.writeFile(G_TOKEN_PATH, JSON.stringify(token), (err) => {
+        if (err) return console.error(err);
+        console.log('Token stored to', G_TOKEN_PATH);
+      });
+      callback(oAuth2Client);
+    });
+  });
+}
+//==================================================================
+// dx funcs
+function openFile(args) {
+  var auth = global.auth;
+  const drive = google.drive({version: 'v3', auth});
+  drive.files.get({fileId: args[0], alt: "media"}, (err, res) => {
+    if (err) return console.error(err);
+    console.log(res.data.substring(0, res.data.length-2));
+  });
+}
+function listAllFiles() {
+  var auth = global.auth;
+  const drive = google.drive({version: 'v3', auth});
+  drive.files.list({
+    fields: 'nextPageToken, files(id, name, parents)',
+  }, (err, res) => {
+    if (err) return console.log('The API returned an error: ' + err);
+    const files = res.data.files;
+    if (files.length) {
+      console.log('DX: File list ----------------- IDs --------------------- parents');
+      files.map((file) => {
+        console.log(`${file.name} (${file.id}) [${file.parents}]`);
+      });
+    } else {
+      console.log('No files found.');
+    }
+  });
+}
+function deleteAllFiles() {
+  var auth = global.auth;
+  const drive = google.drive({version: 'v3', auth});
+  drive.files.list({
+    fields: 'nextPageToken, files(id, name)',
+  }, (err, res) => {
+    if (err) return console.log('The API returned an error: ' + err);
+    const files = res.data.files;
+    if (files.length) {
+      console.log(`DX: Deleting ${files.length} files...`);
+      files.map((file) => {
+        deleteGDriveFileById(file.id,(err,res)=>{if (err) console.error(err);});
+      });
+    } else {
+      console.log('No files found.');
+    }
+  });
+}
+function dxCreateSubfolder() {
+  // test ensure
+  ensureGDriveFolderByName('Subfolder', global.folderID.UserData);
+}
+//==================================================================
+// my library functions
+// this function poorly tested
+function ensureGDriveFolderByName(name, parentID=null, channelID="system") {
+  findGDriveFolderByName(name, parentID, (err, res) => {
+    if (err) return console.error(err);
+    console.log(`Ensuring folder ${name} exists`);
+    const files = res.data.files;
+    if (files.length == 0) {
+      console.log('It doesn\'t exist; creating it');
+      // create folder & let callback perform another find to get id
+      createGDriveFolder(name, parentID, (err, file) => {
+        // after-creation action
+        if (err) return console.error(err);
+      }, channelID);
+    }
+  }, channelID);
+}
+
+// semaphore paradigm: disk locking per channel to prevent race conditions
+function isDiskLockedForChannel(channelID) {
+  return global.lock[channelID];
+}
+// optional 2nd arg allows inverting the function
+function lockDiskForChannel(channelID, unlock=false) {
+  if (unlock==true) return unlockDiskForChannel(channelID);
+  global.lock[channelID] = true;
+}
+function unlockDiskForChannel(channelID, lock=false) {
+  if (lock==true) return lockDiskForChannel(channelID);
+  global.lock[channelID] = false;
+}
+
+async function findGDriveFolderByName(folderName, parentID=null, callback, channelID="system") {
+  while (isDiskLockedForChannel(channelID)) {
+    console.log('Waiting to find ' + folderName);
+    await sleep(50);
+  }
+  lockDiskForChannel(channelID);
+  var auth = global.auth;
+  const drive = google.drive({version: 'v3', auth});
+  var mainq = `name="${folderName}"`;
+  mainq = (parentID == null) ? mainq : `"${parentID}" in parents`
+  var q = {
+    q: mainq,
+    name: folderName,
+    mimeType: 'application/vnd.google-apps.folder',
+    fields: 'files(id, name)',
+  };
+  drive.files.list(q, (err, res) => {
+    unlockDiskForChannel(channelID);
+    callback(err, res);
+  });
+}
+
+async function createGDriveFolder(folderName, parentID=null, callback, channelID="system") {
+  while (isDiskLockedForChannel(channelID)) {
+    console.log('Waiting to create ' + folderName);
+    await sleep(50);
+  }
+  lockDiskForChannel(channelID);
+  var auth = global.auth;
+  const drive = google.drive({version: 'v3', auth});
+  var parents = [];
+  if (parentID !== null) {
+    parents = [parentID];
+  }
+  drive.files.create({
+    resource: {
+      'name': folderName,
+      'parents': parents,
+      'mimeType': 'application/vnd.google-apps.folder'
+    },
+    fields: 'id'
+  }, (err, file) => {
+    if (err) return console.error(err);
+    unlockDiskForChannel(channelID);
+    callback(err,file);
+  });
+}
+
+async function deleteGDriveFileById(fileId, callback=(err,res)=>{}, channelID="system") {
+  while (isDiskLockedForChannel(channelID)) {
+    console.log('Waiting to delete ' + fileId);
+    await sleep(50);
+  }
+  lockDiskForChannel(channelID);
+  var auth = global.auth;
+  const drive = google.drive({version: 'v3', auth});
+  drive.files.delete({fileId:fileId}, (err, res) => {
+    unlockDiskForChannel(channelID);
+    callback(err, res);
+  });
+}
+
+//==================================================================
+// Init the Initiative system. See also callbackInitInitiative, immediately below
+function initInitiative(auth) {
+  // frag it
+  global.auth = auth;
+  // diagnostic / testing junk
+  if (global.config.deleteAllFilesOnStartup == true)
+    { deleteAllFiles(); return; }
+  if (global.config.listAllFilesOnStartup == true) listAllFiles();
+  if (global.config.skipInitInitiative == true) return;
+  // init disk locking for system
+  unlockDiskForChannel("system");
+  // initial startup payload depends on whether UserData folder exists
+  findGDriveFolderByName('UserData', null, (err, res) => {
+    callbackInitInitiative(err, res);
+  });
+}
+// Startup payload
+async function callbackInitInitiative(err, res) {
+  if (err)
+    return console.log('Google Drive API returned an error: ' + err);
+
+  var findAndSetFolderID = function (files, folderName) {
+    files.map((file) => {
+      if (file.name == folderName) { global.folderID[folderName] = file.id; }
+    });
+  }
+
+  // determine if we've already been installed; if not, do install
+  const files = res.data.files;
+  if (files.length) {
+    // SETUP =======================================================
+    var folderName = 'UserData';
+    findAndSetFolderID(files, folderName);
+    if (global.config.deleteUserDataIfFoundOnStartup == true) {
+      // testing/debugging: delete UserData folder (to test installer again)
+      deleteGDriveFileById(global.folderID[folderName],(err,res)=>{if(err)console.log(err);});
+    }
+  } else {
+    // INSTALL =====================================================
+    var folderName = 'UserData';
+    console.log(`Installing ${folderName} folder.`);
+    createGDriveFolder(folderName, null, (err, file) => {
+        if (err) return console.error(err);
+        // fetch ID of new folder
+        findGDriveFolderByName(folderName, null, (err, res) => {
+            lockDiskForChannel("system");
+            const files = res.data.files;
+            if (files.length) { findAndSetFolderID(files, folderName); }
+            unlockDiskForChannel("system");
+          } );
+      } );
+  }
+  // rest of startup
+  // more diagnostic / testing junk
+  if (global.config.createASubfolderOnStartup == true) {
+    while (isDiskLockedForChannel("system")) { await sleep(50); }
+    dxCreateSubfolder();
+  }
+
+}
+
+// ====== Original GameBot code ====================================
 // The dice-rolling function
 function d6(explode=false) {
     var roll = Math.floor(Math.random() * 6 + 1);
@@ -269,17 +566,71 @@ function handleHelpCommand(msg, cmd, args, user) {
   output = addMaintenanceStatusMessage(output);
   msg.reply(output);
 }
-function handleSetGMCommand(msg, cmd, args, user) {
+async function handleSetGMCommand(msg, cmd, args, user) {
   // serverID.userID.gmWhoIsGM STRING
   // without flag: set self as GM
+  var targetID = `${args[0].substring(3, args[0].length-1)}`;
   msg.reply(`User ${user}, ID: ${user.id}\n`
     + `Channel ${msg.channel}, ID: ${msg.channel.id}\n`
     + `Server ${msg.channel.guild}, ID: ${msg.channel.guild.id}\n\n`
     + `<@${user.id}>\n`
     + `${args[0]}\n`
-    + args[0].substring(3, args[0].length-1) // <-- gets userID from arg
+    + targetID
   );
   // ensure folder/subfolder chain: (root)/UserData/ServerID/ChannelID/UserID
+  var serverFolderID = null;
+  var channelFolderID = null;
+  var userFolderID = null;
+  await ensureGDriveFolderByName(msg.channel.guild.id, global.folderID.UserData, msg.channel.id);
+  await findGDriveFolderByName(msg.channel.guild.id, global.folderID.UserData, (err, res) => {
+    if (err) return console.error(err);
+    lockDiskForChannel(msg.channel.id);
+    var files = res.data.files;
+    if (files.length) files.map((file)=>{ global.lastCreatedFolder[msg.channel.id] = file.id; });
+    unlockDiskForChannel(msg.channel.id);
+  }, msg.channel.id);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(25); }
+  serverFolderID = global.lastCreatedFolder[msg.channel.id];
+  await ensureGDriveFolderByName(msg.channel.id, serverFolderID, msg.channel.id);
+  await findGDriveFolderByName(msg.channel.id, serverFolderID, (err, res) => {
+    if (err) return console.error(err);
+    lockDiskForChannel(msg.channel.id);
+    var files = res.data.files;
+    if (files.length) files.map((file)=>{ global.lastCreatedFolder[msg.channel.id] = file.id; });
+    unlockDiskForChannel(msg.channel.id);
+  }, msg.channel.id);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(25); }
+  channelFolderID = global.lastCreatedFolder[msg.channel.id];
+  await ensureGDriveFolderByName(user.id, channelFolderID, msg.channel.id);
+  await findGDriveFolderByName(user.id, channelFolderID, (err, res) => {
+    if (err) return console.error(err);
+    lockDiskForChannel(msg.channel.id);
+    var files = res.data.files;
+    if (files.length) files.map((file)=>{ global.lastCreatedFolder[msg.channel.id] = file.id; });
+    unlockDiskForChannel(msg.channel.id);
+  }, msg.channel.id);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(25); }
+  userFolderID = global.lastCreatedFolder[msg.channel.id];
+  var auth = global.auth;
+  const drive = google.drive({version: 'v3', auth});
+  lockDiskForChannel(msg.channel.id);
+  drive.files.create({
+    resource: {
+      'name': "gm",
+      'parents': [userFolderID]
+    }, media: {
+      'mimeType': 'text/plain',
+      'body': `${targetID}/2`
+    },
+    fields: 'id'
+  }, (err, file) => {
+    if (err) return console.error(err);
+    unlockDiskForChannel(msg.channel.id);
+    console.log(`Wrote ${targetID}`);
+  }
+  );
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(25); }
+  listAllFiles();
 }
 function handleSetPlayersCommand(msg, cmd, args, user) {
   // serverID.userID.gmPlayers ARRAY
@@ -296,6 +647,15 @@ function handleMessage(msg, user=msg.author) {
       switch(cmd) {
           case 'help':
             handleHelpCommand(msg, cmd, args, user);
+          break;
+          case 'list':
+            listAllFiles();
+          break;
+          case 'delall':
+            deleteAllFiles();
+          break;
+          case 'open':
+            openFile(args);
           break;
           case 'setgm':
             handleSetGMCommand(msg, cmd, args, user);
