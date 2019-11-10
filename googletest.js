@@ -18,7 +18,7 @@ global.channelDiskLock = { };
 // config (debugging flags, etc)
 global.config = {
   // debugging options
-  skipInitInitiative: true,
+  skipInitInitiative: false,
   deleteUserDataIfFoundOnStartup: false,
   listAllFilesOnStartup: true,
   createASubfolderOnStartup: false,
