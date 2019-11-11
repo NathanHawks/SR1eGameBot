@@ -9,7 +9,7 @@ var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
 + 'it means I rebooted the bot.'
 */
 + ' Actively testing some ideas; the bot will reboot often, thus the 🎲 icon will often fail.'
-+ ' Psshht! -Astro';
++ ' Pzzhht! -Astro';
 // conditionally add warning message
 function addMaintenanceStatusMessage(output) {
   var r = output + " " + maintenanceStatusMessage;
@@ -18,6 +18,26 @@ function addMaintenanceStatusMessage(output) {
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+// internal setup
+// system folder(s)
+global.folderID = {UserData : null};
+// a way to get recently created IDs per channel
+global.lastCreatedFolder = { };
+// a cursor for returning found files per channel
+global.lastFoundFileID = { };
+// semaphores per channel id, to avoid race conditions
+global.lock = { };
+// a place to store the results of getFileContents
+global.lastFileContents = { };
+// config (debugging flags, etc)
+global.config = {
+  // debugging options
+  skipInitInitiative:                 false,
+  deleteUserDataIfFoundOnStartup:     false,
+  listAllFilesOnStartup:              true,
+  createASubfolderOnStartup:          false,
+  deleteAllFilesOnStartup:            false,
+};
 // ====== GOOGLE = google = Google =================================
 const fs = require('fs');
 const readline = require('readline');
@@ -30,25 +50,6 @@ const G_SCOPES = ['https://www.googleapis.com/auth/drive.appdata',
 // created automatically when the authorization flow completes for the first
 // time.
 const G_TOKEN_PATH = 'googletoken.json';
-
-// internal setup
-// system folder(s)
-global.folderID = {UserData : null};
-// a way to get recently created folder IDs per channel
-global.lastCreatedFolder = { };
-// a cursor for returning found files per channel
-global.lastFoundFileID = { };
-// semaphores per channel id, to avoid race conditions
-global.lock = { };
-// config (debugging flags, etc)
-global.config = {
-  // debugging options
-  skipInitInitiative:                 false,
-  deleteUserDataIfFoundOnStartup:     false,
-  listAllFilesOnStartup:              true,
-  createASubfolderOnStartup:          false,
-  deleteAllFilesOnStartup:            false,
-};
 
 // Load client secrets from a local file.
 fs.readFile('googlecredentials.json', (err, content) => {
@@ -109,13 +110,17 @@ function getAccessToken(oAuth2Client, callback) {
 }
 //==================================================================
 // dx funcs
-function openFile(args) {
+async function openFile(args) {
+  /*
   var auth = global.auth;
   const drive = google.drive({version: 'v3', auth});
   drive.files.get({fileId: args[0], alt: "media"}, (err, res) => {
     if (err) return console.error(err);
     console.log(res.data.substring(0, res.data.length-2));
   });
+  */
+
+  console.log(await getFileContents(args[0], 'system'));
 }
 function listAllFiles() {
   var auth = global.auth;
@@ -146,7 +151,7 @@ function deleteAllFiles() {
     if (files.length) {
       console.log(`DX: Deleting ${files.length} files...`);
       files.map((file) => {
-        deleteGDriveFileById(file.id,(err,res)=>{if (err) console.error(err);});
+        deleteFileById(file.id,(err,res)=>{if (err) console.error(err);});
       });
     } else {
       console.log('No files found.');
@@ -155,7 +160,7 @@ function deleteAllFiles() {
 }
 function dxCreateSubfolder() {
   // test ensure
-  ensureGDriveFolderByName('Subfolder', global.folderID.UserData);
+  ensureFolderByName('Subfolder', global.folderID.UserData);
 }
 //==================================================================
 // my library functions
@@ -164,8 +169,8 @@ async function ensureFolderTriplet(msg) {
   var serverFolderID = null;
   var channelFolderID = null;
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  await ensureGDriveFolderByName(msg.channel.guild.id, global.folderID.UserData, msg.channel.id);
-  await findGDriveFolderByName(msg.channel.guild.id, global.folderID.UserData, (err, res) => {
+  await ensureFolderByName(msg.channel.guild.id, global.folderID.UserData, msg.channel.id);
+  await findFolderByName(msg.channel.guild.id, global.folderID.UserData, (err, res) => {
     if (err) return console.error(err);
     lockDiskForChannel(msg.channel.id);
     var files = res.data.files;
@@ -175,8 +180,8 @@ async function ensureFolderTriplet(msg) {
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   serverFolderID = global.lastCreatedFolder[msg.channel.id];
 
-  await ensureGDriveFolderByName(msg.channel.id, serverFolderID, msg.channel.id);
-  await findGDriveFolderByName(msg.channel.id, serverFolderID, (err, res) => {
+  await ensureFolderByName(msg.channel.id, serverFolderID, msg.channel.id);
+  await findFolderByName(msg.channel.id, serverFolderID, (err, res) => {
     if (err) return console.error(err);
     lockDiskForChannel(msg.channel.id);
     var files = res.data.files;
@@ -186,8 +191,8 @@ async function ensureFolderTriplet(msg) {
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   channelFolderID = global.lastCreatedFolder[msg.channel.id];
 
-  await ensureGDriveFolderByName(msg.author.id, channelFolderID, msg.channel.id);
-  await findGDriveFolderByName(msg.author.id, channelFolderID, (err, res) => {
+  await ensureFolderByName(msg.author.id, channelFolderID, msg.channel.id);
+  await findFolderByName(msg.author.id, channelFolderID, (err, res) => {
     if (err) return console.error(err);
     lockDiskForChannel(msg.channel.id);
     var files = res.data.files;
@@ -200,7 +205,7 @@ async function ensureFolderTriplet(msg) {
 async function findUserFolderFromMsg(msg) {
   var r = null;
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  await findGDriveFolderByName(msg.channel.guild.id, global.folderID.UserData,
+  await findFolderByName(msg.channel.guild.id, global.folderID.UserData,
     (err, res) => {
       if (res.data.files.length > 0) {
         // store the file id
@@ -212,7 +217,7 @@ async function findUserFolderFromMsg(msg) {
   }, msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   var serverFolderID = global.lastFoundFileID[msg.channel.id];
-  await findGDriveFolderByName(msg.channel.id, serverFolderID, (err, res) => {
+  await findFolderByName(msg.channel.id, serverFolderID, (err, res) => {
     if (res.data.files.length > 0) {
       // store the file id
       res.data.files.map((file)=>{
@@ -223,7 +228,7 @@ async function findUserFolderFromMsg(msg) {
   }, msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   var channelFolderID = global.lastFoundFileID[msg.channel.id];
-  await findGDriveFolderByName(msg.author.id, channelFolderID, (err, res) => {
+  await findFolderByName(msg.author.id, channelFolderID, (err, res) => {
     if (err) return console.error(err);
     lockDiskForChannel(msg.channel.id);
     if (res.data.files.length > 0) {
@@ -240,15 +245,15 @@ async function findUserFolderFromMsg(msg) {
   return r;
 }
 
-function ensureGDriveFolderByName(name, parentID=null, channelID="system") {
-  findGDriveFolderByName(name, parentID, (err, res) => {
+function ensureFolderByName(name, parentID=null, channelID="system") {
+  findFolderByName(name, parentID, (err, res) => {
     if (err) return console.error(err);
     console.log(`Ensuring folder ${name} exists`);
     const files = res.data.files;
     if (files.length == 0) {
       console.log('It doesn\'t exist; creating it');
       // create folder & let callback perform another find to get id
-      createGDriveFolder(name, parentID, (err, file) => {
+      createFolder(name, parentID, (err, file) => {
         // after-creation action
         if (err) return console.error(err);
       }, channelID);
@@ -270,7 +275,7 @@ function unlockDiskForChannel(channelID, lock=false) {
   global.lock[channelID] = false;
 }
 
-async function findGDriveFolderByName(folderName, parentID=null, callback, channelID="system") {
+async function findFolderByName(folderName, parentID=null, callback, channelID="system") {
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
   var auth = global.auth;
@@ -289,7 +294,7 @@ async function findGDriveFolderByName(folderName, parentID=null, callback, chann
   });
 }
 
-async function createGDriveFolder(folderName, parentID=null, callback, channelID="system") {
+async function createFolder(folderName, parentID=null, callback, channelID="system") {
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
   var auth = global.auth;
@@ -312,11 +317,29 @@ async function createGDriveFolder(folderName, parentID=null, callback, channelID
   });
 }
 
+async function getFileContents(fileID, channelID) {
+  while (isDiskLockedForChannel(channelID)) { await sleep(15); }
+  lockDiskForChannel(channelID);
+  var auth = global.auth;
+  const drive = google.drive({version: 'v3', auth});
+  drive.files.get({fileId: fileID, alt: "media"}, (err, res) => {
+    if (err) { unlockDiskForChannel(channelID); return console.error(err); }
+    // strip padding which was added to bypass a very weird API error
+    global.lastFileContents[channelID] = res.data.substring(0, res.data.length-2);
+    unlockDiskForChannel(channelID);
+  });
+  while (isDiskLockedForChannel(channelID)) { await sleep(15); }
+  var r = global.lastFileContents[channelID];
+  return r;
+}
+
 async function setContentsByFilenameAndParent(msg, filename, parentFolderID, contents) {
   // prep for disk ops
   var auth = global.auth;
   const drive = google.drive({version: 'v3', auth});
-  lockDiskForChannel(msg.channel.id);
+  var channelID = msg.channel.id;
+  while (isDiskLockedForChannel(channelID)) { await sleep(15); }
+  lockDiskForChannel(channelID);
   // Create/Update the file; does the file already exist
   drive.files.list({q:`"${parentFolderID}" in parents`, name: filename},
     (err, res) => {
@@ -330,7 +353,7 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
           fields: 'id'
         }, (err, file) => {
           if (err) return console.error(err);
-          unlockDiskForChannel(msg.channel.id);
+          unlockDiskForChannel(channelID);
         });
       } else {
         var found = false;
@@ -342,7 +365,7 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
               fileId: file.id, media: {body: `${contents}/2`}},
               (err, res) => {
                 if (err) return console.error(err);
-                unlockDiskForChannel(msg.channel.id);
+                unlockDiskForChannel(channelID);
             });
           }
         });
@@ -353,14 +376,14 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
             fields: 'id'
           }, (err, file) => {
             if (err) return console.error(err);
-            unlockDiskForChannel(msg.channel.id);
+            unlockDiskForChannel(channelID);
           });
         }
       }
     }
   );
 }
-async function deleteGDriveFileById(fileId, callback=(err,res)=>{}, channelID="system") {
+async function deleteFileById(fileId, callback=(err,res)=>{}, channelID="system") {
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
   var auth = global.auth;
@@ -370,7 +393,11 @@ async function deleteGDriveFileById(fileId, callback=(err,res)=>{}, channelID="s
     callback(err, res);
   });
 }
-
+function removeHourglass(msg) {
+  msg.reactions.map((reaction) => {
+    if (reaction.emoji.name == '⏳') { reaction.remove(); }
+  });
+}
 //==================================================================
 // Init the Initiative system. See also callbackInitInitiative, immediately below
 function initInitiative(auth) {
@@ -384,7 +411,7 @@ function initInitiative(auth) {
   // init disk locking for system
   unlockDiskForChannel("system");
   // initial startup payload depends on whether UserData folder exists
-  findGDriveFolderByName('UserData', null, (err, res) => {
+  findFolderByName('UserData', null, (err, res) => {
     callbackInitInitiative(err, res);
   });
 }
@@ -407,16 +434,16 @@ async function callbackInitInitiative(err, res) {
     findAndSetFolderID(files, folderName);
     if (global.config.deleteUserDataIfFoundOnStartup == true) {
       // testing/debugging: delete UserData folder (to test installer again)
-      deleteGDriveFileById(global.folderID[folderName],(err,res)=>{if(err)console.log(err);});
+      deleteFileById(global.folderID[folderName],(err,res)=>{if(err)console.log(err);});
     }
   } else {
     // INSTALL =====================================================
     var folderName = 'UserData';
     console.log(`Installing ${folderName} folder.`);
-    createGDriveFolder(folderName, null, (err, file) => {
+    createFolder(folderName, null, (err, file) => {
         if (err) return console.error(err);
         // fetch ID of new folder
-        findGDriveFolderByName(folderName, null, (err, res) => {
+        findFolderByName(folderName, null, (err, res) => {
             lockDiskForChannel("system");
             const files = res.data.files;
             if (files.length) { findAndSetFolderID(files, folderName); }
@@ -690,6 +717,7 @@ function handleHelpCommand(msg, cmd, args, user) {
 async function handleSetGMCommand(msg, cmd, args, user) {
   // serverID.channelID.userID.gmWhoIsGM STRING
   // without flag: set self as GM
+  msg.react('⏳');
   var targetID = "";
   if (args.length) targetID = args[0].substring(3, args[0].length-1);
   else targetID = user.id;
@@ -708,11 +736,133 @@ async function handleSetGMCommand(msg, cmd, args, user) {
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await setContentsByFilenameAndParent(msg, 'gmWhoIsGM', userFolderID, targetID);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  // remove reaction
+  removeHourglass(msg);
   if (targetID == msg.author.id) msg.reply(' you are now a GM in this channel.');
   else msg.reply(` your GM is now <@${targetID}> in this channel.`);
   listAllFiles();
 }
+async function handleSetPlayersCommand(msg, cmd, args, user) {
+  msg.react('⏳');
+  await ensureFolderTriplet(msg);
+  // fixme: Discord has two formats, <@! vs <@
+  for (x = 0; x < args.length; x++) { args[x] = args[x].substring(3, args[x].length-1); }
+  var content = args.join(",");
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var userFolderID = await findUserFolderFromMsg(msg);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  await setContentsByFilenameAndParent(msg, 'gmPlayers', userFolderID, content);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  // remove reaction
+  removeHourglass(msg);
+  msg.reply(` your group in this channel was reset, and you added ${args.length} players.`);
+  listAllFiles();
+}
+async function handleAddPlayersCommand(msg, cmd, args, user) {
+  msg.react('⏳');
+  await ensureFolderTriplet(msg);
+  var gmPlayersFileID = null;
+  var filename = 'gmPlayers';
+  var auth = global.auth;
+  var drive = google.drive({version: 'v3', auth});
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var userFolderID = await findUserFolderFromMsg(msg);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  lockDiskForChannel(msg.channel.id);
+  // first we need to ensure the file
+  drive.files.list(
+    {q: `"${userFolderID}" in parents`, name: filename},
+    (err, res) => {
+      if (err) console.err(err);
+      // in the event of no match
+      if (res.data.files.length == 0) {
+        // user must use setPlayer first
+        msg.reply("You have an empty group in this channel; please use !setplayers first.")
+        removeHourglass(msg);
+        unlockDiskForChannel(msg.channel.id);
+        return;
+      } else {
+        // verify filename match and abort if not
+        var found = false;
+        res.data.files.map((file)=>{if(file.name==filename){found=true;}});
+        if (found==false) {
+          msg.reply("You have an empty group in this channel; please use !setplayers first.")
+          removeHourglass(msg);
+          unlockDiskForChannel(msg.channel.id);
+          return;
+        }
+      }
+      // now the file surely exists -- redo the find, get the file id
+      lockDiskForChannel(msg.channel.id);
+      drive.files.list({q: `"${userFolderID}" in parents`, name: filename},
+        (err, res) => {
+          // we must check for filename match
+          res.data.files.map((file)=>{
+            if (file.name == filename) {
+              global.lastFoundFileID[msg.channel.id] = file.id;
+            }
+          });
+          unlockDiskForChannel(msg.channel.id);
+    });
+  });
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  gmPlayersFileID = global.lastFoundFileID[msg.channel.id];
+  // get and parse the contents of the file
+  try {
+    var oldPlayerString = await getFileContents(gmPlayersFileID);
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    console.log(`old player string: ${oldPlayerString}`);
+    var newPlayersArr = [];
+    newPlayersArr = oldPlayerString.split(",");
+    // add the new players
+    for (x = 0; x < args.length; x++) { newPlayersArr[newPlayersArr.length] = args[x].substring(3, args[x].length-1); }
+    var newPlayersCount = newPlayersArr.length;
+    // format for output/saving
+    content = newPlayersArr.join(",");
+    // save the new player list
+    await setContentsByFilenameAndParent(msg, filename, userFolderID, content);
+    msg.reply(` you added ${args.length} players to your group in this channel; now there are ${newPlayersCount}.`);
+    removeHourglass(msg);
+  } catch (e) {
+    return;
+  }
+}
+async function handleClearPlayersCommand(msg, cmd, args, user) {
+  msg.react('⏳');
+  await ensureFolderTriplet(msg);
+  // do prep while waiting for long disk operation
+  var auth = global.auth;
+  var drive = google.drive({version: 'v3', auth});
+  var filename = 'gmPlayers';
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var parentFolderID = await findUserFolderFromMsg(msg);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  lockDiskForChannel(msg.channel.id);
+  drive.files.list({q:`"${parentFolderID}" in parents`, name: filename},
+    (err, res) => {
+      if (err) return console.error(err);
+      // the file doesn't exist for this channel/user pairing
+      if (res.data.files.length == 0) {
+        // nothing to delete; we're done here
+      } else {
+        // be sure it's the right file, then delete it
+        res.data.files.map((file) => {
+          if (file.name == filename) {
+            unlockDiskForChannel(msg.channel.id);
+            deleteFileById(file.id, (err,res)=>{}, msg.channel.id);
+          }
+        });
+      }
+    }
+  );
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  // remove reaction
+  removeHourglass(msg);
+  msg.reply(' your group for this channel was reset to 0 players.');
+  listAllFiles();
+}
 async function handleSetInitCommand(msg, cmd, args, user) {
+  msg.react('⏳');
   // serverID.channelID.userID.playerInit STRING
   var content = args.join(" ");
   await ensureFolderTriplet(msg);
@@ -722,10 +872,13 @@ async function handleSetInitCommand(msg, cmd, args, user) {
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await setContentsByFilenameAndParent(msg, 'playerInit', userFolderID, content);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  msg.reply(` your initiative formula is now ${content}.`);
+  // remove reaction
+  removeHourglass(msg);
+  msg.reply(` your initiative formula (in this channel) is now ${content}.`);
   listAllFiles();
 }
 async function handleSetNPCInitCommand(msg, cmd, args, user) {
+  msg.react('⏳');
   await ensureFolderTriplet(msg);
   var content = args.join(" ");
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -733,10 +886,13 @@ async function handleSetNPCInitCommand(msg, cmd, args, user) {
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await setContentsByFilenameAndParent(msg, 'npcInit', userFolderID, content);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  msg.reply(` the NPCs were reset and you added an NPC: ${content}`);
+  // remove reaction
+  removeHourglass(msg);
+  msg.reply(` your NPCs for this channel were reset, and you added an NPC: ${content}`);
   listAllFiles();
 }
 async function handleClearNPCInitCommand(msg, cmd, args, user) {
+  msg.react('⏳');
   await ensureFolderTriplet(msg);
   var auth = global.auth;
   var drive = google.drive({version: 'v3', auth});
@@ -745,29 +901,32 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
   var parentFolderID = await findUserFolderFromMsg(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   lockDiskForChannel(msg.channel.id);
-  // Create/Update the file; does the file already exist
   drive.files.list({q:`"${parentFolderID}" in parents`, name: filename},
     (err, res) => {
+      unlockDiskForChannel(msg.channel.id);
       if (err) return console.error(err);
-      // no, the file doesn't exist for this channel/user pairing
+      // the file doesn't exist for this channel/user pairing
       if (res.data.files.length == 0) {
         // nothing to delete; we're done here
       } else {
-        // either it already exists (update it) or we got a partial match (create it)
+        // be sure it's the right file, then delete it
         res.data.files.map((file) => {
           if (file.name == filename) {
-            unlockDiskForChannel(msg.channel.id);
-            deleteGDriveFileById(file.id, (err,res)=>{}, msg.channel.id);
+            deleteFileById(file.id, (err,res)=>{}, msg.channel.id);
           }
         });
       }
     }
   );
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  // remove reaction
+  removeHourglass(msg);
   msg.reply(' you cleared the NPC initiative formulas.');
   listAllFiles();
 }
 function handleMessage(msg, user=msg.author) {
+  // stop confusing people during development!!
+  if (user.id !== '360086569778020352') return;
   // check if message starts with `!`
   var message = msg.content;
   if (message.substring(0, 1) == '!') {
@@ -791,12 +950,25 @@ function handleMessage(msg, user=msg.author) {
           case 'setgm':
             handleSetGMCommand(msg, cmd, args, user);
           break;
+          case 'setplayers':
+          case 'setplayer':
+            handleSetPlayersCommand(msg, cmd, args, user);
+          break;
+          case 'addplayers':
+          case 'addplayer':
+            handleAddPlayersCommand(msg, cmd, args, user);
+          break;
+          case 'clearplayers':
+            handleClearPlayersCommand(msg, cmd, args, user);
+          break;
           case 'setinit':
             handleSetInitCommand(msg, cmd, args, user);
           break;
+          case 'setnpcinits':
           case 'setnpcinit':
             handleSetNPCInitCommand(msg, cmd, args, user);
           break;
+          case 'clearnpcinits':
           case 'clearnpcinit':
             handleClearNPCInitCommand(msg, cmd, args, user);
           break;
