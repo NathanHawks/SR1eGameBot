@@ -111,15 +111,6 @@ function getAccessToken(oAuth2Client, callback) {
 //==================================================================
 // dx funcs
 async function openFile(args) {
-  /*
-  var auth = global.auth;
-  const drive = google.drive({version: 'v3', auth});
-  drive.files.get({fileId: args[0], alt: "media"}, (err, res) => {
-    if (err) return console.error(err);
-    console.log(res.data.substring(0, res.data.length-2));
-  });
-  */
-
   console.log(await getFileContents(args[0], 'system'));
 }
 function listAllFiles() {
@@ -175,7 +166,8 @@ async function ensureFolderTriplet(msg) {
     if (err) return console.error(err);
     lockDiskForChannel(msg.channel.id);
     var files = res.data.files;
-    if (files.length) files.map((file)=>{ global.lastCreatedFolder[msg.channel.id] = file.id; });
+    if (files.length == 1) files.map((file)=>{ global.lastCreatedFolder[msg.channel.id] = file.id; });
+    else { console.error(`> BAD: ${msg.channel.guild.id} in UserData.`); }
     unlockDiskForChannel(msg.channel.id);
   }, msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -186,7 +178,8 @@ async function ensureFolderTriplet(msg) {
     if (err) return console.error(err);
     lockDiskForChannel(msg.channel.id);
     var files = res.data.files;
-    if (files.length) files.map((file)=>{ global.lastCreatedFolder[msg.channel.id] = file.id; });
+    if (files.length == 1) files.map((file)=>{ global.lastCreatedFolder[msg.channel.id] = file.id; });
+    else { console.error(`> BAD: ${msg.channel.id} in ${serverFolderID}.`); }
     unlockDiskForChannel(msg.channel.id);
   }, msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -197,7 +190,8 @@ async function ensureFolderTriplet(msg) {
     if (err) return console.error(err);
     lockDiskForChannel(msg.channel.id);
     var files = res.data.files;
-    if (files.length) files.map((file)=>{ global.lastCreatedFolder[msg.channel.id] = file.id; });
+    if (files.length == 1) files.map((file)=>{ global.lastCreatedFolder[msg.channel.id] = file.id; });
+    else { console.error(`> BAD: ${msg.author.id} in ${channelFolderID}.`)}
     unlockDiskForChannel(msg.channel.id);
   }, msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -205,6 +199,7 @@ async function ensureFolderTriplet(msg) {
 
 async function findUserFolderFromMsg(msg) {
   var r = null;
+  // a User's folder exists in (root)/UserData/ServerID/ChannelID/UserID
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await findFolderByName(msg.channel.guild.id, global.folderID.UserData,
     (err, res) => {
@@ -258,23 +253,11 @@ function ensureFolderByName(name, parentID=null, channelID="system") {
         // after-creation action
         if (err) return console.error(err);
       }, channelID);
-    } else {
-      // make sure it's really the file I'm after, if not create it
-      var found = false;
-      files.map((file) => {
-        if (file.name == name) { found = true; }
-      });
-      if (found == false) {
-        console.log('It doesn\'t exist; creating it');
-        createFolder(name, parentID, (err, file) => {
-          if (err) return console.error(err);
-        }, channelID)
-      }
     }
   }, channelID);
 }
 
-// semaphore paradigm: disk locking per channel to prevent race conditions
+// folder paradigm w/ disk locking per channel to prevent race conditions
 function isDiskLockedForChannel(channelID) {
   return global.lock[channelID];
 }
@@ -368,29 +351,15 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
           unlockDiskForChannel(channelID);
         });
       } else {
-        var found = false;
-        // either it already exists (update it) or we got a partial match (create it)
+        // it already exists, update it
         res.data.files.map((file) => {
-          if (file.name == filename) {
-            found = true;
             drive.files.update({
               fileId: file.id, media: {body: `${contents}/2`}},
               (err, res) => {
                 if (err) return console.error(err);
                 unlockDiskForChannel(channelID);
             });
-          }
         });
-        if (found == false) {
-          drive.files.create({
-            resource: { 'name': filename, 'parents': [parentFolderID] },
-            media: { 'mimeType': 'text/plain', 'body': `${contents}/2` },
-            fields: 'id'
-          }, (err, file) => {
-            if (err) return console.error(err);
-            unlockDiskForChannel(channelID);
-          });
-        }
       }
     }
   );
