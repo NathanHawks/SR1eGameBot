@@ -153,6 +153,7 @@ function deleteAllFiles() {
       files.map((file) => {
         deleteFileById(file.id,(err,res)=>{if (err) console.error(err);});
       });
+      console.log("DX: All commands sent.")
     } else {
       console.log('No files found.');
     }
@@ -257,6 +258,18 @@ function ensureFolderByName(name, parentID=null, channelID="system") {
         // after-creation action
         if (err) return console.error(err);
       }, channelID);
+    } else {
+      // make sure it's really the file I'm after, if not create it
+      var found = false;
+      files.map((file) => {
+        if (file.name == name) { found = true; }
+      });
+      if (found == false) {
+        console.log('It doesn\'t exist; creating it');
+        createFolder(name, parentID, (err, file) => {
+          if (err) return console.error(err);
+        }, channelID)
+      }
     }
   }, channelID);
 }
@@ -281,12 +294,11 @@ async function findFolderByName(folderName, parentID=null, callback, channelID="
   var auth = global.auth;
   const drive = google.drive({version: 'v3', auth});
   var mainq = `name="${folderName}"`;
-  mainq = (parentID == null) ? mainq : `"${parentID}" in parents`
+  mainq = (parentID == null) ? mainq : `${mainq} and "${parentID}" in parents`
   var q = {
     q: mainq,
-    name: folderName,
     mimeType: 'application/vnd.google-apps.folder',
-    fields: 'files(id, name)',
+    fields: 'files(id, name, parents)',
   };
   drive.files.list(q, (err, res) => {
     unlockDiskForChannel(channelID);
@@ -341,7 +353,7 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
   // Create/Update the file; does the file already exist
-  drive.files.list({q:`"${parentFolderID}" in parents`, name: filename},
+  drive.files.list({q:`"${parentFolderID}" in parents and name="${filename}"`, fields: 'files(id, name, parents)'},
     (err, res) => {
       if (err) return console.error(err);
       // no, the file doesn't exist for this channel/user pairing
@@ -710,9 +722,38 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '   Roll *A*d6 (exploding) with tn *B*, opposed by *X*d6 (exploding) with opponent\'s tn *Y*\n'
     + '   vs*X* = the number of dice the opponent throws (vs*X*! for exploding dice)\n'
     + '   otn*Y* = the opponent\'s target number\n'
-    + '  ***example:*** !5! tn3 vs6! otn4    Roll 5d6 (exploding) with TN 3, against 6d6 (exploding) with TN 4\n';
-  output = addMaintenanceStatusMessage(output);
+    + '  ***example:*** !5! tn3 vs6! otn4    Roll 5d6 (exploding) with TN 3, against 6d6 (exploding) with TN 4\n'
+    + '\n';
+  var output2 =
+      '[page 2]\n:boom: **EXPERIMENTAL: Initiative System** :boom:\n'
+    + 'The initiative system throws a lotta lotta notifications around, so GameBot '
+    + 'needs everyone in the group to proactively consent via these commands:\n'
+    + '\n'
+    + 'Player setup:\n:one: **!setgm @someone**\n:two: **!setinit X +Y**\n'
+    + 'GM setup:\n:one: **!setgm**\n:two: **!setplayers @player1 @player2 (etc)**\n'
+    + '\n'
+    + 'IMPORTANT: Commands won\'t work unless you @people correctly. Use the menu that pops-up while you type, '
+    + 'or tab-completion. \n**If it\'s blue with an underline, you did it right.**\n'
+    + '\n'
+    + 'After setup, the GM rolls initiative via the **!init** command.\n'
+    + '\n'
+    + 'The bot remembers stuff; you won\'t need to redo any setup unless something '
+    + 'changes. **However:**\n'
+    + ':arrow_right: Everything is linked to GM **and chat channel**.\n'
+    + ':arrow_right: If you move to a different channel, you must re-enter everything.\n'
+    + ':arrow_right: Multiple GM\'s can share a channel, but anyone playing in both groups must repeat their set-up steps (starting with !setgm).\n'
+    + ':arrow_right: To play in two games *at the same time,* you\'ll need two channels.\n'
+    + '\n'
+    + '**Other initiative system commands**\n'
+    + '!clearplayers, !addplayers, !listplayers, !setnpcinits, !addnpcinits, !listnpcinits, !clearnpcinits\n'
+    + 'The format for !setnpcinit and !addnpcinit is **X +Y label** e.g. *!addnpcinit 1 +5 thugs*\n'
+    + '!setnpcinit and !addnpcinit are different in that !setnpcinit clears your NPC list and then adds the new NPC.\n'
+    + '\n'
+    + 'All initiative-related commands are a little slow. The :hourglass_flowing_sand: reaction means it\'s working on processing your request.\n'
+    ;
+  output2 = addMaintenanceStatusMessage(output2);
   msg.reply(output);
+  msg.reply(output2);
 }
 async function handleSetGMCommand(msg, cmd, args, user) {
   // serverID.channelID.userID.gmWhoIsGM STRING
@@ -755,7 +796,7 @@ async function handleSetPlayersCommand(msg, cmd, args, user) {
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   // remove reaction
   removeHourglass(msg);
-  msg.reply(` your group in this channel was reset, and you added ${args.length} players.`);
+  msg.reply(` your group in this channel is now ${args.length} players.`);
   listAllFiles();
 }
 async function handleAddPlayersCommand(msg, cmd, args, user) {
@@ -771,30 +812,26 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
   lockDiskForChannel(msg.channel.id);
   // first we need to ensure the file
   drive.files.list(
-    {q: `"${userFolderID}" in parents`, name: filename},
+    {q: `"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
       if (err) console.err(err);
       // in the event of no match
       if (res.data.files.length == 0) {
         // user must use setPlayer first
-        msg.reply("You have an empty group in this channel; please use !setplayers first.")
-        removeHourglass(msg);
+        global.lastFoundFileID[msg.channel.id] = -1;
         unlockDiskForChannel(msg.channel.id);
-        return;
       } else {
         // verify filename match and abort if not
         var found = false;
         res.data.files.map((file)=>{if(file.name==filename){found=true;}});
         if (found==false) {
-          msg.reply("You have an empty group in this channel; please use !setplayers first.")
-          removeHourglass(msg);
+          global.lastFoundFileID[msg.channel.id] = -1;
           unlockDiskForChannel(msg.channel.id);
-          return;
         }
       }
       // now the file surely exists -- redo the find, get the file id
       lockDiskForChannel(msg.channel.id);
-      drive.files.list({q: `"${userFolderID}" in parents`, name: filename},
+      drive.files.list({q: `"${userFolderID}" in parents and name=${filename}`, fields: 'nextPageToken, files(id, name, parents)'},
         (err, res) => {
           // we must check for filename match
           res.data.files.map((file)=>{
@@ -803,29 +840,79 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
             }
           });
           unlockDiskForChannel(msg.channel.id);
-    });
+      });
   });
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   gmPlayersFileID = global.lastFoundFileID[msg.channel.id];
   // get and parse the contents of the file
   try {
-    var oldPlayerString = await getFileContents(gmPlayersFileID);
-    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-    console.log(`old player string: ${oldPlayerString}`);
-    var newPlayersArr = [];
-    newPlayersArr = oldPlayerString.split(",");
-    // add the new players
-    for (x = 0; x < args.length; x++) { newPlayersArr[newPlayersArr.length] = args[x].substring(3, args[x].length-1); }
-    var newPlayersCount = newPlayersArr.length;
-    // format for output/saving
-    content = newPlayersArr.join(",");
-    // save the new player list
-    await setContentsByFilenameAndParent(msg, filename, userFolderID, content);
-    msg.reply(` you added ${args.length} players to your group in this channel; now there are ${newPlayersCount}.`);
-    removeHourglass(msg);
+    if (gmPlayersFileID !== -1) {
+      var oldPlayerString = await getFileContents(gmPlayersFileID);
+      while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+      var newPlayersArr = [];
+      newPlayersArr = oldPlayerString.split(",");
+      // add the new players
+      for (x = 0; x < args.length; x++) { newPlayersArr[newPlayersArr.length] = args[x].substring(3, args[x].length-1); }
+      var newPlayersCount = newPlayersArr.length;
+      // format for output/saving
+      content = newPlayersArr.join(",");
+      // save the new player list
+      await setContentsByFilenameAndParent(msg, filename, userFolderID, content);
+      msg.reply(` you added ${args.length} players to your group in this channel; now there are ${newPlayersCount}.`);
+      removeHourglass(msg);
+    } else { handleSetPlayersCommand(msg, cmd, args, user); }
   } catch (e) {
     return;
   }
+}
+async function handleListPlayersCommand(msg, cmd, args, user) {
+  msg.react('⏳');
+  await ensureFolderTriplet(msg);
+  var auth = global.auth;
+  var drive = google.drive({version: 'v3', auth});
+  var filename = 'gmPlayers';
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var userFolderID = await findUserFolderFromMsg(msg);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  lockDiskForChannel(msg.channel.id);
+  drive.files.list({q:`"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
+    (err, res) => {
+      if (err) return console.error(err);
+      // the file doesn't exist for this channel/user pairing
+      if (res.data.files.length == 0) {
+        // no group; report so, and prep to abort
+        msg.reply(' you currently have no group in this channel.')
+        global.lastFoundFileID[msg.channel.id] = -1;
+        unlockDiskForChannel(msg.channel.id);
+      } else {
+        // be sure it's the right file
+        res.data.files.map((file) => {
+          if (file.name == filename) {
+            global.lastFoundFileID[msg.channel.id] = file.id;
+            unlockDiskForChannel(msg.channel.id);
+          }
+        });
+      }
+    }
+  );
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  // abort if no group
+  if (global.lastFoundFileID[msg.channel.id] == -1) {
+    removeHourglass(msg);
+    return;
+  }
+  // get contents, parse, and count
+  var gmPlayersFileID = global.lastFoundFileID[msg.channel.id];
+  var playersString = await getFileContents(gmPlayersFileID);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var playersArr = playersString.split(',');
+  var output = '';
+  // format for discord
+  playersArr.map((p) => { p = `:arrow_right: <@${p}>`; output += `\n${p}` });
+  // remove reaction
+  removeHourglass(msg);
+  msg.reply(` your group for this channel is ${playersArr.length} players strong: ${output}`);
+  listAllFiles();
 }
 async function handleClearPlayersCommand(msg, cmd, args, user) {
   msg.react('⏳');
@@ -838,7 +925,7 @@ async function handleClearPlayersCommand(msg, cmd, args, user) {
   var parentFolderID = await findUserFolderFromMsg(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   lockDiskForChannel(msg.channel.id);
-  drive.files.list({q:`"${parentFolderID}" in parents`, name: filename},
+  drive.files.list({q:`"${parentFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
       if (err) return console.error(err);
       // the file doesn't exist for this channel/user pairing
@@ -901,7 +988,7 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
   var parentFolderID = await findUserFolderFromMsg(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   lockDiskForChannel(msg.channel.id);
-  drive.files.list({q:`"${parentFolderID}" in parents`, name: filename},
+  drive.files.list({q:`"${parentFolderID}" in parents and name="${filename}"`, name: filename, fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
       unlockDiskForChannel(msg.channel.id);
       if (err) return console.error(err);
@@ -957,6 +1044,9 @@ function handleMessage(msg, user=msg.author) {
           case 'addplayers':
           case 'addplayer':
             handleAddPlayersCommand(msg, cmd, args, user);
+          break;
+          case 'listplayers':
+            handleListPlayersCommand(msg, cmd, args, user);
           break;
           case 'clearplayers':
             handleClearPlayersCommand(msg, cmd, args, user);
