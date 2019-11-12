@@ -787,6 +787,7 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
       // in the event of no match
       if (res.data.files.length == 0) {
         // user must use setPlayer first
+        setContentsByFilenameAndParent(msg, filename, userFolderID, '');
         global.lastFoundFileID[msg.channel.id] = -1;
         unlockDiskForChannel(msg.channel.id);
       } else {
@@ -795,19 +796,22 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
         res.data.files.map((file)=>{if(file.name==filename){found=true;}});
         if (found==false) {
           global.lastFoundFileID[msg.channel.id] = -1;
-          unlockDiskForChannel(msg.channel.id);
         }
+        unlockDiskForChannel(msg.channel.id);
       }
       // now the file surely exists -- redo the find, get the file id
       lockDiskForChannel(msg.channel.id);
-      drive.files.list({q: `"${userFolderID}" in parents and name=${filename}`, fields: 'nextPageToken, files(id, name, parents)'},
+      drive.files.list({q: `"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
         (err, res) => {
+          if (err) return console.error(err);
           // we must check for filename match
-          res.data.files.map((file)=>{
-            if (file.name == filename) {
-              global.lastFoundFileID[msg.channel.id] = file.id;
-            }
-          });
+          if (res.data && res.data.files.length) {
+            res.data.files.map((file)=>{
+              if (file.name == filename) {
+                global.lastFoundFileID[msg.channel.id] = file.id;
+              }
+            });
+          }
           unlockDiskForChannel(msg.channel.id);
       });
   });
@@ -883,6 +887,78 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
   msg.reply(` your group for this channel is ${playersArr.length} players strong: ${output}`);
   listAllFiles();
 }
+async function handleRemovePlayersCommand(msg, cmd, args, user) {
+  msg.react('⏳');
+  await ensureFolderTriplet(msg);
+  var content = args.join(" ");
+  var filename = "gmPlayers"
+  var auth = global.auth;
+  var drive = google.drive({version: 'v3', auth});
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var userFolderID = await findUserFolderFromMsg(msg);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  lockDiskForChannel(msg.channel.id);
+  // ensure the file
+  drive.files.list(
+    {q: `"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
+    (err, res) => {
+      if (err) console.err(err);
+      // in the event of no match
+      if (res.data.files.length) {
+        res.data.files.map((file) => {
+          global.lastFoundFileID[msg.channel.id] = file.id;
+        });
+      } else {
+        setContentsByFilenameAndParent(msg, filename, userFolderID, '');
+        // now the file surely exists -- redo the find, get the file id
+        lockDiskForChannel(msg.channel.id);
+        drive.files.list({q: `"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
+        (err, res) => {
+          if (err) return console.error(err);
+          // we must check for filename match
+          if (res.data && res.data.files.length) {
+            res.data.files.map((file)=>{
+              if (file.name == filename) {
+                global.lastFoundFileID[msg.channel.id] = file.id;
+              }
+            });
+          }
+        });
+      }
+      unlockDiskForChannel(msg.channel.id);
+  });
+  // get the file's id
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  gmPlayersFileID = global.lastFoundFileID[msg.channel.id];
+  // get and parse the contents
+  var oldContentString = await getFileContents(gmPlayersFileID);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var contentArray = null;
+  if (oldContentString == '') contentArray = [];
+  else contentArray = oldContentString.split(",");
+  var newContentArray = [];
+  // parse the args entries and delete the requested entries
+  var removedIndex = [];
+  for (var y = 0; y < contentArray.length; y++) {
+    for (var x = 0; x < args.length; x++) {
+      var remove = args[x].substring(3, args[x].length-1); // <@!user_ID>
+      if (contentArray[y] == remove) {
+        // don't keep it
+        removedIndex[removedIndex.length] = y;
+      }
+    }
+  }
+  // now rebuild it better
+  for (var y = 0; y < contentArray.length; y++) {
+    if (removedIndex.indexOf(y) == -1)
+      newContentArray[newContentArray.length] = contentArray[y];
+  }
+  // save, notify, remove hourglass
+  var newContentString = newContentArray.join(",");
+  setContentsByFilenameAndParent(msg, filename, userFolderID, newContentString);
+  removeHourglass(msg);
+  msg.reply(` you removed ${removedIndex.length} players. You now have ${newContentArray.length} players in this channel.`)
+}
 async function handleClearPlayersCommand(msg, cmd, args, user) {
   msg.react('⏳');
   await ensureFolderTriplet(msg);
@@ -936,15 +1012,187 @@ async function handleSetInitCommand(msg, cmd, args, user) {
 async function handleSetNPCInitCommand(msg, cmd, args, user) {
   msg.react('⏳');
   await ensureFolderTriplet(msg);
-  var content = args.join(" ");
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   var userFolderID = await findUserFolderFromMsg(msg);
+  var contentArray = [];
+  for (var x = 0; x < args.length; x++) {
+    contentArray[contentArray.length] = `${args[x]} ${args[x+1]} ${args[x+2]}`;
+    x = x + 2;
+  }
+  var contentString = contentArray.join(",");
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  await setContentsByFilenameAndParent(msg, 'npcInit', userFolderID, content);
+  await setContentsByFilenameAndParent(msg, 'gmNPCInit', userFolderID, contentString);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   // remove reaction
   removeHourglass(msg);
-  msg.reply(` your NPCs for this channel were reset, and you added an NPC: ${content}`);
+  msg.reply(` your NPC's for this channel were reset, and you added ${contentArray.length} NPC's`);
+  listAllFiles();
+}
+async function handleAddNPCInitCommand(msg, cmd, args, user) {
+  msg.react('⏳');
+  await ensureFolderTriplet(msg);
+  var content = args.join(" ");
+  var filename = "gmNPCInit"
+  var auth = global.auth;
+  var drive = google.drive({version: 'v3', auth});
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var userFolderID = await findUserFolderFromMsg(msg);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  lockDiskForChannel(msg.channel.id);
+  // ensure the file
+  drive.files.list(
+    {q: `"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
+    (err, res) => {
+      if (err) console.err(err);
+      // in the event of no match
+      if (res.data.files.length) {
+        res.data.files.map((file) => {
+          global.lastFoundFileID[msg.channel.id] = file.id;
+        });
+      } else {
+        setContentsByFilenameAndParent(msg, filename, userFolderID, '');
+        // now the file surely exists -- redo the find, get the file id
+        lockDiskForChannel(msg.channel.id);
+        drive.files.list({q: `"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
+        (err, res) => {
+          if (err) return console.error(err);
+          // we must check for filename match
+          if (res.data && res.data.files.length) {
+            res.data.files.map((file)=>{
+              if (file.name == filename) {
+                global.lastFoundFileID[msg.channel.id] = file.id;
+              }
+            });
+          }
+        });
+      }
+      unlockDiskForChannel(msg.channel.id);
+  });
+  // get the file's id
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  gmNPCFileID = global.lastFoundFileID[msg.channel.id];
+  // get and parse the contents
+  var oldContentString = await getFileContents(gmNPCFileID);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var contentArray = null;
+  if (oldContentString == '') contentArray = [];
+  else contentArray = oldContentString.split(",");
+  // add the new entries
+  for (var x = 0; x < args.length; x++) {
+    var newNPC = `${args[x]} ${args[x+1]} ${args[x+2]}`;
+    contentArray[contentArray.length] = newNPC;
+    x = x + 2;
+  }
+  // save, notify, remove hourglass
+  var newContentString = contentArray.join(",");
+  setContentsByFilenameAndParent(msg, filename, userFolderID, newContentString);
+  removeHourglass(msg);
+  msg.reply(` you now have ${contentArray.length} NPC's for your next encounter in this channel.`)
+}
+async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
+  msg.react('⏳');
+  await ensureFolderTriplet(msg);
+  var content = args.join(" ");
+  var filename = "gmNPCInit"
+  var auth = global.auth;
+  var drive = google.drive({version: 'v3', auth});
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var userFolderID = await findUserFolderFromMsg(msg);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  lockDiskForChannel(msg.channel.id);
+  // ensure the file
+  drive.files.list(
+    {q: `"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
+    (err, res) => {
+      if (err) console.err(err);
+      // in the event of no match
+      if (res.data.files.length) {
+        res.data.files.map((file) => {
+          global.lastFoundFileID[msg.channel.id] = file.id;
+        });
+      } else {
+        setContentsByFilenameAndParent(msg, filename, userFolderID, '');
+        // now the file surely exists -- redo the find, get the file id
+        lockDiskForChannel(msg.channel.id);
+        drive.files.list({q: `"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
+        (err, res) => {
+          if (err) return console.error(err);
+          // we must check for filename match
+          if (res.data && res.data.files.length) {
+            res.data.files.map((file)=>{
+              if (file.name == filename) {
+                global.lastFoundFileID[msg.channel.id] = file.id;
+              }
+            });
+          }
+        });
+      }
+      unlockDiskForChannel(msg.channel.id);
+  });
+  // get the file's id
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var gmNPCFileID = global.lastFoundFileID[msg.channel.id];
+  // get and parse the contents
+  var oldContentString = await getFileContents(gmNPCFileID);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var contentArray = null;
+  if (oldContentString == '') contentArray = [];
+  else contentArray = oldContentString.split(",");
+  var newContentArray = [];
+  // parse the args entries and delete the requested entries
+  var removedIndex = [];
+  for (var y = 0; y < contentArray.length; y++) {
+    for (var x = 0; x < args.length; x++) {
+      var remove = `${args[x]} ${args[x+1]} ${args[x+2]}`;
+      if (contentArray[y] == remove) {
+        // don't keep it
+        removedIndex[removedIndex.length] = y;
+      }
+      x = x + 2;
+    }
+  }
+  // now rebuild it better
+  for (var y = 0; y < contentArray.length; y++) {
+    if (removedIndex.indexOf(y) == -1)
+      newContentArray[newContentArray.length] = contentArray[y];
+  }
+  // save, notify, remove hourglass
+  var newContentString = newContentArray.join(",");
+  setContentsByFilenameAndParent(msg, filename, userFolderID, newContentString);
+  removeHourglass(msg);
+  msg.reply(` you removed ${removedIndex.length} NPC's. You now have ${newContentArray.length} NPC's in this channel.`)
+}
+async function handleListNPCInitCommand(msg, cmd, args, user) {
+  msg.react('⏳');
+  await ensureFolderTriplet(msg);
+  var auth = global.auth;
+  var drive = google.drive({version: 'v3', auth});
+  var filename = 'gmNPCInit';
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var parentFolderID = await findUserFolderFromMsg(msg);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  lockDiskForChannel(msg.channel.id);
+  drive.files.list({q:`"${parentFolderID}" in parents and name="${filename}"`, name: filename, fields: 'nextPageToken, files(id, name, parents)'},
+    (err, res) => {
+      if (err) { unlockDiskForChannel(msg.channel.id); return console.error(err); }
+      if (res.data.files.length == 0) { } else {
+        res.data.files.map((file) => {
+          global.lastFoundFileID[msg.channel.id] = file.id;
+        });
+      }
+      unlockDiskForChannel(msg.channel.id);
+    }
+  );
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var contentString = await getFileContents(global.lastFoundFileID[msg.channel.id]);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var contentArray = contentString.split(",");
+  var output = " your NPC inits for the next encounter in this channel are:";
+  for (var x = 0; x < contentArray.length; x++) {
+    output = `${output}\n:arrow_right: ${contentArray[x]}`
+  }
+  removeHourglass(msg);
+  msg.reply(output);
   listAllFiles();
 }
 async function handleClearNPCInitCommand(msg, cmd, args, user) {
@@ -952,7 +1200,7 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
   await ensureFolderTriplet(msg);
   var auth = global.auth;
   var drive = google.drive({version: 'v3', auth});
-  var filename = 'npcInit';
+  var filename = 'gmNPCInit';
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   var parentFolderID = await findUserFolderFromMsg(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -961,15 +1209,10 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
     (err, res) => {
       unlockDiskForChannel(msg.channel.id);
       if (err) return console.error(err);
-      // the file doesn't exist for this channel/user pairing
-      if (res.data.files.length == 0) {
-        // nothing to delete; we're done here
-      } else {
-        // be sure it's the right file, then delete it
+      if (res.data.files.length == 0) { } else {
+        // delete it
         res.data.files.map((file) => {
-          if (file.name == filename) {
-            deleteFileById(file.id, (err,res)=>{}, msg.channel.id);
-          }
+          deleteFileById(file.id, (err,res)=>{}, msg.channel.id);
         });
       }
     }
@@ -977,7 +1220,7 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   // remove reaction
   removeHourglass(msg);
-  msg.reply(' you cleared the NPC initiative formulas.');
+  msg.reply(' you cleared your NPC initiative formulas for this channel.');
   listAllFiles();
 }
 function handleMessage(msg, user=msg.author) {
@@ -1006,27 +1249,62 @@ function handleMessage(msg, user=msg.author) {
           case 'setgm':
             handleSetGMCommand(msg, cmd, args, user);
           break;
+          case 'setp':
           case 'setplayers':
           case 'setplayer':
             handleSetPlayersCommand(msg, cmd, args, user);
           break;
+          case 'addp':
           case 'addplayers':
           case 'addplayer':
             handleAddPlayersCommand(msg, cmd, args, user);
           break;
+          case 'lp':
           case 'listplayers':
             handleListPlayersCommand(msg, cmd, args, user);
           break;
+          case 'rmp':
+          case 'removeplayer':
+          case 'removeplayers':
+            handleRemovePlayersCommand(msg, cmd, args, user);
+          break;
+          case 'clrp':
           case 'clearplayers':
             handleClearPlayersCommand(msg, cmd, args, user);
           break;
+          case 'si':
           case 'setinit':
             handleSetInitCommand(msg, cmd, args, user);
           break;
+          case 'setn':
+          case 'setnpc':
+          case 'setnpcs':
           case 'setnpcinits':
           case 'setnpcinit':
             handleSetNPCInitCommand(msg, cmd, args, user);
           break;
+          case 'addn':
+          case 'addnpc':
+          case 'addnpcs':
+          case 'addnpcinits':
+          case 'addnpcinit':
+            handleAddNPCInitCommand(msg, cmd, args, user);
+          break;
+          case 'ln':
+          case 'listnpcinits':
+          case 'listnpcinit':
+            handleListNPCInitCommand(msg, cmd, args, user);
+          break;
+          case 'rmn':
+          case 'rmnpc':
+          case 'rmnpcs':
+          case 'removenpc':
+          case 'removenpcs':
+          case 'removenpcinit':
+          case 'removenpcinits':
+            handleRemoveNPCInitCommand(msg, cmd, args, user);
+          break;
+          case 'clrn':
           case 'clearnpcinits':
           case 'clearnpcinit':
             handleClearNPCInitCommand(msg, cmd, args, user);
