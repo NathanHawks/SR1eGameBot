@@ -757,7 +757,7 @@ function handleHelpCommand(msg, cmd, args, user) {
     + 'The initiative system throws a lotta lotta notifications around, so GameBot '
       + 'needs everyone in the group to proactively consent via these commands:\n'
     + '\n'
-    + 'Player setup:\n:one: **!setgm @someone**\n:two: **!setinit X +Y**\n'
+    + 'Player setup:\n:one: **!setgm @someone**\n:two: **!setinit X Y**\n'
     + 'GM setup:\n:one: **!setgm**\n:two: **!setplayers @player1 @player2 (etc)**\n'
     + '\n'
     + 'IMPORTANT: Commands won\'t work unless you @people correctly. '
@@ -765,6 +765,10 @@ function handleHelpCommand(msg, cmd, args, user) {
       + 'or tab-completion. \n**If it\'s blue with an underline, you did it right.**\n'
     + '\n'
     + 'After setup, the GM rolls initiative via the **!init** command.\n'
+    + '\n'
+    + '\n*The !setinit format* is **!setinit X Y** where X is the number of dice '
+      + 'and Y is the modifier. For example, **!setinit 1 4** sets an initiative '
+      + 'formula of 1d6+4.'
     + '\n'
     + 'The bot remembers stuff; you won\'t need to redo any setup unless something '
       + 'changes. **However:**\n'
@@ -777,8 +781,8 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '**Other initiative system commands**\n'
     + '!clearplayers, !addplayers, !listplayers, !setnpcinits, !addnpcinits, '
       + '!listnpcinits, !clearnpcinits\n'
-    + 'The format for !setnpcinit and !addnpcinit is **X +Y label** '
-      + 'e.g. *!addnpcinit 1 +5 thugs*\n'
+    + 'The format for !setnpcinit and !addnpcinit is **X Y label** '
+      + 'e.g. **!addnpcinit 1 5 thugs** (means the thugs have 1d6+5 initiative).\n'
     + '!setnpcinit and !addnpcinit are different in that !setnpcinit clears '
       + 'your NPC list and then adds the new NPC.\n'
     + '\n'
@@ -791,6 +795,7 @@ function handleHelpCommand(msg, cmd, args, user) {
 }
 async function handleInitCommand(msg, cmd, args, user) {
   msg.react('⏳');
+  global.lastFoundFileID[msg.channel.id] = null;
   await ensureFolderTriplet(msg);
   var gmPlayersFileID = null;
   var auth = global.auth;
@@ -818,12 +823,21 @@ async function handleInitCommand(msg, cmd, args, user) {
   );
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   var gmPlayersFileID = global.lastFoundFileID[msg.channel.id];
+  //--- disabled because I want it to run even with only NPCs / only players
+  // if (gmPlayersFileID == -1) {
+  //   msg.reply("you don't have any players in your group right now.");
+  //   removeHourglass(msg);
+  //   return;
+  // }
+  //---
   // make array of playerIDs from msg.author's gmPlayers file content, if any
-  var gmPlayersString = await getFileContents(gmPlayersFileID);
+  var gmPlayersString = await getFileContents(gmPlayersFileID, msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   lockDiskForChannel(msg.channel.id);
   var gmPlayersArr = gmPlayersString.split(',');
-  console.log(gmPlayersArr);
+  var gmNPCArr = [];
+  var playerInitContent = [];
+  var gmNPCFileContent = [];
   // ensure all players have setgm to user, and have setinit
   var someoneIsntReady_GM = false;
   var someoneIsntReady_Init = false;
@@ -833,9 +847,16 @@ async function handleInitCommand(msg, cmd, args, user) {
   var playersNotSetGM = [];
   var playersNotSetInit = [];
   var skipFileActions = false;
-  // loop thru gm's (msg.author's) list of players
+  var initWillFail = false;
+  var output = '';
+  // prune empty entries from gmPlayersArr
+  var tmpArr = [];
+  gmPlayersArr.map((p)=>{
+    if (p.length && p !== ' ') tmpArr[tmpArr.length] = p;
+  });
+  gmPlayersArr = tmpArr;
+  // loop on gm's (msg.author's) list of players
   for (var x = 0; x < gmPlayersArr.length; x++) {
-    console.log(`checking ${gmPlayersArr[x]}`);
     var filename = 'gmWhoIsGM';
     // create an index of each player's folderID
     unlockDiskForChannel(msg.channel.id);
@@ -843,7 +864,6 @@ async function handleInitCommand(msg, cmd, args, user) {
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
     // if the player doesn't have a user folder in this channel, skip other checks
     if (playerFolderIDs[x] == -1) {
-      console.log("Player doesn't have a user folder in this channel.");
       someoneIsntReady_GM = true;
       playersNotSetGM[x] = gmPlayersArr[x];
       playerGMFileID[x] = -1;
@@ -851,7 +871,6 @@ async function handleInitCommand(msg, cmd, args, user) {
       playersNotSetInit[x] = gmPlayersArr[x];
       playerInitFileID[x] = -1;
     } else {
-      console.log("Scanning player's folder for gmWhoIsGM and playerInit files");
       lockDiskForChannel(msg.channel.id);
       drive.files.list({q: `"${playerFolderIDs[x]}" in parents and name="${filename}"`},
         (err, res) => {
@@ -859,10 +878,8 @@ async function handleInitCommand(msg, cmd, args, user) {
           if (res.data.files.length) {
             res.data.files.map((file)=>{
               global.lastFoundFileID[msg.channel.id] = file.id;
-              console.log(`found player's gmWhoIsGM file: ID ${file.id}`);
             });
           } else {
-            console.log("player's gmWhoIsGM file not found");
             global.lastFoundFileID[msg.channel.id] = -1;
           }
           unlockDiskForChannel(msg.channel.id);
@@ -873,18 +890,16 @@ async function handleInitCommand(msg, cmd, args, user) {
       playerGMFileID[x] = global.lastFoundFileID[msg.channel.id];
       lockDiskForChannel(msg.channel.id);
       if (playerGMFileID[x] == -1) {
-        console.log('no GM file found');
         // not ready because they don't have a gmWhoIsGM file at all
         someoneIsntReady_GM = true;
         playersNotSetGM[x] = gmPlayersArr[x];
       }
       else {
         unlockDiskForChannel(msg.channel.id);
-        var playerGMContent = await getFileContents(playerGMFileID[x]);
+        var playerGMContent = await getFileContents(playerGMFileID[x], msg.channel.id);
         while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
         lockDiskForChannel(msg.channel.id);
         if (playerGMContent !== user.id) {
-          console.log(`gm file ${playerGMContent} didn't match person rolling init ${user.id}`);
           // not ready because their gmWhoIsGM file indicates another GM
           someoneIsntReady_GM = true;
           playersNotSetGM[x] = gmPlayersArr[x];
@@ -898,11 +913,9 @@ async function handleInitCommand(msg, cmd, args, user) {
           if (err) console.error(err);
           if (res.data.files.length) {
             res.data.files.map((file)=>{
-              console.log(`${file.name} -- passing a found id for player Init`);
               global.lastFoundFileID[msg.channel.id] = file.id;
             });
           } else {
-            console.log(`passing -1 for Init`);
             global.lastFoundFileID[msg.channel.id] = -1;
           }
           unlockDiskForChannel(msg.channel.id);
@@ -912,18 +925,16 @@ async function handleInitCommand(msg, cmd, args, user) {
       while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
       playerInitFileID[x] = global.lastFoundFileID[msg.channel.id];
       if (playerInitFileID[x] == -1) {
-        console.log(`${gmPlayersArr[x]} doesn't have an init file.`)
         // not ready because they don't have a playerInit file at all
         someoneIsntReady_Init = true;
         playersNotSetInit[x] = gmPlayersArr[x];
       }
       else {
         unlockDiskForChannel(msg.channel.id);
-        var playerInitContent = await getFileContents(playerInitFileID[x]);
+        playerInitContent[x] = await getFileContents(playerInitFileID[x], msg.channel.id);
         while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
         lockDiskForChannel(msg.channel.id);
-        if (playerInitContent.length == 0) {
-          console.log(`${gmPlayersArr[x]} has an empty init file.`)
+        if (playerInitContent[x].length == 0) {
           // not ready because their playerInit file is empty
           someoneIsntReady_Init = true;
           playersNotSetInit[x] = gmPlayersArr[x];
@@ -931,10 +942,6 @@ async function handleInitCommand(msg, cmd, args, user) {
       }
     }
   }
-  console.log(`NOT set init: ${playersNotSetInit}`);
-  console.log(`NOT set gm: ${playersNotSetGM}`);
-  var initWillFail = false;
-  var output = '';
   if (someoneIsntReady_GM) {
     // someone hasn't !setgm; append output to list them; set flag to fail
     output += ` some players haven't set you as their gm yet:\n`;
@@ -943,23 +950,130 @@ async function handleInitCommand(msg, cmd, args, user) {
   }
   if (someoneIsntReady_Init) {
     // someone hasn't !setinit; append output to list them; set flag to fail
+    if (output !== '') output += 'and';
     output += ` some players haven't set their initiative formulas yet:\n`;
     playersNotSetInit.map((p)=>{output+=`:no_entry_sign: <@${p}>\n`});
     initWillFail = true;
   }
-  if (initWillFail) {
-    removeHourglass(msg);
-    msg.reply(output);
-    return;
-  }
-  else msg.reply( " everyone's setup looks good...")
   // get NPC's, if any
-  // is there at least 1 NPC or player?
-    // there isn't; notify and return
-  // we have a valid setup; roll init
-  // store initial initiative passes
-  // calculate & store extra initiative passes
-  // sort & report
+  filename = 'gmNPCInit';
+  lockDiskForChannel(msg.channel.id);
+  drive.files.list({q:`"${userFolderID}" in parents and name="${filename}"`},
+    (err, res) => {
+      if (err) {unlockDiskForChannel(msg.channel.id); return console.error(err);}
+      if (res.data.files.length === 1) {
+        res.data.files.map((file)=>{
+          global.lastFoundFileID[msg.channel.id] = file.id;
+        });
+      } else {
+        global.lastFoundFileID[msg.channel.id] = -1;
+      }
+      unlockDiskForChannel(msg.channel.id)
+    }
+  );
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var gmNPCFileID = global.lastFoundFileID[msg.channel.id];
+  if (gmNPCFileID == -1) {
+    console.log(`No NPC file was found.`);
+  } else {
+    gmNPCFileContent[x] = await getFileContents(gmNPCFileID, msg.channel.id);
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    gmNPCArr = gmNPCFileContent[x].split(",");
+    console.log(`NPC's configured: ${gmNPCArr.length} [${gmNPCFileContent[x]}]`);
+  }
+  // abort if we have no players and no NPC's, or if anyone's init will fail
+  if (gmNPCArr.length == 0 && (gmPlayersArr.length == 0 || initWillFail)) {
+    // init will fail; notify
+    if (gmPlayersArr.length == 0 && gmPlayersArr.length == 0) {
+      initWillFail = true;
+      output += " -- can't roll initiative: in this channel, you have neither players nor NPC's.";
+    }
+    else if (initWillFail) {
+      output += " -- can't roll initiative: players aren't ready.\n"
+      + "See !help or ask your GM how to get set up!";
+    }
+  } else {
+    output += " the initiative order is:\n";
+  }
+  // if we have a valid setup, roll init
+  var npcRolls = [];
+  var playerRolls = [];
+  var npcPasses = [];
+  var playerPasses = [];
+  if (!initWillFail) {
+    // roll & calculate for players
+    for (var x = 0; x < gmPlayersArr.length; x++) {
+      var total = 0;
+      var init = playerInitContent[x].split(" ");
+      var [junk,rolls] = rollDice(init[0], false, -1)
+      console.log(`Natural: ${rolls}`);
+      for (var y = 0; y < rolls.length; y++) {
+        rolls[y] = Number(rolls[y]);
+        total += rolls[y];
+      }
+      total += Number(init[1]);
+      console.log(`Total: ${total}`);
+      playerRolls = rolls;
+      // store initial initiative passes
+      playerPasses[x] = [];
+      playerPasses[x][playerPasses[x].length] = total;
+      // calculate & store extra initiative passes
+      if (total > 10) {
+        playerPasses[x][playerPasses[x].length] = total - 7;
+      }
+    }
+    // roll & calculate for NPCs
+    for (var x = 0; x < gmNPCArr.length; x++) {
+      if (gmNPCArr[x].length) {
+        var total = 0;
+        var init = gmNPCArr[x].split(" ");
+        var [junk,rolls] = rollDice(init[0], false, -1)
+        console.log(`NPC ${x} Natural: ${rolls}`);
+        for (var y = 0; y < rolls.length; y++) {
+          rolls[y] = Number(rolls[y]);
+          total += rolls[y];
+        }
+        total += Number(init[1]);
+        console.log(`NPC ${x} Total: ${total}`);
+        npcRolls = rolls;
+        // store initial initiative passes
+        npcPasses[x] = [];
+        npcPasses[x][npcPasses[x].length] = total;
+        // calculate & store extra initiative passes
+        if (total > 10) {
+          npcPasses[x][npcPasses[x].length] = total - 7;
+        }
+      }
+    }
+    console.log(`Player passes: ${playerPasses}`);
+    console.log(`NPC passes: ${npcPasses}`);
+  }
+  // create dummy array so we can address higher items
+  var ordArr = [];
+  for (var x = 0; x <= 30; x++) { ordArr[x] = ''; }
+  // sort
+  for (var x = 30; x > 0; x--) {
+    for (var y = 0; y < playerPasses.length; y++) {
+      if (playerPasses[y].indexOf(x) !== -1) {
+        if (ordArr[x]) ordArr[x] += ", ";
+        ordArr[x] += `<@${gmPlayersArr[y]}>`;
+      }
+    }
+    for (var y = 0; y < npcPasses.length; y++) {
+      if (npcPasses[y].indexOf(x) !== -1) {
+        if (ordArr[x]) ordArr[x] += ", ";
+        ordArr[x] += gmNPCArr[y].split(" ")[2];
+      }
+    }
+  }
+  console.log("OrdArr: " + ordArr);
+  for (var x = 30; x > 0; x--) {
+    if (ordArr[x].length) {
+      output += `${x}: ${ordArr[x]}\n`;
+    }
+  }
+  // report
+  msg.reply(output);
   unlockDiskForChannel(msg.channel.id);
   removeHourglass(msg);
 }
@@ -1084,7 +1198,6 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
         }
       }
       var newPlayersCount = newPlayersArr.length;
-      console.log(newPlayersCount);
       // format for output/saving
       content = newPlayersArr.join(",");
       // save the new player list
@@ -1220,7 +1333,9 @@ async function handleRemovePlayersCommand(msg, cmd, args, user) {
       if (remove.substring(0,1) == '!') {
         remove = remove.substring(1, remove.length);
       }
-      if (contentArray[y] == remove || contentArray[y].length == 0) {
+      if (contentArray[y] == remove
+        || contentArray[y].length == 0
+        || contentArray[y] == ' ') {
         // don't keep it
         removedIndex[removedIndex.length] = y;
       }
@@ -1506,13 +1621,13 @@ async function handleListNPCInitCommand(msg, cmd, args, user) {
     // determine/build output
     if (contentArray.length > 0) {
       // file exists and has NPC's in it
-      var output = " your NPC inits for the next encounter in this channel are:";
+      var output = " your NPC's inits in this channel are:";
       for (var x = 0; x < contentArray.length; x++) {
         output = `${output}\n:arrow_right: ${contentArray[x]}`
       }
     } else {
       // file exists but was blank
-      var output = " you have no NPC's configured in this channel yet.";
+      var output = " you have no NPC's in this channel yet.";
     }
   }
   removeHourglass(msg);
