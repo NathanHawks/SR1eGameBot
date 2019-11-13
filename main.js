@@ -1021,6 +1021,12 @@ async function handleInitCommand(msg, cmd, args, user) {
       if (total > 10) {
         playerPasses[x][playerPasses[x].length] = total - 7;
       }
+      if (total > 16) {
+        playerPasses[x][playerPasses[x].length] = total - 14;
+      }
+      if (total > 22) {
+        playerPasses[x][playerPasses[x].length] = total - 21;
+      }
     }
     // roll & calculate for NPCs
     for (var x = 0; x < gmNPCArr.length; x++) {
@@ -1042,6 +1048,12 @@ async function handleInitCommand(msg, cmd, args, user) {
         // calculate & store extra initiative passes
         if (total > 10) {
           npcPasses[x][npcPasses[x].length] = total - 7;
+        }
+        if (total > 16) {
+          npcPasses[x][npcPasses[x].length] = total - 14;
+        }
+        if (total > 22) {
+          npcPasses[x][npcPasses[x].length] = total - 21;
         }
       }
     }
