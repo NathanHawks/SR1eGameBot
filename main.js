@@ -38,7 +38,7 @@ global.config = {
   createASubfolderOnStartup:          false,
   deleteAllFilesOnStartup:            false,
 };
-// ====== GOOGLE = google = Google =================================
+// @ ============ GOOGLE * google * Google ===========
 const fs = require('fs');
 const readline = require('readline');
 const {google} = require('googleapis');
@@ -58,7 +58,7 @@ fs.readFile('googlecredentials.json', (err, content) => {
   authorize(JSON.parse(content), initInitiative);
 });
 
-// =========== google's library functions ==========================
+// @ =========== google's library functions =============
 /**
  * Create an OAuth2 client with the given credentials, and then execute the
  * given callback function.
@@ -109,7 +109,7 @@ function getAccessToken(oAuth2Client, callback) {
   });
 }
 //==================================================================
-// dx funcs
+// @ ================== DX FUNCS ================
 async function openFile(args) {
   console.log(await getFileContents(args[0], 'system'));
 }
@@ -155,18 +155,21 @@ function dxCreateSubfolder() {
   ensureFolderByName('Subfolder', global.folderID.UserData);
 }
 //==================================================================
-// my library functions
+// @ =========== INITIATIVE LIBRARY FUNCS ============
 // ensure folder/subfolder chain: (root)/(UserData)/ServerID/ChannelID/UserID
 async function ensureFolderTriplet(msg) {
   var serverFolderID = null;
   var channelFolderID = null;
+  var userDataFolderID = global.folderID.UserData;
+  var serverDiscordID = msg.channel.guild.id;
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  await ensureFolderByName(msg.channel.guild.id, global.folderID.UserData, msg.channel.id);
-  await findFolderByName(msg.channel.guild.id, global.folderID.UserData, (err, res) => {
+  await ensureFolderByName(serverDiscordID, userDataFolderID, msg.channel.id);
+  await findFolderByName(serverDiscordID, userDataFolderID, (err, res) => {
     if (err) return console.error(err);
     lockDiskForChannel(msg.channel.id);
     var files = res.data.files;
-    if (files.length == 1) files.map((file)=>{ global.lastCreatedFolder[msg.channel.id] = file.id; });
+    if (files.length == 1)
+      files.map((file)=>{global.lastCreatedFolder[msg.channel.id] = file.id;});
     else { console.error(`> BAD: ${msg.channel.guild.id} in UserData.`); }
     unlockDiskForChannel(msg.channel.id);
   }, msg.channel.id);
@@ -178,7 +181,8 @@ async function ensureFolderTriplet(msg) {
     if (err) return console.error(err);
     lockDiskForChannel(msg.channel.id);
     var files = res.data.files;
-    if (files.length == 1) files.map((file)=>{ global.lastCreatedFolder[msg.channel.id] = file.id; });
+    if (files.length == 1)
+      files.map((file)=>{global.lastCreatedFolder[msg.channel.id] = file.id;});
     else { console.error(`> BAD: ${msg.channel.id} in ${serverFolderID}.`); }
     unlockDiskForChannel(msg.channel.id);
   }, msg.channel.id);
@@ -190,7 +194,8 @@ async function ensureFolderTriplet(msg) {
     if (err) return console.error(err);
     lockDiskForChannel(msg.channel.id);
     var files = res.data.files;
-    if (files.length == 1) files.map((file)=>{ global.lastCreatedFolder[msg.channel.id] = file.id; });
+    if (files.length == 1)
+      files.map((file)=>{global.lastCreatedFolder[msg.channel.id] = file.id;});
     else { console.error(`> BAD: ${msg.author.id} in ${channelFolderID}.`)}
     unlockDiskForChannel(msg.channel.id);
   }, msg.channel.id);
@@ -241,6 +246,51 @@ async function findUserFolderFromMsg(msg) {
   return r;
 }
 
+async function findUserFolderFromUserID(msg, userID) {
+  var r = null;
+  // a User's folder exists in (root)/UserData/ServerID/ChannelID/UserID
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  await findFolderByName(msg.channel.guild.id, global.folderID.UserData,
+    (err, res) => {
+      if (res.data.files.length > 0) {
+        // store the file id
+        res.data.files.map((file)=>{
+          global.lastFoundFileID[msg.channel.id] = file.id;
+        });
+        unlockDiskForChannel(msg.channel.id);
+      }
+  }, msg.channel.id);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var serverFolderID = global.lastFoundFileID[msg.channel.id];
+  await findFolderByName(msg.channel.id, serverFolderID, (err, res) => {
+    if (res.data.files.length > 0) {
+      // store the file id
+      res.data.files.map((file)=>{
+        global.lastFoundFileID[msg.channel.id] = file.id;
+      });
+      unlockDiskForChannel(msg.channel.id);
+    }
+  }, msg.channel.id);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var channelFolderID = global.lastFoundFileID[msg.channel.id];
+  await findFolderByName(userID, channelFolderID, (err, res) => {
+    if (err) return console.error(err);
+    lockDiskForChannel(msg.channel.id);
+    if (res.data.files.length > 0) {
+      // store the file id
+      res.data.files.map((file)=>{
+        global.lastFoundFileID[msg.channel.id] = file.id;
+      });
+    } else { global.lastFoundFileID[msg.channel.id] = -1; }
+    unlockDiskForChannel(msg.channel.id);
+  }, msg.channel.id);
+  // return the file ID
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  r = global.lastFoundFileID[msg.channel.id];
+  return r;
+}
+
+// @ function ensureFolderByName(name, parentID=null, channelID="system")
 function ensureFolderByName(name, parentID=null, channelID="system") {
   findFolderByName(name, parentID, (err, res) => {
     if (err) return console.error(err);
@@ -257,20 +307,25 @@ function ensureFolderByName(name, parentID=null, channelID="system") {
   }, channelID);
 }
 
+//  function isDiskLockedForChannel(channelID)
 // folder paradigm w/ disk locking per channel to prevent race conditions
 function isDiskLockedForChannel(channelID) {
   return global.lock[channelID];
 }
+// @ function lockDiskForChannel(channelID, unlock=false)
 // optional 2nd arg allows inverting the function
 function lockDiskForChannel(channelID, unlock=false) {
   if (unlock==true) return unlockDiskForChannel(channelID);
   global.lock[channelID] = true;
 }
+
+// @ function unlockDiskForChannel(channelID, lock=false)
 function unlockDiskForChannel(channelID, lock=false) {
   if (lock==true) return lockDiskForChannel(channelID);
   global.lock[channelID] = false;
 }
 
+// @ function findFolderByName(folderName, parentID=null, callback, channelID="system")
 async function findFolderByName(folderName, parentID=null, callback, channelID="system") {
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
@@ -289,6 +344,7 @@ async function findFolderByName(folderName, parentID=null, callback, channelID="
   });
 }
 
+// @ function createFolder(folderName, parentID=null, callback, channelID="system")
 async function createFolder(folderName, parentID=null, callback, channelID="system") {
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
@@ -320,7 +376,7 @@ async function getFileContents(fileID, channelID) {
   drive.files.get({fileId: fileID, alt: "media"}, (err, res) => {
     if (err) { unlockDiskForChannel(channelID); return console.error(err); }
     // strip padding which was added to bypass a very weird API error
-    global.lastFileContents[channelID] = res.data.substring(0, res.data.length-2);
+    global.lastFileContents[channelID]=res.data.substring(0,res.data.length-2);
     unlockDiskForChannel(channelID);
   });
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
@@ -336,7 +392,8 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
   // Create/Update the file; does the file already exist
-  drive.files.list({q:`"${parentFolderID}" in parents and name="${filename}"`, fields: 'files(id, name, parents)'},
+  drive.files.list({q:`"${parentFolderID}" in parents and name="${filename}"`,
+    fields: 'files(id, name, parents)'},
     (err, res) => {
       if (err) return console.error(err);
       // no, the file doesn't exist for this channel/user pairing
@@ -379,7 +436,7 @@ function removeHourglass(msg) {
     if (reaction.emoji.name == '⏳') { reaction.remove(); }
   });
 }
-//==================================================================
+// @ ================= INIT INITIATIVE ================
 // Init the Initiative system. See also callbackInitInitiative, immediately below
 function initInitiative(auth) {
   // frag it
@@ -442,7 +499,7 @@ async function callbackInitInitiative(err, res) {
 }
 
 // ====== Original GameBot code ====================================
-// The dice-rolling function
+// @ ============= DICEBOT LIBRARY FUNCS ==============
 function d6(explode=false) {
     var roll = Math.floor(Math.random() * 6 + 1);
     if (roll == 6 && explode == true) roll += d6(true);
@@ -562,7 +619,7 @@ function rollDice(numDiceInt, isTestBool, tnInt) {
   return [successesInt,rollsIntArr];
 }
 // ============= main script =======================================
-// Libs
+// @ ============== DISCORD SETUP SCRIPT ==============
 // disabled: var Discord = require('discord.io');
 const Discord = require('discord.js'); // new hotness
 var logger = require('winston'); // why not
@@ -599,6 +656,7 @@ bot.on('messageReactionAdd', (reaction, user) => {
   }
 });
 
+// @ ============== COMMAND HANDLERS ==============
 // handle rolls, tests, & opposed tests
 function handleRollCommand(msg, cmd, args, user) {
 
@@ -691,45 +749,230 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '   Roll *A*d6 (exploding) with tn *B*, opposed by *X*d6 (exploding) with opponent\'s tn *Y*\n'
     + '   vs*X* = the number of dice the opponent throws (vs*X*! for exploding dice)\n'
     + '   otn*Y* = the opponent\'s target number\n'
-    + '  ***example:*** !5! tn3 vs6! otn4    Roll 5d6 (exploding) with TN 3, against 6d6 (exploding) with TN 4\n'
+    + '  ***example:*** !5! tn3 vs6! otn4    '
+      + 'Roll 5d6 (exploding) with TN 3, against 6d6 (exploding) with TN 4\n'
     + '\n';
   var output2 =
       '[page 2]\n:boom: **EXPERIMENTAL: Initiative System** :boom:\n'
     + 'The initiative system throws a lotta lotta notifications around, so GameBot '
-    + 'needs everyone in the group to proactively consent via these commands:\n'
+      + 'needs everyone in the group to proactively consent via these commands:\n'
     + '\n'
     + 'Player setup:\n:one: **!setgm @someone**\n:two: **!setinit X +Y**\n'
     + 'GM setup:\n:one: **!setgm**\n:two: **!setplayers @player1 @player2 (etc)**\n'
     + '\n'
-    + 'IMPORTANT: Commands won\'t work unless you @people correctly. Use the menu that pops-up while you type, '
-    + 'or tab-completion. \n**If it\'s blue with an underline, you did it right.**\n'
+    + 'IMPORTANT: Commands won\'t work unless you @people correctly. '
+      + 'Use the menu that pops-up while you type, '
+      + 'or tab-completion. \n**If it\'s blue with an underline, you did it right.**\n'
     + '\n'
     + 'After setup, the GM rolls initiative via the **!init** command.\n'
     + '\n'
     + 'The bot remembers stuff; you won\'t need to redo any setup unless something '
-    + 'changes. **However:**\n'
+      + 'changes. **However:**\n'
     + ':arrow_right: Everything is linked to GM **and chat channel**.\n'
     + ':arrow_right: If you move to a different channel, you must re-enter everything.\n'
-    + ':arrow_right: Multiple GM\'s can share a channel, but anyone playing in both groups must repeat their set-up steps (starting with !setgm).\n'
+    + ':arrow_right: Multiple GM\'s can share a channel, but anyone playing in '
+    + 'both groups must repeat their set-up steps (starting with !setgm).\n'
     + ':arrow_right: To play in two games *at the same time,* you\'ll need two channels.\n'
     + '\n'
     + '**Other initiative system commands**\n'
-    + '!clearplayers, !addplayers, !listplayers, !setnpcinits, !addnpcinits, !listnpcinits, !clearnpcinits\n'
-    + 'The format for !setnpcinit and !addnpcinit is **X +Y label** e.g. *!addnpcinit 1 +5 thugs*\n'
-    + '!setnpcinit and !addnpcinit are different in that !setnpcinit clears your NPC list and then adds the new NPC.\n'
+    + '!clearplayers, !addplayers, !listplayers, !setnpcinits, !addnpcinits, '
+      + '!listnpcinits, !clearnpcinits\n'
+    + 'The format for !setnpcinit and !addnpcinit is **X +Y label** '
+      + 'e.g. *!addnpcinit 1 +5 thugs*\n'
+    + '!setnpcinit and !addnpcinit are different in that !setnpcinit clears '
+      + 'your NPC list and then adds the new NPC.\n'
     + '\n'
-    + 'All initiative-related commands are a little slow. The :hourglass_flowing_sand: reaction means it\'s working on processing your request.\n'
+    + 'All initiative-related commands are a little slow. '
+      + 'The :hourglass_flowing_sand: reaction means it\'s working on your request.\n'
     ;
   output2 = addMaintenanceStatusMessage(output2);
   msg.reply(output);
   msg.reply(output2);
+}
+async function handleInitCommand(msg, cmd, args, user) {
+  msg.react('⏳');
+  await ensureFolderTriplet(msg);
+  var gmPlayersFileID = null;
+  var auth = global.auth;
+  var drive = google.drive({version: 'v3', auth});
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  // get author's userFolderID for this channel
+  var userFolderID = await findUserFolderFromMsg(msg);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  lockDiskForChannel(msg.channel.id);
+  // get file ID of gm's (msg.author's) gmPlayers file, if any
+  var filename = 'gmPlayers';
+  drive.files.list(
+    {q: `"${userFolderID}" in parents and name="${filename}"`,
+    fields: 'nextPageToken, files(id, name, parents)'},
+    (err, res) => {
+      if (err) console.err(err);
+      if (res.data.files.length) {
+        res.data.files.map((file) => {
+          global.lastFoundFileID[msg.channel.id] = file.id;
+        });
+      }
+      else { global.lastFoundFileID[msg.channel.id] = -1; }
+      unlockDiskForChannel(msg.channel.id);
+    }
+  );
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  var gmPlayersFileID = global.lastFoundFileID[msg.channel.id];
+  // make array of playerIDs from msg.author's gmPlayers file content, if any
+  var gmPlayersString = await getFileContents(gmPlayersFileID);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  lockDiskForChannel(msg.channel.id);
+  var gmPlayersArr = gmPlayersString.split(',');
+  console.log(gmPlayersArr);
+  // ensure all players have setgm to user, and have setinit
+  var someoneIsntReady_GM = false;
+  var someoneIsntReady_Init = false;
+  var playerFolderIDs = [];
+  var playerGMFileID = [];
+  var playerInitFileID = [];
+  var playersNotSetGM = [];
+  var playersNotSetInit = [];
+  var skipFileActions = false;
+  // loop thru gm's (msg.author's) list of players
+  for (var x = 0; x < gmPlayersArr.length; x++) {
+    console.log(`checking ${gmPlayersArr[x]}`);
+    var filename = 'gmWhoIsGM';
+    // create an index of each player's folderID
+    unlockDiskForChannel(msg.channel.id);
+    playerFolderIDs[x] = await findUserFolderFromUserID(msg, gmPlayersArr[x]);
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    // if the player doesn't have a user folder in this channel, skip other checks
+    if (playerFolderIDs[x] == -1) {
+      console.log("Player doesn't have a user folder in this channel.");
+      someoneIsntReady_GM = true;
+      playersNotSetGM[x] = gmPlayersArr[x];
+      playerGMFileID[x] = -1;
+      someoneIsntReady_Init = true;
+      playersNotSetInit[x] = gmPlayersArr[x];
+      playerInitFileID[x] = -1;
+    } else {
+      console.log("Scanning player's folder for gmWhoIsGM and playerInit files");
+      lockDiskForChannel(msg.channel.id);
+      drive.files.list({q: `"${playerFolderIDs[x]}" in parents and name="${filename}"`},
+        (err, res) => {
+          if (err) console.error(err);
+          if (res.data.files.length) {
+            res.data.files.map((file)=>{
+              global.lastFoundFileID[msg.channel.id] = file.id;
+              console.log(`found player's gmWhoIsGM file: ID ${file.id}`);
+            });
+          } else {
+            console.log("player's gmWhoIsGM file not found");
+            global.lastFoundFileID[msg.channel.id] = -1;
+          }
+          unlockDiskForChannel(msg.channel.id);
+        }
+      );
+      // another index for each player's gmWhoIsGM fileID
+      while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+      playerGMFileID[x] = global.lastFoundFileID[msg.channel.id];
+      lockDiskForChannel(msg.channel.id);
+      if (playerGMFileID[x] == -1) {
+        console.log('no GM file found');
+        // not ready because they don't have a gmWhoIsGM file at all
+        someoneIsntReady_GM = true;
+        playersNotSetGM[x] = gmPlayersArr[x];
+      }
+      else {
+        unlockDiskForChannel(msg.channel.id);
+        var playerGMContent = await getFileContents(playerGMFileID[x]);
+        while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+        lockDiskForChannel(msg.channel.id);
+        if (playerGMContent !== user.id) {
+          console.log(`gm file ${playerGMContent} didn't match person rolling init ${user.id}`);
+          // not ready because their gmWhoIsGM file indicates another GM
+          someoneIsntReady_GM = true;
+          playersNotSetGM[x] = gmPlayersArr[x];
+        }
+      }
+      // ensure all players have setinit
+      filename = "playerInit";
+      lockDiskForChannel(msg.channel.id);
+      drive.files.list({q: `"${playerFolderIDs[x]}" in parents and name="${filename}"`},
+        (err, res) => {
+          if (err) console.error(err);
+          if (res.data.files.length) {
+            res.data.files.map((file)=>{
+              console.log(`${file.name} -- passing a found id for player Init`);
+              global.lastFoundFileID[msg.channel.id] = file.id;
+            });
+          } else {
+            console.log(`passing -1 for Init`);
+            global.lastFoundFileID[msg.channel.id] = -1;
+          }
+          unlockDiskForChannel(msg.channel.id);
+        }
+      );
+      // another index for each player's playerInit fileID
+      while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+      playerInitFileID[x] = global.lastFoundFileID[msg.channel.id];
+      if (playerInitFileID[x] == -1) {
+        console.log(`${gmPlayersArr[x]} doesn't have an init file.`)
+        // not ready because they don't have a playerInit file at all
+        someoneIsntReady_Init = true;
+        playersNotSetInit[x] = gmPlayersArr[x];
+      }
+      else {
+        unlockDiskForChannel(msg.channel.id);
+        var playerInitContent = await getFileContents(playerInitFileID[x]);
+        while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+        lockDiskForChannel(msg.channel.id);
+        if (playerInitContent.length == 0) {
+          console.log(`${gmPlayersArr[x]} has an empty init file.`)
+          // not ready because their playerInit file is empty
+          someoneIsntReady_Init = true;
+          playersNotSetInit[x] = gmPlayersArr[x];
+        }
+      }
+    }
+  }
+  console.log(`NOT set init: ${playersNotSetInit}`);
+  console.log(`NOT set gm: ${playersNotSetGM}`);
+  var initWillFail = false;
+  var output = '';
+  if (someoneIsntReady_GM) {
+    // someone hasn't !setgm; append output to list them; set flag to fail
+    output += ` some players haven't set you as their gm yet:\n`;
+    playersNotSetGM.map((p)=>{output+=`:no_entry_sign: <@${p}>\n`});
+    initWillFail = true;
+  }
+  if (someoneIsntReady_Init) {
+    // someone hasn't !setinit; append output to list them; set flag to fail
+    output += ` some players haven't set their initiative formulas yet:\n`;
+    playersNotSetInit.map((p)=>{output+=`:no_entry_sign: <@${p}>\n`});
+    initWillFail = true;
+  }
+  if (initWillFail) {
+    removeHourglass(msg);
+    msg.reply(output);
+    return;
+  }
+  else msg.reply( " everyone's setup looks good...")
+  // get NPC's, if any
+  // is there at least 1 NPC or player?
+    // there isn't; notify and return
+  // we have a valid setup; roll init
+  // store initial initiative passes
+  // calculate & store extra initiative passes
+  // sort & report
+  unlockDiskForChannel(msg.channel.id);
+  removeHourglass(msg);
 }
 async function handleSetGMCommand(msg, cmd, args, user) {
   // serverID.channelID.userID.gmWhoIsGM STRING
   // without flag: set self as GM
   msg.react('⏳');
   var targetID = "";
-  if (args.length) targetID = args[0].substring(3, args[0].length-1);
+  if (args.length) {
+    targetID = args[0].substring(2, args[0].length-1);
+    if (targetID.substring(0, 1) == '!')
+      targetID = args[0].substring(3, args[0].length-1);
+  }
   else targetID = user.id;
   /*
   msg.reply(`User ${user}, ID: ${user.id}\n`
@@ -756,7 +999,11 @@ async function handleSetPlayersCommand(msg, cmd, args, user) {
   msg.react('⏳');
   await ensureFolderTriplet(msg);
   // fixme: Discord has two formats, <@! vs <@
-  for (x = 0; x < args.length; x++) { args[x] = args[x].substring(3, args[x].length-1); }
+  for (x=0; x < args.length; x++){
+    args[x]=args[x].substring(2,args[x].length-1);
+    if (args[x].substring(0, 1) == '!')
+      args[x] = args[x].substring(1, args[x].length);
+  }
   var content = args.join(",");
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   var userFolderID = await findUserFolderFromMsg(msg);
@@ -781,7 +1028,8 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
   lockDiskForChannel(msg.channel.id);
   // first we need to ensure the file
   drive.files.list(
-    {q: `"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
+    {q: `"${userFolderID}" in parents and name="${filename}"`,
+    fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
       if (err) console.err(err);
       // in the event of no match
@@ -801,15 +1049,14 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
       }
       // now the file surely exists -- redo the find, get the file id
       lockDiskForChannel(msg.channel.id);
-      drive.files.list({q: `"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
+      drive.files.list({q: `"${userFolderID}" in parents and name="${filename}"`,
+        fields: 'nextPageToken, files(id, name, parents)'},
         (err, res) => {
           if (err) return console.error(err);
           // we must check for filename match
           if (res.data && res.data.files.length) {
             res.data.files.map((file)=>{
-              if (file.name == filename) {
-                global.lastFoundFileID[msg.channel.id] = file.id;
-              }
+              global.lastFoundFileID[msg.channel.id] = file.id;
             });
           }
           unlockDiskForChannel(msg.channel.id);
@@ -824,14 +1071,27 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
       while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
       var newPlayersArr = [];
       newPlayersArr = oldPlayerString.split(",");
+      var tmpArr = [];
+      for (var x = 0; x < newPlayersArr.length; x++) {
+        if (newPlayersArr[x].length > 0) tmpArr[tmpArr.length] = newPlayersArr[x];
+      }
+      newPlayersArr = tmpArr;
       // add the new players
-      for (x = 0; x < args.length; x++) { newPlayersArr[newPlayersArr.length] = args[x].substring(3, args[x].length-1); }
+      for (x = 0; x < args.length; x++) {
+        newPlayersArr[newPlayersArr.length] = args[x].substring(2, args[x].length-1);
+        if (newPlayersArr[newPlayersArr.length-1].substring(0,1) == '!') {
+          newPlayersArr[newPlayersArr.length-1] = args[x].substring(3, args[x].length-1);
+        }
+      }
       var newPlayersCount = newPlayersArr.length;
+      console.log(newPlayersCount);
       // format for output/saving
       content = newPlayersArr.join(",");
       // save the new player list
       await setContentsByFilenameAndParent(msg, filename, userFolderID, content);
-      msg.reply(` you added ${args.length} players to your group in this channel; now there are ${newPlayersCount}.`);
+      while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+      msg.reply(` you added ${args.length} players to your group in this channel;`
+      + ` now there are ${newPlayersCount}.`);
       removeHourglass(msg);
     } else { handleSetPlayersCommand(msg, cmd, args, user); }
   } catch (e) {
@@ -848,7 +1108,8 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
   var userFolderID = await findUserFolderFromMsg(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   lockDiskForChannel(msg.channel.id);
-  drive.files.list({q:`"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
+  drive.files.list({q:`"${userFolderID}" in parents and name="${filename}"`,
+    fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
       if (err) return console.error(err);
       // the file doesn't exist for this channel/user pairing
@@ -860,10 +1121,8 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
       } else {
         // be sure it's the right file
         res.data.files.map((file) => {
-          if (file.name == filename) {
-            global.lastFoundFileID[msg.channel.id] = file.id;
-            unlockDiskForChannel(msg.channel.id);
-          }
+          global.lastFoundFileID[msg.channel.id] = file.id;
+          unlockDiskForChannel(msg.channel.id);
         });
       }
     }
@@ -879,12 +1138,26 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
   var playersString = await getFileContents(gmPlayersFileID);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   var playersArr = playersString.split(',');
+  var tmpArr = [];
+  playersArr.map((p) => {
+    if (p.length > 0) tmpArr[tmpArr.length] = p;
+  });
+  playersArr = tmpArr;
   var output = '';
   // format for discord
-  playersArr.map((p) => { p = `:arrow_right: <@${p}>`; output += `\n${p}` });
+  playersArr.map((p) => {
+    if (p !== '') {
+      p = `:arrow_right: <@${p}>`;
+      output += `\n${p}`;
+    }
+  });
   // remove reaction
   removeHourglass(msg);
-  msg.reply(` your group for this channel is ${playersArr.length} players strong: ${output}`);
+  if (playersArr.length == 0)
+    msg.reply(' you don\'t have a group in this channel yet.');
+  else
+    msg.reply(` your group for this channel is ${playersArr.length} players `
+    + `strong: ${output}`);
   listAllFiles();
 }
 async function handleRemovePlayersCommand(msg, cmd, args, user) {
@@ -900,7 +1173,8 @@ async function handleRemovePlayersCommand(msg, cmd, args, user) {
   lockDiskForChannel(msg.channel.id);
   // ensure the file
   drive.files.list(
-    {q: `"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
+    {q: `"${userFolderID}" in parents and name="${filename}"`,
+    fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
       if (err) console.err(err);
       // in the event of no match
@@ -912,18 +1186,19 @@ async function handleRemovePlayersCommand(msg, cmd, args, user) {
         setContentsByFilenameAndParent(msg, filename, userFolderID, '');
         // now the file surely exists -- redo the find, get the file id
         lockDiskForChannel(msg.channel.id);
-        drive.files.list({q: `"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
-        (err, res) => {
-          if (err) return console.error(err);
-          // we must check for filename match
-          if (res.data && res.data.files.length) {
-            res.data.files.map((file)=>{
-              if (file.name == filename) {
+        drive.files.list(
+          {q: `"${userFolderID}" in parents and name="${filename}"`,
+          fields: 'nextPageToken, files(id, name, parents)'},
+          (err, res) => {
+            if (err) return console.error(err);
+            // we must check for filename match
+            if (res.data && res.data.files.length) {
+              res.data.files.map((file)=>{
                 global.lastFoundFileID[msg.channel.id] = file.id;
-              }
-            });
+              });
+            }
           }
-        });
+        );
       }
       unlockDiskForChannel(msg.channel.id);
   });
@@ -941,8 +1216,11 @@ async function handleRemovePlayersCommand(msg, cmd, args, user) {
   var removedIndex = [];
   for (var y = 0; y < contentArray.length; y++) {
     for (var x = 0; x < args.length; x++) {
-      var remove = args[x].substring(3, args[x].length-1); // <@!user_ID>
-      if (contentArray[y] == remove) {
+      var remove = args[x].substring(2, args[x].length-1); // <@!user_ID>
+      if (remove.substring(0,1) == '!') {
+        remove = remove.substring(1, remove.length);
+      }
+      if (contentArray[y] == remove || contentArray[y].length == 0) {
         // don't keep it
         removedIndex[removedIndex.length] = y;
       }
@@ -957,7 +1235,8 @@ async function handleRemovePlayersCommand(msg, cmd, args, user) {
   var newContentString = newContentArray.join(",");
   setContentsByFilenameAndParent(msg, filename, userFolderID, newContentString);
   removeHourglass(msg);
-  msg.reply(` you removed ${removedIndex.length} players. You now have ${newContentArray.length} players in this channel.`)
+  msg.reply(` you removed ${removedIndex.length} players. `
+  + `You now have ${newContentArray.length} players in this channel.`)
 }
 async function handleClearPlayersCommand(msg, cmd, args, user) {
   msg.react('⏳');
@@ -970,7 +1249,8 @@ async function handleClearPlayersCommand(msg, cmd, args, user) {
   var parentFolderID = await findUserFolderFromMsg(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   lockDiskForChannel(msg.channel.id);
-  drive.files.list({q:`"${parentFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
+  drive.files.list({q:`"${parentFolderID}" in parents and name="${filename}"`,
+    fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
       if (err) return console.error(err);
       // the file doesn't exist for this channel/user pairing
@@ -979,10 +1259,8 @@ async function handleClearPlayersCommand(msg, cmd, args, user) {
       } else {
         // be sure it's the right file, then delete it
         res.data.files.map((file) => {
-          if (file.name == filename) {
-            unlockDiskForChannel(msg.channel.id);
-            deleteFileById(file.id, (err,res)=>{}, msg.channel.id);
-          }
+          unlockDiskForChannel(msg.channel.id);
+          deleteFileById(file.id, (err,res)=>{}, msg.channel.id);
         });
       }
     }
@@ -1004,9 +1282,12 @@ async function handleSetInitCommand(msg, cmd, args, user) {
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await setContentsByFilenameAndParent(msg, 'playerInit', userFolderID, content);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  // reformat for output (better user feedback)
+  var tmpArr = content.split(" ");
+  var output = `${tmpArr[0]}d6 +${tmpArr[1]}`;
   // remove reaction
   removeHourglass(msg);
-  msg.reply(` your initiative formula (in this channel) is now ${content}.`);
+  msg.reply(` your initiative formula (in this channel) is now ${output}.`);
   listAllFiles();
 }
 async function handleSetNPCInitCommand(msg, cmd, args, user) {
@@ -1019,13 +1300,14 @@ async function handleSetNPCInitCommand(msg, cmd, args, user) {
     contentArray[contentArray.length] = `${args[x]} ${args[x+1]} ${args[x+2]}`;
     x = x + 2;
   }
-  var contentString = contentArray.join(",");
+  var content = contentArray.join(",");
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  await setContentsByFilenameAndParent(msg, 'gmNPCInit', userFolderID, contentString);
+  await setContentsByFilenameAndParent(msg, 'gmNPCInit', userFolderID, content);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   // remove reaction
   removeHourglass(msg);
-  msg.reply(` your NPC's for this channel were reset, and you added ${contentArray.length} NPC's`);
+  msg.reply(` your NPC's for this channel were reset, `
+  + `and you added ${contentArray.length} NPC's`);
   listAllFiles();
 }
 async function handleAddNPCInitCommand(msg, cmd, args, user) {
@@ -1041,7 +1323,8 @@ async function handleAddNPCInitCommand(msg, cmd, args, user) {
   lockDiskForChannel(msg.channel.id);
   // ensure the file
   drive.files.list(
-    {q: `"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
+    {q: `"${userFolderID}" in parents and name="${filename}"`,
+    fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
       if (err) console.err(err);
       // in the event of no match
@@ -1050,25 +1333,32 @@ async function handleAddNPCInitCommand(msg, cmd, args, user) {
           global.lastFoundFileID[msg.channel.id] = file.id;
         });
       } else {
-        setContentsByFilenameAndParent(msg, filename, userFolderID, '');
-        // now the file surely exists -- redo the find, get the file id
-        lockDiskForChannel(msg.channel.id);
-        drive.files.list({q: `"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
-        (err, res) => {
-          if (err) return console.error(err);
-          // we must check for filename match
-          if (res.data && res.data.files.length) {
-            res.data.files.map((file)=>{
-              if (file.name == filename) {
-                global.lastFoundFileID[msg.channel.id] = file.id;
-              }
-            });
-          }
-        });
+        global.lastFoundFileID[msg.channel.id] = -1;
       }
       unlockDiskForChannel(msg.channel.id);
   });
   // get the file's id
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  if (global.lastFoundFileID[msg.channel.id] == -1)
+    await setContentsByFilenameAndParent(msg, filename, userFolderID, '');
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+
+  lockDiskForChannel(msg.channel.id);
+  // now the file surely exists -- redo the find, get the file id
+  drive.files.list(
+    {q: `"${userFolderID}" in parents and name="${filename}"`,
+    fields: 'nextPageToken, files(id, name, parents)'},
+    (err, res) => {
+      if (err) return console.error(err);
+      // we must check for filename match
+      if (res.data && res.data.files.length) {
+        res.data.files.map((file)=>{
+          global.lastFoundFileID[msg.channel.id] = file.id;
+        });
+      }
+      unlockDiskForChannel(msg.channel.id);
+    }
+  );
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   gmNPCFileID = global.lastFoundFileID[msg.channel.id];
   // get and parse the contents
@@ -1087,7 +1377,7 @@ async function handleAddNPCInitCommand(msg, cmd, args, user) {
   var newContentString = contentArray.join(",");
   setContentsByFilenameAndParent(msg, filename, userFolderID, newContentString);
   removeHourglass(msg);
-  msg.reply(` you now have ${contentArray.length} NPC's for your next encounter in this channel.`)
+  msg.reply(` you now have ${contentArray.length} NPC's in this channel.`)
 }
 async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
   msg.react('⏳');
@@ -1102,7 +1392,8 @@ async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
   lockDiskForChannel(msg.channel.id);
   // ensure the file
   drive.files.list(
-    {q: `"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
+    {q: `"${userFolderID}" in parents and name="${filename}"`,
+    fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
       if (err) console.err(err);
       // in the event of no match
@@ -1111,21 +1402,24 @@ async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
           global.lastFoundFileID[msg.channel.id] = file.id;
         });
       } else {
+        // it didn't exist; make an empty file
+        unlockDiskForChannel(msg.channel.id);
         setContentsByFilenameAndParent(msg, filename, userFolderID, '');
-        // now the file surely exists -- redo the find, get the file id
         lockDiskForChannel(msg.channel.id);
-        drive.files.list({q: `"${userFolderID}" in parents and name="${filename}"`, fields: 'nextPageToken, files(id, name, parents)'},
-        (err, res) => {
-          if (err) return console.error(err);
-          // we must check for filename match
-          if (res.data && res.data.files.length) {
-            res.data.files.map((file)=>{
-              if (file.name == filename) {
+        // now the file surely exists -- redo the find, get the file id
+        drive.files.list(
+          {q: `"${userFolderID}" in parents and name="${filename}"`,
+          fields: 'nextPageToken, files(id, name, parents)'},
+          (err, res) => {
+            if (err) return console.error(err);
+            // we must check for filename match
+            if (res.data && res.data.files.length) {
+              res.data.files.map((file)=>{
                 global.lastFoundFileID[msg.channel.id] = file.id;
-              }
-            });
+              });
+            }
           }
-        });
+        );
       }
       unlockDiskForChannel(msg.channel.id);
   });
@@ -1147,8 +1441,14 @@ async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
       if (contentArray[y] == remove) {
         // don't keep it
         removedIndex[removedIndex.length] = y;
+        x = x + 2; // the top of the for() loop does x++; we skip to next trio
+      } else {
+        // try matching just the label
+        caySplitArray = contentArray[y].split(" ");
+        if (args[x] !== null && caySplitArray[2] == args[x]) {
+          removedIndex[removedIndex.length] = y;
+        }
       }
-      x = x + 2;
     }
   }
   // now rebuild it better
@@ -1160,7 +1460,8 @@ async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
   var newContentString = newContentArray.join(",");
   setContentsByFilenameAndParent(msg, filename, userFolderID, newContentString);
   removeHourglass(msg);
-  msg.reply(` you removed ${removedIndex.length} NPC's. You now have ${newContentArray.length} NPC's in this channel.`)
+  msg.reply(` you removed ${removedIndex.length} NPC's. `
+  + `You now have ${newContentArray.length} NPC's in this channel.`)
 }
 async function handleListNPCInitCommand(msg, cmd, args, user) {
   msg.react('⏳');
@@ -1172,10 +1473,13 @@ async function handleListNPCInitCommand(msg, cmd, args, user) {
   var parentFolderID = await findUserFolderFromMsg(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   lockDiskForChannel(msg.channel.id);
-  drive.files.list({q:`"${parentFolderID}" in parents and name="${filename}"`, name: filename, fields: 'nextPageToken, files(id, name, parents)'},
+  drive.files.list({q:`"${parentFolderID}" in parents and name="${filename}"`,
+    fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
-      if (err) { unlockDiskForChannel(msg.channel.id); return console.error(err); }
-      if (res.data.files.length == 0) { } else {
+      // if(err){unlockDiskForChannel(msg.channel.id); return console.error(err);}
+      if (res.data.files.length == 0) {
+        global.lastFoundFileID[msg.channel.id] = -1;
+      } else {
         res.data.files.map((file) => {
           global.lastFoundFileID[msg.channel.id] = file.id;
         });
@@ -1184,12 +1488,32 @@ async function handleListNPCInitCommand(msg, cmd, args, user) {
     }
   );
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  var contentString = await getFileContents(global.lastFoundFileID[msg.channel.id]);
-  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  var contentArray = contentString.split(",");
-  var output = " your NPC inits for the next encounter in this channel are:";
-  for (var x = 0; x < contentArray.length; x++) {
-    output = `${output}\n:arrow_right: ${contentArray[x]}`
+  if (global.lastFoundFileID[msg.channel.id] == -1) {
+    // file doesn't exist
+    var output = " you have no NPC's configured in this channel yet.";
+  } else {
+    // file exists
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    var contentString = await getFileContents(global.lastFoundFileID[msg.channel.id]);
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    var contentArray = contentString.split(",");
+    // clean any blank entries
+    var tmpArr = [];
+    contentArray.map((content)=> {
+      if (content.length > 0) tmpArr[tmpArr.length] = content;
+    });
+    contentArray = tmpArr;
+    // determine/build output
+    if (contentArray.length > 0) {
+      // file exists and has NPC's in it
+      var output = " your NPC inits for the next encounter in this channel are:";
+      for (var x = 0; x < contentArray.length; x++) {
+        output = `${output}\n:arrow_right: ${contentArray[x]}`
+      }
+    } else {
+      // file exists but was blank
+      var output = " you have no NPC's configured in this channel yet.";
+    }
   }
   removeHourglass(msg);
   msg.reply(output);
@@ -1205,7 +1529,9 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
   var parentFolderID = await findUserFolderFromMsg(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   lockDiskForChannel(msg.channel.id);
-  drive.files.list({q:`"${parentFolderID}" in parents and name="${filename}"`, name: filename, fields: 'nextPageToken, files(id, name, parents)'},
+  drive.files.list(
+    {q:`"${parentFolderID}" in parents and name="${filename}"`,
+    fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
       unlockDiskForChannel(msg.channel.id);
       if (err) return console.error(err);
@@ -1223,9 +1549,10 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
   msg.reply(' you cleared your NPC initiative formulas for this channel.');
   listAllFiles();
 }
+// @ =========== HANDLEMESSAGE FUNCTION ============
 function handleMessage(msg, user=msg.author) {
   // stop confusing people during development!!
-  if (user.id !== '360086569778020352') return;
+  //if (user.id !== '360086569778020352') return;
   // check if message starts with `!`
   var message = msg.content;
   if (message.substring(0, 1) == '!') {
@@ -1245,6 +1572,9 @@ function handleMessage(msg, user=msg.author) {
           break;
           case 'open':
             if (user.id == '360086569778020352') openFile(args);
+          break;
+          case 'init':
+            handleInitCommand(msg, cmd, args, user);
           break;
           case 'setgm':
             handleSetGMCommand(msg, cmd, args, user);
