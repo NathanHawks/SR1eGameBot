@@ -368,6 +368,26 @@ async function createFolder(folderName, parentID=null, callback, channelID="syst
   });
 }
 
+async function findFileByName(filename, parentID, channelID) {
+  lockDiskForChannel(channelID);
+  var auth = global.auth;
+  var drive = google.drive({version: 'v3', auth});
+  drive.files.list(
+    {q: `"${parentID}" in parents and name="${filename}"`,
+    fields: 'nextPageToken, files(id, name, parents)'},
+    (err, res) => {
+      if (err) console.err(err);
+      if (res.data.files.length === 1) {
+        res.data.files.map((file) => {
+          global.lastFoundFileID[channelID] = file.id;
+        });
+      }
+      else { global.lastFoundFileID[channelID] = -1; }
+      unlockDiskForChannel(channelID);
+    }
+  );
+}
+
 async function getFileContents(fileID, channelID) {
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
@@ -797,48 +817,15 @@ async function handleInitCommand(msg, cmd, args, user) {
   msg.react('⏳');
   global.lastFoundFileID[msg.channel.id] = null;
   await ensureFolderTriplet(msg);
-  var gmPlayersFileID = null;
-  var auth = global.auth;
-  var drive = google.drive({version: 'v3', auth});
-  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  // get author's userFolderID for this channel
-  var userFolderID = await findUserFolderFromMsg(msg);
-  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  lockDiskForChannel(msg.channel.id);
-  // get file ID of gm's (msg.author's) gmPlayers file, if any
-  var filename = 'gmPlayers';
-  drive.files.list(
-    {q: `"${userFolderID}" in parents and name="${filename}"`,
-    fields: 'nextPageToken, files(id, name, parents)'},
-    (err, res) => {
-      if (err) console.err(err);
-      if (res.data.files.length) {
-        res.data.files.map((file) => {
-          global.lastFoundFileID[msg.channel.id] = file.id;
-        });
-      }
-      else { global.lastFoundFileID[msg.channel.id] = -1; }
-      unlockDiskForChannel(msg.channel.id);
-    }
-  );
-  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  var gmPlayersFileID = global.lastFoundFileID[msg.channel.id];
-  //--- disabled because I want it to run even with only NPCs / only players
-  // if (gmPlayersFileID == -1) {
-  //   msg.reply("you don't have any players in your group right now.");
-  //   removeHourglass(msg);
-  //   return;
-  // }
-  //---
-  // make array of playerIDs from msg.author's gmPlayers file content, if any
-  var gmPlayersString = await getFileContents(gmPlayersFileID, msg.channel.id);
-  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  lockDiskForChannel(msg.channel.id);
-  var gmPlayersArr = gmPlayersString.split(',');
+  var userFolderID = '';
+  var gmPlayersFileID = '';
+  var gmPlayersString = '';
+  var gmPlayersArr = [];
+  var gmNPCFileID = '';
+  var gmNPCFileContent = '';
   var gmNPCArr = [];
   var playerInitContent = [];
   var gmNPCFileContent = [];
-  // ensure all players have setgm to user, and have setinit
   var someoneIsntReady_GM = false;
   var someoneIsntReady_Init = false;
   var playerFolderIDs = [];
@@ -849,6 +836,31 @@ async function handleInitCommand(msg, cmd, args, user) {
   var skipFileActions = false;
   var initWillFail = false;
   var output = '';
+  var filename = '';
+  var npcRolls = [];
+  var playerRolls = [];
+  var npcPasses = [];
+  var playerPasses = [];
+  var auth = global.auth;
+  var drive = google.drive({version: 'v3', auth});
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  // get author's userFolderID for this channel
+  userFolderID = await findUserFolderFromMsg(msg);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  lockDiskForChannel(msg.channel.id);
+  // get file ID of gm's (msg.author's) gmPlayers file, if any
+  filename = 'gmPlayers';
+  await findFileByName(filename, userFolderID, msg.channel.id);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  gmPlayersFileID = global.lastFoundFileID[msg.channel.id];
+  // make array of playerIDs from msg.author's gmPlayers file content, if any
+  if (gmPlayersFileID !== -1) {
+    gmPlayersString = await getFileContents(gmPlayersFileID, msg.channel.id);
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    lockDiskForChannel(msg.channel.id);
+    gmPlayersArr = gmPlayersString.split(',');
+  }
+  // ensure all players have setgm to user, and have setinit
   // prune empty entries from gmPlayersArr
   var tmpArr = [];
   gmPlayersArr.map((p)=>{
@@ -857,7 +869,7 @@ async function handleInitCommand(msg, cmd, args, user) {
   gmPlayersArr = tmpArr;
   // loop on gm's (msg.author's) list of players
   for (var x = 0; x < gmPlayersArr.length; x++) {
-    var filename = 'gmWhoIsGM';
+    filename = 'gmWhoIsGM';
     // create an index of each player's folderID
     unlockDiskForChannel(msg.channel.id);
     playerFolderIDs[x] = await findUserFolderFromUserID(msg, gmPlayersArr[x]);
@@ -872,19 +884,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       playerInitFileID[x] = -1;
     } else {
       lockDiskForChannel(msg.channel.id);
-      drive.files.list({q: `"${playerFolderIDs[x]}" in parents and name="${filename}"`},
-        (err, res) => {
-          if (err) console.error(err);
-          if (res.data.files.length) {
-            res.data.files.map((file)=>{
-              global.lastFoundFileID[msg.channel.id] = file.id;
-            });
-          } else {
-            global.lastFoundFileID[msg.channel.id] = -1;
-          }
-          unlockDiskForChannel(msg.channel.id);
-        }
-      );
+      await findFileByName(filename, playerFolderIDs[x], msg.channel.id);
       // another index for each player's gmWhoIsGM fileID
       while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
       playerGMFileID[x] = global.lastFoundFileID[msg.channel.id];
@@ -908,19 +908,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       // ensure all players have setinit
       filename = "playerInit";
       lockDiskForChannel(msg.channel.id);
-      drive.files.list({q: `"${playerFolderIDs[x]}" in parents and name="${filename}"`},
-        (err, res) => {
-          if (err) console.error(err);
-          if (res.data.files.length) {
-            res.data.files.map((file)=>{
-              global.lastFoundFileID[msg.channel.id] = file.id;
-            });
-          } else {
-            global.lastFoundFileID[msg.channel.id] = -1;
-          }
-          unlockDiskForChannel(msg.channel.id);
-        }
-      );
+      await findFileByName(filename, playerFolderIDs[x], msg.channel.id);
       // another index for each player's playerInit fileID
       while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
       playerInitFileID[x] = global.lastFoundFileID[msg.channel.id];
@@ -958,32 +946,18 @@ async function handleInitCommand(msg, cmd, args, user) {
   // get NPC's, if any
   filename = 'gmNPCInit';
   lockDiskForChannel(msg.channel.id);
-  drive.files.list({q:`"${userFolderID}" in parents and name="${filename}"`},
-    (err, res) => {
-      if (err) {unlockDiskForChannel(msg.channel.id); return console.error(err);}
-      if (res.data.files.length === 1) {
-        res.data.files.map((file)=>{
-          global.lastFoundFileID[msg.channel.id] = file.id;
-        });
-      } else {
-        global.lastFoundFileID[msg.channel.id] = -1;
-      }
-      unlockDiskForChannel(msg.channel.id)
-    }
-  );
+  await findFileByName(filename, userFolderID, msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  var gmNPCFileID = global.lastFoundFileID[msg.channel.id];
+  gmNPCFileID = global.lastFoundFileID[msg.channel.id];
   if (gmNPCFileID == -1) {
-    console.log(`No NPC file was found.`);
   } else {
     gmNPCFileContent[x] = await getFileContents(gmNPCFileID, msg.channel.id);
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
     gmNPCArr = gmNPCFileContent[x].split(",");
-    console.log(`NPC's configured: ${gmNPCArr.length} [${gmNPCFileContent[x]}]`);
   }
   // abort if we have no players and no NPC's, or if anyone's init will fail
   if (gmNPCArr.length == 0 && (gmPlayersArr.length == 0 || initWillFail)) {
-    // init will fail; notify
+    // init will fail one of two ways; notify
     if (gmPlayersArr.length == 0 && gmPlayersArr.length == 0) {
       initWillFail = true;
       output += " -- can't roll initiative: in this channel, you have neither players nor NPC's.";
@@ -993,26 +967,20 @@ async function handleInitCommand(msg, cmd, args, user) {
       + "See !help or ask your GM how to get set up!";
     }
   } else {
-    output += " the initiative order is:\n";
+    output += " the initiative order is:\n===============================\n";
   }
   // if we have a valid setup, roll init
-  var npcRolls = [];
-  var playerRolls = [];
-  var npcPasses = [];
-  var playerPasses = [];
   if (!initWillFail) {
     // roll & calculate for players
     for (var x = 0; x < gmPlayersArr.length; x++) {
       var total = 0;
       var init = playerInitContent[x].split(" ");
       var [junk,rolls] = rollDice(init[0], false, -1)
-      console.log(`Natural: ${rolls}`);
       for (var y = 0; y < rolls.length; y++) {
         rolls[y] = Number(rolls[y]);
         total += rolls[y];
       }
       total += Number(init[1]);
-      console.log(`Total: ${total}`);
       playerRolls = rolls;
       // store initial initiative passes
       playerPasses[x] = [];
@@ -1034,13 +1002,11 @@ async function handleInitCommand(msg, cmd, args, user) {
         var total = 0;
         var init = gmNPCArr[x].split(" ");
         var [junk,rolls] = rollDice(init[0], false, -1)
-        console.log(`NPC ${x} Natural: ${rolls}`);
         for (var y = 0; y < rolls.length; y++) {
           rolls[y] = Number(rolls[y]);
           total += rolls[y];
         }
         total += Number(init[1]);
-        console.log(`NPC ${x} Total: ${total}`);
         npcRolls = rolls;
         // store initial initiative passes
         npcPasses[x] = [];
@@ -1057,14 +1023,12 @@ async function handleInitCommand(msg, cmd, args, user) {
         }
       }
     }
-    console.log(`Player passes: ${playerPasses}`);
-    console.log(`NPC passes: ${npcPasses}`);
   }
-  // create dummy array so we can address higher items
+  // create dummy entries for output array so we can address higher items first
   var ordArr = [];
-  for (var x = 0; x <= 30; x++) { ordArr[x] = ''; }
+  for (var x = 0; x <= 40; x++) { ordArr[x] = ''; }
   // sort
-  for (var x = 30; x > 0; x--) {
+  for (var x = 40; x > 0; x--) {
     for (var y = 0; y < playerPasses.length; y++) {
       if (playerPasses[y].indexOf(x) !== -1) {
         if (ordArr[x]) ordArr[x] += ", ";
@@ -1078,11 +1042,11 @@ async function handleInitCommand(msg, cmd, args, user) {
       }
     }
   }
-  console.log("OrdArr: " + ordArr);
-  for (var x = 30; x > 0; x--) {
-    if (ordArr[x].length) {
-      output += `${x}: ${ordArr[x]}\n`;
-    }
+  for (var x = 40; x > 0; x--) {
+    if (ordArr[x].length) { output += `${x}: ${ordArr[x]}\n`; }
+  }
+  if (gmNPCArr.length > 0 || (gmPlayersArr.length > 0 && !initWillFail)) {
+    output += "===============================\n";
   }
   // report
   msg.reply(output);
@@ -1158,36 +1122,17 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
     fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
       if (err) console.err(err);
-      // in the event of no match
       if (res.data.files.length == 0) {
-        // user must use setPlayer first
+        // create it if it doesn't exist
         setContentsByFilenameAndParent(msg, filename, userFolderID, '');
         global.lastFoundFileID[msg.channel.id] = -1;
         unlockDiskForChannel(msg.channel.id);
-      } else {
-        // verify filename match and abort if not
-        var found = false;
-        res.data.files.map((file)=>{if(file.name==filename){found=true;}});
-        if (found==false) {
-          global.lastFoundFileID[msg.channel.id] = -1;
-        }
-        unlockDiskForChannel(msg.channel.id);
       }
-      // now the file surely exists -- redo the find, get the file id
-      lockDiskForChannel(msg.channel.id);
-      drive.files.list({q: `"${userFolderID}" in parents and name="${filename}"`,
-        fields: 'nextPageToken, files(id, name, parents)'},
-        (err, res) => {
-          if (err) return console.error(err);
-          // we must check for filename match
-          if (res.data && res.data.files.length) {
-            res.data.files.map((file)=>{
-              global.lastFoundFileID[msg.channel.id] = file.id;
-            });
-          }
-          unlockDiskForChannel(msg.channel.id);
-      });
   });
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  lockDiskForChannel(msg.channel.id);
+  // now the file surely exists -- redo the find, get the file id
+  await findFileByName(filename, userFolderID, msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   gmPlayersFileID = global.lastFoundFileID[msg.channel.id];
   // get and parse the contents of the file
@@ -1448,22 +1393,8 @@ async function handleAddNPCInitCommand(msg, cmd, args, user) {
   var userFolderID = await findUserFolderFromMsg(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   lockDiskForChannel(msg.channel.id);
-  // ensure the file
-  drive.files.list(
-    {q: `"${userFolderID}" in parents and name="${filename}"`,
-    fields: 'nextPageToken, files(id, name, parents)'},
-    (err, res) => {
-      if (err) console.err(err);
-      // in the event of no match
-      if (res.data.files.length) {
-        res.data.files.map((file) => {
-          global.lastFoundFileID[msg.channel.id] = file.id;
-        });
-      } else {
-        global.lastFoundFileID[msg.channel.id] = -1;
-      }
-      unlockDiskForChannel(msg.channel.id);
-  });
+  // find the file
+  await findFileByName(filename, userFolderID, msg.channel.id);
   // get the file's id
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   if (global.lastFoundFileID[msg.channel.id] == -1)
@@ -1472,20 +1403,7 @@ async function handleAddNPCInitCommand(msg, cmd, args, user) {
 
   lockDiskForChannel(msg.channel.id);
   // now the file surely exists -- redo the find, get the file id
-  drive.files.list(
-    {q: `"${userFolderID}" in parents and name="${filename}"`,
-    fields: 'nextPageToken, files(id, name, parents)'},
-    (err, res) => {
-      if (err) return console.error(err);
-      // we must check for filename match
-      if (res.data && res.data.files.length) {
-        res.data.files.map((file)=>{
-          global.lastFoundFileID[msg.channel.id] = file.id;
-        });
-      }
-      unlockDiskForChannel(msg.channel.id);
-    }
-  );
+  await findFileByName(filename, userFolderID, msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   gmNPCFileID = global.lastFoundFileID[msg.channel.id];
   // get and parse the contents
@@ -1600,20 +1518,7 @@ async function handleListNPCInitCommand(msg, cmd, args, user) {
   var parentFolderID = await findUserFolderFromMsg(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   lockDiskForChannel(msg.channel.id);
-  drive.files.list({q:`"${parentFolderID}" in parents and name="${filename}"`,
-    fields: 'nextPageToken, files(id, name, parents)'},
-    (err, res) => {
-      // if(err){unlockDiskForChannel(msg.channel.id); return console.error(err);}
-      if (res.data.files.length == 0) {
-        global.lastFoundFileID[msg.channel.id] = -1;
-      } else {
-        res.data.files.map((file) => {
-          global.lastFoundFileID[msg.channel.id] = file.id;
-        });
-      }
-      unlockDiskForChannel(msg.channel.id);
-    }
-  );
+  findFileByName(filename, parentFolderID, msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   if (global.lastFoundFileID[msg.channel.id] == -1) {
     // file doesn't exist
@@ -1679,7 +1584,7 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
 // @ =========== HANDLEMESSAGE FUNCTION ============
 function handleMessage(msg, user=msg.author) {
   // stop confusing people during development!!
-  //if (user.id !== '360086569778020352') return;
+  if (user.id !== '360086569778020352') return;
   // check if message starts with `!`
   var message = msg.content;
   if (message.substring(0, 1) == '!') {
