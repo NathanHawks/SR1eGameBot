@@ -35,7 +35,6 @@ global.config = {
   skipInitInitiative:                 false,
   deleteUserDataIfFoundOnStartup:     false,
   listAllFilesOnStartup:              true,
-  createASubfolderOnStartup:          false,
   deleteAllFilesOnStartup:            false,
 };
 // @ ============ GOOGLE * google * Google ===========
@@ -51,12 +50,16 @@ const G_SCOPES = ['https://www.googleapis.com/auth/drive.appdata',
 // time.
 const G_TOKEN_PATH = 'googletoken.json';
 
-// Load client secrets from a local file.
-fs.readFile('googlecredentials.json', (err, content) => {
-  if (err) return console.log('Error loading client secret file:', err);
-  // Authorize a client with credentials, then call the Google Drive API.
-  authorize(JSON.parse(content), initInitiative);
-});
+// Load client secrets from env or local file.
+if (process.env.hasOwnProperty('GOOGLE_CREDENTIALS')) {
+  authorize(JSON.parse(process.env.GOOGLE_CREDENTIALS), initInitiative);
+} else {
+  fs.readFile('googlecredentials.json', (err, content) => {
+    if (err) return console.log('Error loading client secret file:', err);
+    // Authorize a client with credentials, then call the Google Drive API.
+    authorize(JSON.parse(content), initInitiative);
+  });
+}
 
 // @ =========== google's library functions =============
 /**
@@ -71,11 +74,16 @@ function authorize(credentials, callback) {
       client_id, client_secret, redirect_uris[0]);
 
   // Check if we have previously stored a token.
-  fs.readFile(G_TOKEN_PATH, (err, token) => {
-    if (err) return getAccessToken(oAuth2Client, callback);
-    oAuth2Client.setCredentials(JSON.parse(token));
+  if (process.env.hasOwnProperty('GOOGLE_TOKEN')) {
+    oAuth2Client.setCredentials(JSON.parse(process.env.GOOGLE_TOKEN));
     callback(oAuth2Client);
-  });
+  } else {
+    fs.readFile(G_TOKEN_PATH, (err, token) => {
+      if (err) return getAccessToken(oAuth2Client, callback);
+      oAuth2Client.setCredentials(JSON.parse(token));
+      callback(oAuth2Client);
+    });
+  }
 }
 
 /**
@@ -358,8 +366,8 @@ async function createFolder(folderName, parentID=null, callback, channelID="syst
     },
     fields: 'id'
   }, (err, file) => {
-    if (err) return console.error(err);
     unlockDiskForChannel(channelID);
+    if (err) return console.error(err);
     callback(err,file);
   });
 }
@@ -735,7 +743,11 @@ function handleRollCommand(msg, cmd, args, user) {
   }
 }
 function handleHelpCommand(msg, cmd, args, user) {
-  var output = 'GameBot usage:\n'
+  var whatToShow = 1;
+  if (args.length && args[0] == 2) {
+    whatToShow = 2;
+  }
+  var output = '[page1]\n GameBot usage:\n'
     + '!***X***         Roll ***X***d6 *without* exploding 6\'s'
     + '  ***example:*** !5   rolls 5d6 without exploding\n'
     + '!X***!***        Roll ***X***d6 ***with*** exploding 6\'s'
@@ -762,8 +774,9 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '   otn*Y* = the opponent\'s target number\n'
     + '  ***example:*** !5! tn3 vs6! otn4    '
       + 'Roll 5d6 (exploding) with TN 3, against 6d6 (exploding) with TN 4\n'
-    + '\n';
-  var output2 =
+    + '\n'
+    + ':boom: Oh, and one more thing... try **!help 2** to learn about the new **initiative features!**';
+  var output21 =
       '[page 2]\n:boom: **EXPERIMENTAL: Initiative System** :boom:\n'
     + 'The initiative system throws a lotta lotta notifications around, so GameBot '
       + 'needs everyone in the group to proactively consent via these commands:\n'
@@ -777,11 +790,12 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '\n'
     + 'After setup, the GM rolls initiative via the **!init** command.\n'
     + '\n'
-    + '\n*The !setinit format* is **!setinit X Y** where X is the number of dice '
+    + 'The *!setinit* syntax is **!setinit X Y** where X is the number of dice '
       + 'and Y is the modifier. For example, **!setinit 1 4** sets an initiative '
       + 'formula of 1d6+4.'
-    + '\n'
-    + 'The bot remembers stuff; you won\'t need to redo any setup unless something '
+    ;
+    var output22 = '\n'
+    + 'The bot remembers stuff; you won\'t need to redo setup, just update whatever '
       + 'changes. **However:**\n'
     + ':arrow_right: Everything is linked to GM **and chat channel**.\n'
     + ':arrow_right: If you move to a different channel, you must re-enter everything.\n'
@@ -790,19 +804,34 @@ function handleHelpCommand(msg, cmd, args, user) {
     + ':arrow_right: To play in two games *at the same time,* you\'ll need two channels.\n'
     + '\n'
     + '**Other initiative system commands**\n'
-    + '!clearplayers, !addplayers, !listplayers, !setnpcinits, !addnpcinits, '
-      + '!listnpcinits, !clearnpcinits\n'
-    + 'The format for !setnpcinit and !addnpcinit is **X Y label** '
+    + '!clearplayers, !addplayers *[@player1 @player2, etc]*, !listplayers, '
+      + '!removeplayers *[@player1 @player2 etc]*, !setnpcinits *[see below]*, !addnpcinits *[see below]*, '
+      + '!listnpcinits, !removenpcinits *[label-1 label-2 etc]*, !clearnpcinits\n'
+    + '\n'
+    + 'The format for !setnpcinit and !addnpcinit is **X Y label** -- labels cannot have any spaces --'
       + 'e.g. **!addnpcinit 1 5 thugs** (means the thugs have 1d6+5 initiative).\n'
-    + '!setnpcinit and !addnpcinit are different in that !setnpcinit clears '
-      + 'your NPC list and then adds the new NPC.\n'
+    + '!setnpcinit and !addnpcinit are different: !setnpcinit first clears '
+      + 'your NPC list and then adds the new NPC(s).\n'
+    + 'If you have multiple NPC\'s with the same label, !removeNPCInits also accepts'
+      + 'the format **!removenpcinits X Y label** which requires a full match. But, '
+      + 'having multiple NPC\'s with the same label is confusing anyway, so maybe just don\'t do that.\n'
     + '\n'
     + 'All initiative-related commands are a little slow. '
       + 'The :hourglass_flowing_sand: reaction means it\'s working on your request.\n'
+    + '\n'
+    + 'Commands are **not** case-sensitive. Go WiLd WitH tHaT.\n'
     ;
-  output2 = addMaintenanceStatusMessage(output2);
-  msg.reply(output);
-  msg.reply(output2);
+  switch (whatToShow) {
+    case 2:
+      output22 = addMaintenanceStatusMessage(output22);
+      msg.reply(output21);
+      msg.reply(output22);
+    break;
+    case 1:
+      output = addMaintenanceStatusMessage(output);
+      msg.reply(output);
+    break;
+  }
 }
 async function handleInitCommand(msg, cmd, args, user) {
   msg.react('⏳');
@@ -951,17 +980,32 @@ async function handleInitCommand(msg, cmd, args, user) {
     // init will fail one of two ways; notify
     if (gmPlayersArr.length == 0 && gmPlayersArr.length == 0) {
       initWillFail = true;
-      output += " -- can't roll initiative: in this channel, you have neither players nor NPC's.";
+      output += " -- can't roll initiative: you have no players or NPC's in this channel.";
     }
     else if (initWillFail) {
       output += " -- can't roll initiative: players aren't ready.\n"
-      + "See !help or ask your GM how to get set up!";
+      + ":thinking: :bulb: See **!help 2** or ask your GM how to get set up!";
     }
   } else {
     output += " the initiative order is:\n===============================\n";
   }
   // if we have a valid setup, roll init
   if (!initWillFail) {
+    playerRolls = [];
+    // determine which init system we're emulating
+    var passTH = [];
+    var passSub = [];
+    switch (cmd) {
+      case 'init':
+        passTH = [10, 16, 22, 1000];
+        passSub = [7, 14, 21, 0];
+      break;
+      case 'init2':
+      case 'init3':
+        passTH = [10, 20, 30, 40];
+        passSub = [10, 20, 30, 40];
+      break;
+    }
     // roll & calculate for players
     for (var x = 0; x < gmPlayersArr.length; x++) {
       var total = 0;
@@ -972,19 +1016,22 @@ async function handleInitCommand(msg, cmd, args, user) {
         total += rolls[y];
       }
       total += Number(init[1]);
-      playerRolls = rolls;
+      playerRolls[x] = rolls;
       // store initial initiative passes
       playerPasses[x] = [];
       playerPasses[x][playerPasses[x].length] = total;
       // calculate & store extra initiative passes
-      if (total > 10) {
-        playerPasses[x][playerPasses[x].length] = total - 7;
+      if (total > passTH[0]) {
+        playerPasses[x][playerPasses[x].length] = total - passSub[0];
       }
-      if (total > 16) {
-        playerPasses[x][playerPasses[x].length] = total - 14;
+      if (total > passTH[1]) {
+        playerPasses[x][playerPasses[x].length] = total - passSub[1];
       }
-      if (total > 22) {
-        playerPasses[x][playerPasses[x].length] = total - 21;
+      if (total > passTH[2]) {
+        playerPasses[x][playerPasses[x].length] = total - passSub[2];
+      }
+      if (total > passTH[3]) {
+        playerPasses[x][playerPasses[x].length] = total - passSub[3];
       }
     }
     // roll & calculate for NPCs
@@ -998,19 +1045,22 @@ async function handleInitCommand(msg, cmd, args, user) {
           total += rolls[y];
         }
         total += Number(init[1]);
-        npcRolls = rolls;
+        npcRolls[x] = rolls;
         // store initial initiative passes
         npcPasses[x] = [];
         npcPasses[x][npcPasses[x].length] = total;
         // calculate & store extra initiative passes
-        if (total > 10) {
-          npcPasses[x][npcPasses[x].length] = total - 7;
+        if (total > passTH[0]) {
+          npcPasses[x][npcPasses[x].length] = total - passSub[0];
         }
-        if (total > 16) {
-          npcPasses[x][npcPasses[x].length] = total - 14;
+        if (total > passTH[1]) {
+          npcPasses[x][npcPasses[x].length] = total - passSub[1];
         }
-        if (total > 22) {
-          npcPasses[x][npcPasses[x].length] = total - 21;
+        if (total > passTH[2]) {
+          npcPasses[x][npcPasses[x].length] = total - passSub[2];
+        }
+        if (total > passTH[3]) {
+          npcPasses[x][npcPasses[x].length] = total - passSub[3];
         }
       }
     }
@@ -1018,7 +1068,7 @@ async function handleInitCommand(msg, cmd, args, user) {
   // create dummy entries for output array so we can address higher items first
   var ordArr = [];
   for (var x = 0; x <= 40; x++) { ordArr[x] = ''; }
-  // sort
+  // sort & format for output
   for (var x = 40; x > 0; x--) {
     for (var y = 0; y < playerPasses.length; y++) {
       if (playerPasses[y].indexOf(x) !== -1) {
@@ -1033,6 +1083,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       }
     }
   }
+  // add to output from high to low
   for (var x = 40; x > 0; x--) {
     if (ordArr[x].length) { output += `${x}: ${ordArr[x]}\n`; }
   }
@@ -1597,6 +1648,8 @@ function handleMessage(msg, user=msg.author) {
             if (user.id == '360086569778020352') openFile(args);
           break;
           case 'init':
+          case 'init2':
+          case 'init3':
             handleInitCommand(msg, cmd, args, user);
           break;
           case 'setgm':
