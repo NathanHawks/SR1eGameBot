@@ -1,5 +1,5 @@
 // set true to activate warning messages
-var isMaintenanceModeBool = true;
+var isMaintenanceModeBool = false;
 // set status message to send as warning when isMaintenanceModeBool is true
 var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
 /*
@@ -8,8 +8,8 @@ var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
 + 'The bot\'s in maintenance mode.** If it forgets rerolls faster than normal, '
 + 'it means I rebooted the bot.'
 */
-+ ' Actively testing some ideas; the bot will reboot often, thus the 🎲 icon will often fail.'
-+ ' Pzzhht! -Astro';
++ ' Testing a major upgrade! Please DM me if the bot goes offline!'
++ ' Pzzhht! -<@360086569778020352>';
 // conditionally add warning message
 function addMaintenanceStatusMessage(output) {
   var r = output + " " + maintenanceStatusMessage;
@@ -149,10 +149,6 @@ function deleteAllFiles() {
       console.log('No files found.');
     }
   });
-}
-function dxCreateSubfolder() {
-  // test ensure
-  ensureFolderByName('Subfolder', global.folderID.UserData);
 }
 //==================================================================
 // @ =========== INITIATIVE LIBRARY FUNCS ============
@@ -506,16 +502,11 @@ async function callbackInitInitiative(err, res) {
             const files = res.data.files;
             if (files.length) { findAndSetFolderID(files, folderName); }
             unlockDiskForChannel("system");
-          } );
-      } );
+          }
+        );
+      }
+    );
   }
-  // rest of startup
-  // more diagnostic / testing junk
-  if (global.config.createASubfolderOnStartup == true) {
-    while (isDiskLockedForChannel("system")) { await sleep(15); }
-    dxCreateSubfolder();
-  }
-
 }
 
 // ====== Original GameBot code ====================================
@@ -956,7 +947,7 @@ async function handleInitCommand(msg, cmd, args, user) {
     gmNPCArr = gmNPCFileContent[x].split(",");
   }
   // abort if we have no players and no NPC's, or if anyone's init will fail
-  if (gmNPCArr.length == 0 && (gmPlayersArr.length == 0 || initWillFail)) {
+  if ((gmNPCArr.length == 0 && gmPlayersArr.length == 0) || initWillFail) {
     // init will fail one of two ways; notify
     if (gmPlayersArr.length == 0 && gmPlayersArr.length == 0) {
       initWillFail = true;
@@ -1045,7 +1036,7 @@ async function handleInitCommand(msg, cmd, args, user) {
   for (var x = 40; x > 0; x--) {
     if (ordArr[x].length) { output += `${x}: ${ordArr[x]}\n`; }
   }
-  if (gmNPCArr.length > 0 || (gmPlayersArr.length > 0 && !initWillFail)) {
+  if ((gmNPCArr.length > 0 || gmPlayersArr.length > 0) && !initWillFail) {
     output += "===============================\n";
   }
   // report
@@ -1584,7 +1575,7 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
 // @ =========== HANDLEMESSAGE FUNCTION ============
 function handleMessage(msg, user=msg.author) {
   // stop confusing people during development!!
-  if (user.id !== '360086569778020352') return;
+  // if (user.id !== '360086569778020352') return;
   // check if message starts with `!`
   var message = msg.content;
   if (message.substring(0, 1) == '!') {
