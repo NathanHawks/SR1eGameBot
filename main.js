@@ -766,7 +766,7 @@ function handleRollCommand(msg, cmd, args, user) {
 }
 function handleHelpCommand(msg, cmd, args, user) {
   var whatToShow = 1;
-  if (args.length && args[0] == 2) {
+  if (args.length && args[0] == 2 || cmd === 'inithelp') {
     whatToShow = 2;
   }
   var output = '[page1]\n GameBot usage:\n'
@@ -799,46 +799,64 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '\n'
     + ':boom: Oh, and one more thing... try **!help 2** to learn about the new **initiative features!**';
   var output21 =
-      '[page 2]\n:boom: **EXPERIMENTAL: Initiative System** :boom:\n'
-    + 'The initiative system throws a lotta lotta notifications around, so GameBot '
-      + 'needs everyone in the group to proactively consent via these commands:\n'
+      '\n:boom: **EXPERIMENTAL: Initiative System** :boom:\n'
     + '\n'
     + 'Player setup:\n:one: **!setgm @someone**\n:two: **!setinit X Y**\n'
-    + 'GM setup:\n:one: **!setgm**\n:two: **!setplayers @player1 @player2 (etc)**\n'
+    + 'GM setup:\n:one: **!setgm**\n:two: **!setplayers @player1 @player2 (etc)**'
+      + '\n:three: **!setnpcinits *(see below)***\n'
+    + '\n'
+    + '**!setinit** syntax is **!setinit X Y** where X is the number of dice '
+    + 'and Y is the modifier. For example, **!setinit 1 4** sets your initiative '
+    + 'formula to 1d6+4.\n'
     + '\n'
     + 'IMPORTANT: Commands won\'t work unless you @people correctly. '
-      + 'Use the menu that pops-up while you type, '
-      + 'or tab-completion. \n**If it\'s blue with an underline, you did it right.**\n'
+      + 'Use the menu that pops-up while you type, or tab-completion. \n'
+      + '**If it\'s blue with an underline, you did it right.**\n'
     + '\n'
-    + 'After setup, the GM rolls initiative via the **!init** command.\n'
-    + '\n'
-    + 'The *!setinit* syntax is **!setinit X Y** where X is the number of dice '
-      + 'and Y is the modifier. For example, **!setinit 1 4** sets an initiative '
-      + 'formula of 1d6+4.'
+    + ':game_die: **Rolling Initiative** :game_die:\n'
+      + ':arrow_right: **!init** - Shadowrun 1e initiative\n'
+      + ':arrow_right: **!initflip** - Shadowrun 1e initiative, reversed\n'
+      + ':arrow_right: **!init2** - Shadowrun 2e initiative\n'
+      + ':arrow_right: **!init2flip** - Shadowrun 2e initiative, reversed\n'
+      + ':arrow_right: **!init3** - Shadowrun 3e initiative\n'
+      + ':arrow_right: **!init3flip** - Shadowrun 3e initiative, reversed\n'
+      + '\n'
+      + 'The bot remembers stuff; you won\'t need to redo setup, just update whatever '
+        + 'changes. **However:**\n'
+      + ':arrow_right: Everything is linked to GM **and chat channel**.\n'
+      + ':arrow_right: If you move to a different channel, you must re-enter everything.\n'
+      + ':arrow_right: Multiple GM\'s can share a channel, but anyone playing in '
+      + 'both groups must repeat their set-up steps (starting with !setgm).\n'
+      + ':arrow_right: To play in two games *at the same time,* you\'ll need two channels.\n'
+      + '\n'
     ;
     var output22 = '\n'
-    + 'The bot remembers stuff; you won\'t need to redo setup, just update whatever '
-      + 'changes. **However:**\n'
-    + ':arrow_right: Everything is linked to GM **and chat channel**.\n'
-    + ':arrow_right: If you move to a different channel, you must re-enter everything.\n'
-    + ':arrow_right: Multiple GM\'s can share a channel, but anyone playing in '
-    + 'both groups must repeat their set-up steps (starting with !setgm).\n'
-    + ':arrow_right: To play in two games *at the same time,* you\'ll need two channels.\n'
     + '\n'
-    + '**Other initiative system commands**\n'
-    + '!clearplayers, !addplayers *[@player1 @player2, etc]*, !listplayers, '
-      + '!removeplayers *[@player1 @player2 etc]*, !setnpcinits *[see below]*, !addnpcinits *[see below]*, '
-      + '!listnpcinits, !removenpcinits *[label-1 label-2 etc]*, !clearnpcinits\n'
+    + ':nerd: **Other initiative commands** :nerd:\n```'
+      + 'Shortcut  Full command    [Required] options\n'
+      + '          !setgm          @someone\n'
+      + '!si       !setinit        [X Y]\n'
+      + '!setp     !setplayers     [@player1 @player2 etc]\n'
+      + '!addp     !addplayers     [@player1 @player2, etc]\n'
+      + '!lp       !listplayers\n'
+      + '!rmp      !removeplayers  [@player1 @player2 etc]\n'
+      + '!clrp     !clearplayers\n'
+      + '!setn     !setnpcinits    [X1 Y1 label1 X2 Y2 label2 etc]\n'
+      + '!addn     !addnpcinits    [X1 Y1 label1 X2 Y2 label2 etc]\n'
+      + '!ln       !listnpcinits\n'
+      + '!rmn      !removenpcinits [label1 label2 etc]\n'
+      + '!clrn     !clearnpcinits\n'
+      + '```'
     + '\n'
-    + 'The format for !setnpcinit and !addnpcinit is **X Y label** -- labels cannot have spaces or commas --'
-      + 'e.g. **!addnpcinit 1 5 thugs** (means the thugs have 1d6+5 initiative).\n'
-    + '!setnpcinit and !addnpcinit are different: !setnpcinit first clears '
-      + 'your NPC list and then adds the new NPC(s).\n'
-    + 'If you have multiple NPC\'s with the same label, !removeNPCInits also accepts'
+    + ':dragon_face: **Adding NPC\'s** :dragon_face:\n'
+    + '**!setnpcinit** and **!addnpcinit** syntax: !(command) **X Y label** -- labels cannot have spaces or commas --'
+      + 'e.g. **!addnpcinit 1 5 thugs** (means the thugs have 1d6+5 initiative). Add as many NPCs as you want, separated by spaces.\n'
+    + '\n'
+    + 'If you have multiple NPC\'s with the same label, !removeNPCInits also accepts '
       + 'the format **!removenpcinits X Y label** which requires a full match. But, '
       + 'having multiple NPC\'s with the same label is confusing anyway, so maybe just don\'t do that.\n'
     + '\n'
-    + 'All initiative-related commands are a little slow. '
+    + 'All initiative-related commands are slow. '
       + 'The :hourglass_flowing_sand: reaction means it\'s working on your request.\n'
     + '\n'
     + 'Commands are **not** case-sensitive. Go WiLd WitH tHaT.\n'
@@ -1117,7 +1135,7 @@ async function handleInitCommand(msg, cmd, args, user) {
     for (var y = 0; y < playerPasses.length; y++) {
       // if the player is supposed to go on this phase (init passes aside)
       if (playerPasses[y].indexOf(x) !== -1) {
-        var formattedEntry = `*[${x}]* **${msg.client.users.get(gmPlayersArr[y]).username}** (${playerInitContent[y].split(" ")[1]})`;
+        var formattedEntry = `*[${x}]* <@${gmPlayersArr[y]}> (${playerInitContent[y].split(" ")[1]})`;
         // enforce the init passes rule
         if (playerPassArr.indexOf(y) === -1) {
           // the player hasn't gone yet this pass
@@ -1194,10 +1212,9 @@ async function handleInitCommand(msg, cmd, args, user) {
     if (cmd !== 'init2' && cmd !== 'init2flip') {
       // has everyone gone yet this pass?
       if (playerPassArr.length == gmPlayersArr.length
-         && npcPassArr.length == gmNPCArr.length
-       && (x <= 1)) {
-        // playerPasses = [];
-        // npcPasses = [];
+        && npcPassArr.length == gmNPCArr.length
+        || (x <= 1))
+      {
         if (nextPassArr.length) {
           nextPassArr.sort(sortInitPass);
           for (var z = 0; z < nextPassArr.length; z++) {
@@ -1219,26 +1236,28 @@ async function handleInitCommand(msg, cmd, args, user) {
         furtherPlayerPassArr = farPlayerPassArr;
         farPlayerPassArr = [];
         if (x <= 1) {
-          console.log(`nextPassArr = ${nextPassArr}`);
-          console.log(`laterPassArr = ${laterPassArr}`);
+          // second pass
           if (nextPassArr.length) {
             nextPassArr.sort(sortInitPass);
             for (var z = 0; z < nextPassArr.length; z++) {
               ordArr.splice(x, 0, nextPassArr[z]);
             }
           }
+          // third pass
           if (laterPassArr.length) {
             laterPassArr.sort(sortInitPass);
             for (var z = 0; z < laterPassArr.length; z++) {
               ordArr.splice(x, 0, laterPassArr[z]);
             }
           }
+          // fourth pass
           if (furtherPassArr.length) {
             furtherPassArr.sort(sortInitPass);
             for (var z = 0; z < furtherPassArr.length; z++) {
               ordArr.splice(x, 0, furtherPassArr[z]);
             }
           }
+          //. fifth pass
           if (farPassArr.length) {
             farPassArr.sort(sortInitPass);
             for (var z = 0; z < farPassArr.length; z++) {
@@ -1448,7 +1467,7 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
   // format for discord
   playersArr.map((p) => {
     if (p !== '') {
-      p = `:arrow_right: ${msg.client.users.get(p).username}>`;
+      p = `:arrow_right: <@${p}>`;
       output += `\n${p}`;
     }
   });
@@ -1825,6 +1844,7 @@ function handleMessage(msg, user=msg.author) {
       cmd = cmd.toLowerCase();
       switch(cmd) {
           case 'help':
+          case 'inithelp':
             handleHelpCommand(msg, cmd, args, user);
           break;
           case 'list':
