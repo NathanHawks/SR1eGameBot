@@ -1215,6 +1215,12 @@ async function handleInitCommand(msg, cmd, args, user) {
         && npcPassArr.length == gmNPCArr.length
         || (x <= 1))
       {
+        // sort first pass if it's time to
+        if (playerPassArr.length == gmPlayersArr.length
+          && npcPassArr.length == gmNPCArr.length)
+        {
+          //ordArr.sort(sortInitPass);
+        }
         if (nextPassArr.length) {
           nextPassArr.sort(sortInitPass);
           for (var z = 0; z < nextPassArr.length; z++) {
@@ -1790,7 +1796,8 @@ async function handleListNPCInitCommand(msg, cmd, args, user) {
       // file exists and has NPC's in it
       var output = " your NPC's inits in this channel are:";
       for (var x = 0; x < contentArray.length; x++) {
-        output = `${output}\n:arrow_right: ${contentArray[x]}`
+        var [dice,mod,label] = contentArray[x].split(" ");
+        output = `${output}\n:arrow_right: ${dice}d6+${mod} :label: ${label}`
       }
     } else {
       // file exists but was blank
@@ -1891,6 +1898,7 @@ function handleMessage(msg, user=msg.author) {
             handleClearPlayersCommand(msg, cmd, args, user);
           break;
           case 'si':
+          case 'seti':
           case 'setinit':
             handleSetInitCommand(msg, cmd, args, user);
           break;
@@ -1909,6 +1917,7 @@ function handleMessage(msg, user=msg.author) {
             handleAddNPCInitCommand(msg, cmd, args, user);
           break;
           case 'ln':
+          case 'listnpcs':
           case 'listnpcinits':
           case 'listnpcinit':
             handleListNPCInitCommand(msg, cmd, args, user);
