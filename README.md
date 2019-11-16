@@ -98,7 +98,7 @@ Remove and re-add your "reaction" to keep re-rolling that roll.
             !setgm          @someone
   !si       !setinit        [X Y]
   !setp     !setplayers     [@player1 @player2 etc]
-  !addp     !addplayers     [@player1 @player2, etc]
+  !addp     !addplayers     [@player1 @player2 etc]
   !lp       !listplayers
   !rmp      !removeplayers  [@player1 @player2 etc]
   !clrp     !clearplayers
