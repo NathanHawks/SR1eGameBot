@@ -48,22 +48,28 @@ Remove and re-add your "reaction" to keep re-rolling that roll.
    otnY = the opponent's target number
   example: !5! tn3 vs6! otn4    Roll 5d6 (exploding) with TN 3, against 6d6 (exploding) with TN 4</pre>
 
-###:boom: EXPERIMENTAL: Initiative System :boom:
+### :boom: EXPERIMENTAL: Initiative System :boom:
 
-  Player setup:
+#### Player setup:
+
   :one: !setgm @someone
+
   :two: !setinit X Y
-  GM setup:
+
+#### GM setup:
+
   :one: !setgm
+
   :two: !setplayers @player1 @player2 (etc)
+
   :three: !setnpcinits (see below)
 
   **!setinit** syntax is **!setinit X Y** where X is the number of dice and Y is the modifier. For example, !setinit 1 4 sets your initiative formula to 1d6+4.
 
-  IMPORTANT: Commands won't work unless you @people correctly. Use the menu that pops-up while you type, or tab-completion.
-  **If it's blue with an underline, you did it right.**
+  IMPORTANT: Commands won't work unless you @people correctly. Use the menu that pops-up while you type, or tab-completion.  **If it's blue with an underline, you did it right.**
 
-  :game_die: **Rolling Initiative** :game_die:
+#### :game_die: **Rolling Initiative** :game_die:
+
   :arrow_right: **!init** - Shadowrun 1e initiative
   :arrow_right: **!initflip** - Shadowrun 1e initiative, reversed
   :arrow_right: **!init2** - Shadowrun 2e initiative
@@ -78,8 +84,9 @@ Remove and re-add your "reaction" to keep re-rolling that roll.
   :arrow_right: To play in two games at the same time, you'll need two channels.
   @Nathan,
 
-  :nerd: **Other initiative commands** :nerd: ```
-  Shortcut  Full command    [Required] options
+#### :nerd: **Other initiative commands** :nerd:
+
+  ```Shortcut  Full command    [Required] options
             !setgm          @someone
   !si       !setinit        [X Y]
   !setp     !setplayers     [@player1 @player2 etc]
@@ -91,9 +98,10 @@ Remove and re-add your "reaction" to keep re-rolling that roll.
   !addn     !addnpcinits    [X1 Y1 label1 X2 Y2 label2 etc]
   !ln       !listnpcinits
   !rmn      !removenpcinits [label1 label2 etc]
-  !clrn     !clearnpcinits```
+  !clrn     !clearnpcinits ```
 
-  :dragon_face: **Adding NPC's** :dragon_face:
+#### :dragon_face: **Adding NPC's** :dragon_face:
+
   **!setnpcinit** and **!addnpcinit** syntax: **!(command) X Y label** -- labels cannot have spaces or commas --e.g. **!addnpcinit 1 5 thugs** (means the thugs have 1d6+5 initiative). Add as many NPCs as you want, separated by spaces.
 
   If you have multiple NPC's with the same label, **!removeNPCInits** also accepts the format !removenpcinits X Y label which requires a full match. But, having multiple NPC's with the same label is confusing anyway, so maybe just don't do that.
