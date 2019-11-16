@@ -48,15 +48,15 @@ Remove and re-add your "reaction" to keep re-rolling that roll.
    otnY = the opponent's target number
   example: !5! tn3 vs6! otn4    Roll 5d6 (exploding) with TN 3, against 6d6 (exploding) with TN 4</pre>
 
-### :boom: EXPERIMENTAL: Initiative System :boom:
+## :boom: EXPERIMENTAL: Initiative System :boom:
 
-#### Player setup:
+### Player setup:
 
   :one: !setgm @someone
 
   :two: !setinit X Y
 
-#### GM setup:
+### GM setup:
 
   :one: !setgm
 
@@ -68,7 +68,7 @@ Remove and re-add your "reaction" to keep re-rolling that roll.
 
   IMPORTANT: Commands won't work unless you @people correctly. Use the menu that pops-up while you type, or tab-completion.  **If it's blue with an underline, you did it right.**
 
-#### :game_die: **Rolling Initiative** :game_die:
+### :game_die: **Rolling Initiative** :game_die:
 
   :arrow_right: **!init** - Shadowrun 1e initiative
 
@@ -92,7 +92,7 @@ Remove and re-add your "reaction" to keep re-rolling that roll.
 
   :arrow_right: To play in two games at the same time, you'll need two channels.
 
-#### :nerd: **Other initiative commands** :nerd:
+### :game_die: **Other initiative commands** :game_die:
 
   ```Shortcut  Full command    [Required] options
             !setgm          @someone
@@ -109,7 +109,7 @@ Remove and re-add your "reaction" to keep re-rolling that roll.
   !clrn     !clearnpcinits
   ```
 
-#### :dragon_face: **Adding NPC's** :dragon_face:
+### :dragon_face: **Adding NPC's** :dragon_face:
 
   **!setnpcinit** and **!addnpcinit** syntax: **!(command) X Y label** -- labels cannot have spaces or commas --e.g. **!addnpcinit 1 5 thugs** (means the thugs have 1d6+5 initiative). Add as many NPCs as you want, separated by spaces.
 
