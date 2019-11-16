@@ -71,18 +71,26 @@ Remove and re-add your "reaction" to keep re-rolling that roll.
 #### :game_die: **Rolling Initiative** :game_die:
 
   :arrow_right: **!init** - Shadowrun 1e initiative
+
   :arrow_right: **!initflip** - Shadowrun 1e initiative, reversed
+
   :arrow_right: **!init2** - Shadowrun 2e initiative
+
   :arrow_right: **!init2flip** - Shadowrun 2e initiative, reversed
+
   :arrow_right: **!init3** - Shadowrun 3e initiative
+
   :arrow_right: **!init3flip** - Shadowrun 3e initiative, reversed
 
   The bot remembers stuff; you won't need to redo setup, just update whatever changes. ***However:***
+
   :arrow_right: Everything is linked to GM **and chat channel.**
+
   :arrow_right: If you move to a different channel, you must re-enter everything.
+
   :arrow_right: Multiple GM's can share a channel, but anyone playing in both groups must repeat their set-up steps (starting with !setgm).
+
   :arrow_right: To play in two games at the same time, you'll need two channels.
-  @Nathan,
 
 #### :nerd: **Other initiative commands** :nerd:
 
@@ -98,7 +106,8 @@ Remove and re-add your "reaction" to keep re-rolling that roll.
   !addn     !addnpcinits    [X1 Y1 label1 X2 Y2 label2 etc]
   !ln       !listnpcinits
   !rmn      !removenpcinits [label1 label2 etc]
-  !clrn     !clearnpcinits ```
+  !clrn     !clearnpcinits
+  ```
 
 #### :dragon_face: **Adding NPC's** :dragon_face:
 
