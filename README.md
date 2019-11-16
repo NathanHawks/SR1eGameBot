@@ -2,7 +2,7 @@
 
 ## What It Is
 
-A Discord dicebot for SR1e/2e/3e, which also has an **experimental initiative system** to help run Shadowrun 1st Edition over Discord.
+A Discord dicebot for SR1e/2e/3e, which also has an **experimental initiative system** to help run Shadowrun 1st-3rd Editions over Discord.
 
 ## How to Install
 

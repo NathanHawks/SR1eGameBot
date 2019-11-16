@@ -899,8 +899,8 @@ async function handleInitCommand(msg, cmd, args, user) {
   var filename = '';
   var npcRolls = [];
   var playerRolls = [];
-  var npcPasses = [];
-  var playerPasses = [];
+  var npcPhases = [];
+  var playerPhases = [];
   var auth = global.auth;
   var drive = google.drive({version: 'v3', auth});
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -1061,20 +1061,20 @@ async function handleInitCommand(msg, cmd, args, user) {
       total += Number(init[1]);
       playerRolls[x] = rolls;
       // store initial initiative passes
-      playerPasses[x] = [];
-      playerPasses[x][playerPasses[x].length] = total;
+      playerPhases[x] = [];
+      playerPhases[x][playerPhases[x].length] = total;
       // calculate & store extra initiative passes
       if (total > passTH[0]) {
-        playerPasses[x][playerPasses[x].length] = total - passSub[0];
+        playerPhases[x][playerPhases[x].length] = total - passSub[0];
       }
       if (total > passTH[1]) {
-        playerPasses[x][playerPasses[x].length] = total - passSub[1];
+        playerPhases[x][playerPhases[x].length] = total - passSub[1];
       }
       if (total > passTH[2]) {
-        playerPasses[x][playerPasses[x].length] = total - passSub[2];
+        playerPhases[x][playerPhases[x].length] = total - passSub[2];
       }
       if (total > passTH[3]) {
-        playerPasses[x][playerPasses[x].length] = total - passSub[3];
+        playerPhases[x][playerPhases[x].length] = total - passSub[3];
       }
     }
     // roll & calculate for NPCs
@@ -1090,20 +1090,20 @@ async function handleInitCommand(msg, cmd, args, user) {
         total += Number(init[1]);
         npcRolls[x] = rolls;
         // store initial initiative passes
-        npcPasses[x] = [];
-        npcPasses[x][npcPasses[x].length] = total;
+        npcPhases[x] = [];
+        npcPhases[x][npcPhases[x].length] = total;
         // calculate & store extra initiative passes
         if (total > passTH[0]) {
-          npcPasses[x][npcPasses[x].length] = total - passSub[0];
+          npcPhases[x][npcPhases[x].length] = total - passSub[0];
         }
         if (total > passTH[1]) {
-          npcPasses[x][npcPasses[x].length] = total - passSub[1];
+          npcPhases[x][npcPhases[x].length] = total - passSub[1];
         }
         if (total > passTH[2]) {
-          npcPasses[x][npcPasses[x].length] = total - passSub[2];
+          npcPhases[x][npcPhases[x].length] = total - passSub[2];
         }
         if (total > passTH[3]) {
-          npcPasses[x][npcPasses[x].length] = total - passSub[3];
+          npcPhases[x][npcPhases[x].length] = total - passSub[3];
         }
       }
     }
@@ -1111,93 +1111,100 @@ async function handleInitCommand(msg, cmd, args, user) {
   // create dummy entries for output array so we can address higher items first
   var ordArr = [];
   // has each player or npc (by array index) gone yet this pass?
-  var playerPassArr = [];
-  var npcPassArr = [];
+  var playerWentArr = [];
+  var npcWentArr = [];
   // to bump people to the bottom
-  var nextPassArr = [];
-  var nextPlayerPassArr = [];
-  var nextNPCPassArr = [];
-  var laterPassArr = [];
-  var laterPlayerPassArr = [];
-  var laterNPCPassArr = [];
-  var furtherPassArr = [];
-  var furtherPlayerPassArr = [];
-  var furtherNPCPassArr = [];
-  var farPassArr = [];
-  var farPlayerPassArr = [];
-  var farNPCPassArr = [];
-  afterFirstPass = false;
+  var nextOrdArr = [];
+  var nextPlayerWentArr = [];
+  var nextNPCWentArr = [];
+  var laterOrdArr = [];
+  var laterPlayerWentArr = [];
+  var laterNPCWentArr = [];
+  var furtherOrdArr = [];
+  var furtherPlayerWentArr = [];
+  var furtherNPCWentArr = [];
+  var farOrdArr = [];
+  var farPlayerWentArr = [];
+  var farNPCWentArr = [];
   for (var x = 0; x <= 40; x++) { ordArr[x] = ''; }
   // sort & format for output
   // create a downward loop for populating ordArr
   for (var x = 40; x > 0; x--) {
     // loop thru players array (containing arrays of their dice-based phases)
-    for (var y = 0; y < playerPasses.length; y++) {
+    for (var y = 0; y < playerPhases.length; y++) {
       // if the player is supposed to go on this phase (init passes aside)
-      if (playerPasses[y].indexOf(x) !== -1) {
+      if (playerPhases[y].indexOf(x) !== -1) {
         var formattedEntry = `*[${x}]* <@${gmPlayersArr[y]}> (${playerInitContent[y].split(" ")[1]})`;
-        // enforce the init passes rule
-        if (playerPassArr.indexOf(y) === -1) {
-          // the player hasn't gone yet this pass
-          playerPassArr[playerPassArr.length] = y;
-          if (ordArr[x]) ordArr[x] += ",";
-          ordArr[x] += formattedEntry;
-        } else {
-          // the player already went this pass
-          if (nextPlayerPassArr.indexOf(y) === -1) {
-            nextPlayerPassArr[nextPlayerPassArr.length] = y;
-            nextPassArr[nextPassArr.length] = formattedEntry;
+        if (cmd !== 'init2' && cmd !== 'init2flip') {
+          // it's not 2nd edition: enforce the init passes rule
+          if (playerWentArr.indexOf(y) === -1) {
+            // the player hasn't gone yet this pass
+            playerWentArr[playerWentArr.length] = y;
+            if (ordArr[x]) { ordArr[x] += ","; }
+            ordArr[x] += formattedEntry;
+            if (y === 1) {
+            }
           } else {
-            // the player is also already in the next pass
-            if (laterPlayerPassArr.indexOf(y) === -1) {
-              laterPlayerPassArr[laterPlayerPassArr.length] = y;
-              laterPassArr[laterPassArr.length] = formattedEntry;
+            // the player already went this pass
+            if (nextPlayerWentArr.indexOf(y) === -1) {
+              nextPlayerWentArr[nextPlayerWentArr.length] = y;
+              nextOrdArr[nextOrdArr.length] = formattedEntry;
             } else {
-              if (furtherPlayerPassArr.indexOf(y) === -1) {
-                // i can do this all day (not really)
-                furtherPlayerPassArr[furtherPlayerPassArr.length] = y;
-                furtherPassArr[furtherPassArr.length] = formattedEntry;
+              // the player is also already in the next pass
+              if (laterPlayerWentArr.indexOf(y) === -1) {
+                laterPlayerWentArr[laterPlayerWentArr.length] = y;
+                laterOrdArr[laterOrdArr.length] = formattedEntry;
               } else {
-                // 5th phase
-                farPlayerPassArr[farPlayerPassArr.length] = y;
-                farPassArr[farPassArr.length] = formattedEntry;
+                // i can do this all day (not really)
+                if (furtherPlayerWentArr.indexOf(y) === -1) {
+                  furtherPlayerWentArr[furtherPlayerWentArr.length] = y;
+                  furtherOrdArr[furtherOrdArr.length] = formattedEntry;
+                } else {
+                  // 5th pass
+                  farPlayerWentArr[farPlayerWentArr.length] = y;
+                  farOrdArr[farOrdArr.length] = formattedEntry;
+                }
               }
             }
           }
+        } else {
+          // don't enforce init passes for 2nd edition
+          if (ordArr[x]) ordArr[x] += "\n";
+          ordArr[x] += formattedEntry;
         }
       }
     }
     // loop thru npc array (containing arrays their dice-based phases)
-    for (var y = 0; y < npcPasses.length; y++) {
+    for (var y = 0; y < npcPhases.length; y++) {
       // if the npc is supposed to go this phase (init passes aside)
-      if (npcPasses[y].indexOf(x) !== -1) {
+      if (npcPhases[y].indexOf(x) !== -1) {
         var formattedEntry = `*[${x}]* ${gmNPCArr[y].split(" ")[2]} (${gmNPCArr[y].split(" ")[1]})`;
         if (cmd !== 'init2' && cmd !== 'init2flip') {
           // enforce the init passes rule
-          if (npcPassArr.indexOf(y) === -1) {
+          if (npcWentArr.indexOf(y) === -1) {
             // the npc hasn't gone yet this pass
-            npcPassArr[npcPassArr.length] = y;
+            npcWentArr[npcWentArr.length] = y;
             if (ordArr[x]) ordArr[x] += ",";
             ordArr[x] += formattedEntry;
           } else {
             // the npc already went this pass
-            if (nextNPCPassArr.indexOf(y) === -1) {
-              nextNPCPassArr[nextNPCPassArr.length] = y;
-              nextPassArr[nextPassArr.length] = formattedEntry;
+            if (nextNPCWentArr.indexOf(y) === -1) {
+              nextNPCWentArr[nextNPCWentArr.length] = y;
+              nextOrdArr[nextOrdArr.length] = formattedEntry;
             } else {
-              if (laterNPCPassArr.indexOf(y) === -1) {
+              if (laterNPCWentArr.indexOf(y) === -1) {
                 // the npc is also already in the next pass
-                laterNPCPassArr[laterNPCPassArr.length] = y;
-                laterPassArr[laterPassArr.length] = formattedEntry;
+                laterNPCWentArr[laterNPCWentArr.length] = y;
+                laterOrdArr[laterOrdArr.length] = formattedEntry;
               } else {
-                if (furtherNPCPassArr.indexOf(y) === -1) {
+                if (furtherNPCWentArr.indexOf(y) === -1) {
                   // i can do this all day (not really)
-                  furtherNPCPassArr[furtherNPCPassArr.length] = y;
-                  furtherPassArr[furtherPassArr.length] = formattedEntry;
+                  furtherNPCWentArr[furtherNPCWentArr.length] = y;
+                  furtherOrdArr[furtherOrdArr.length] = formattedEntry;
                 } else {
-                  // 5th phase
-                  farNPCPassArr[farNPCPassArr.length] = y;
-                  farPassArr[farPassArr.length] = formattedEntry;
+                  // 5th pass
+                  farNPCWentArr[farNPCWentArr.length] = y;
+                  farOrdArr[farOrdArr.length] = formattedEntry;
                 }
               }
             }
@@ -1211,70 +1218,70 @@ async function handleInitCommand(msg, cmd, args, user) {
     }
     if (cmd !== 'init2' && cmd !== 'init2flip') {
       // has everyone gone yet this pass?
-      if (playerPassArr.length == gmPlayersArr.length
-        && npcPassArr.length == gmNPCArr.length
+      if (playerWentArr.length == gmPlayersArr.length
+        && npcWentArr.length == gmNPCArr.length
         || (x <= 1))
       {
         // sort first pass if it's time to
-        if (playerPassArr.length == gmPlayersArr.length
-          && npcPassArr.length == gmNPCArr.length)
+        if (playerWentArr.length == gmPlayersArr.length
+          && npcWentArr.length == gmNPCArr.length)
         {
-          //ordArr.sort(sortInitPass);
+          //ordArr.sort(sortInitPass); // that made a mess...?
         }
-        if (nextPassArr.length) {
-          nextPassArr.sort(sortInitPass);
-          for (var z = 0; z < nextPassArr.length; z++) {
-            ordArr.splice(x, 0, nextPassArr[z]);
+        if (nextOrdArr.length) {
+          nextOrdArr.sort(sortInitPass);
+          for (var z = 0; z < nextOrdArr.length; z++) {
+            ordArr.splice(x, 0, nextOrdArr[z]);
           }
         }
-        nextPassArr = laterPassArr;
-        laterPassArr = furtherPassArr
-        furtherPassArr = farPassArr;
-        farPassArr = [];
-        npcPassArr = nextNPCPassArr;
-        nextNPCPassArr = laterNPCPassArr;
-        laterNPCPassArr = furtherNPCPassArr;
-        furtherNPCPassArr = farNPCPassArr;
-        farNPCPassArr = [];
-        playerPassArr = nextPlayerPassArr;
-        nextPlayerPassArr = laterPlayerPassArr;
-        laterPlayerPassArr = furtherPlayerPassArr;
-        furtherPlayerPassArr = farPlayerPassArr;
-        farPlayerPassArr = [];
+        nextOrdArr = laterOrdArr;
+        laterOrdArr = furtherOrdArr
+        furtherOrdArr = farOrdArr;
+        farOrdArr = [];
+        npcWentArr = nextNPCWentArr;
+        nextNPCWentArr = laterNPCWentArr;
+        laterNPCWentArr = furtherNPCWentArr;
+        furtherNPCWentArr = farNPCWentArr;
+        farNPCWentArr = [];
+        playerWentArr = nextPlayerWentArr;
+        nextPlayerWentArr = laterPlayerWentArr;
+        laterPlayerWentArr = furtherPlayerWentArr;
+        furtherPlayerWentArr = farPlayerWentArr;
+        farPlayerWentArr = [];
         if (x <= 1) {
           // second pass
-          if (nextPassArr.length) {
-            nextPassArr.sort(sortInitPass);
-            for (var z = 0; z < nextPassArr.length; z++) {
-              ordArr.splice(x, 0, nextPassArr[z]);
+          if (nextOrdArr.length) {
+            nextOrdArr.sort(sortInitPass);
+            for (var z = 0; z < nextOrdArr.length; z++) {
+              ordArr.splice(x, 0, nextOrdArr[z]);
             }
           }
           // third pass
-          if (laterPassArr.length) {
-            laterPassArr.sort(sortInitPass);
-            for (var z = 0; z < laterPassArr.length; z++) {
-              ordArr.splice(x, 0, laterPassArr[z]);
+          if (laterOrdArr.length) {
+            laterOrdArr.sort(sortInitPass);
+            for (var z = 0; z < laterOrdArr.length; z++) {
+              ordArr.splice(x, 0, laterOrdArr[z]);
             }
           }
           // fourth pass
-          if (furtherPassArr.length) {
-            furtherPassArr.sort(sortInitPass);
-            for (var z = 0; z < furtherPassArr.length; z++) {
-              ordArr.splice(x, 0, furtherPassArr[z]);
+          if (furtherOrdArr.length) {
+            furtherOrdArr.sort(sortInitPass);
+            for (var z = 0; z < furtherOrdArr.length; z++) {
+              ordArr.splice(x, 0, furtherOrdArr[z]);
             }
           }
           //. fifth pass
-          if (farPassArr.length) {
-            farPassArr.sort(sortInitPass);
-            for (var z = 0; z < farPassArr.length; z++) {
-              ordArr.splice(x, 0, farPassArr[z]);
+          if (farOrdArr.length) {
+            farOrdArr.sort(sortInitPass);
+            for (var z = 0; z < farOrdArr.length; z++) {
+              ordArr.splice(x, 0, farOrdArr[z]);
             }
           }
         }
       }
     }
   }
-  // re-sort each phase for Reaction
+  // re-sort each phase for Reaction and split lines
   for (var x = 0; x < ordArr.length; x++) {
     var tmpArr = ordArr[x].split(",");
     if (tmpArr.length > 1) {
@@ -1287,7 +1294,7 @@ async function handleInitCommand(msg, cmd, args, user) {
     case 'init2':
     case 'init3':
       // add to output from high to low
-      for (var x = 40; x > 0; x--) {
+      for (var x = ordArr.length-1; x > 0; x--) {
         if (ordArr[x].length) { output += `${ordArr[x]}\n`; }
       }
     break;
@@ -1295,7 +1302,7 @@ async function handleInitCommand(msg, cmd, args, user) {
     case 'init2flip':
     case 'init3flip':
       // add to output from low to high
-      for (var x = 0; x < 40; x++) {
+      for (var x = 0; x < ordArr.length; x++) { // 40 per pass times 5 passes
         if (ordArr[x].length) { output += `${ordArr[x]}\n`; }
       }
     break;
