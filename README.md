@@ -94,7 +94,9 @@ Remove and re-add your "reaction" to keep re-rolling that roll.
 
 ### :game_die: **Other initiative commands** :game_die:
 
-  ```Shortcut  Full command    [Required] options
+  ```
+  Shortcut  Full command    [Required] options
+  --------------------------------------------
             !setgm          @someone
   !si       !setinit        [X Y]
   !setp     !setplayers     [@player1 @player2 etc]

@@ -839,6 +839,7 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '\n'
     + ':nerd: **Other initiative commands** :nerd:\n```'
       + 'Shortcut  Full command    [Required] options\n'
+      + '--------------------------------------------\n'
       + '          !setgm          @someone\n'
       + '!si       !setinit        [X Y]\n'
       + '!setp     !setplayers     [@player1 @player2 etc]\n'
