@@ -113,7 +113,9 @@ Remove and re-add your "reaction" to keep re-rolling that roll.
 
 ### :dragon_face: **Adding NPC's** :dragon_face:
 
-  **!setnpcinits** and **!addnpcinits** syntax: **!(command) X Y label** -- labels cannot have spaces or commas --e.g. **!addnpcinits 1 5 thugs** (means the thugs have 1d6+5 initiative). Add as many NPCs as you want, separated by spaces.
+  **!setnpcinits** and **!addnpcinits** syntax: **!(command) X Y label** -- labels cannot have spaces or commas. Add as many NPCs as you want, separated by spaces.
+
+  e.g. **!addnpcinits 1 5 thugs** (means the thugs have 1d6+5 initiative).
 
   If you have multiple NPC's with the same label, **!removeNPCInits** also accepts the format !removenpcinits X Y label which requires a full match. But, having multiple NPC's with the same label is confusing anyway, so maybe just don't do that.
 

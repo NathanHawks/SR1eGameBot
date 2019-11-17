@@ -130,16 +130,16 @@ function listAllFiles() {
     if (err) return console.log('The API returned an error: ' + err);
     const files = res.data.files;
     if (files.length) {
-      console.log('DX: File list ----------------- IDs --------------------- parents');
+      console.log('----- File list -------------------- IDs ------------------------------ parents ------------');
       files.map((file) => {
-        console.log(`${file.name} (${file.id}) [${file.parents}]`);
+        console.log(`${file.name.padEnd(20)} (${file.id}) [${file.parents}]`);
       });
     } else {
       console.log('No files found.');
     }
   });
 }
-function deleteAllFiles() {
+/* function deleteAllFiles() {
   var auth = global.auth;
   const drive = google.drive({version: 'v3', auth});
   drive.files.list({
@@ -157,7 +157,7 @@ function deleteAllFiles() {
       console.log('No files found.');
     }
   });
-}
+} */
 //==================================================================
 // @ =========== INITIATIVE LIBRARY FUNCS ============
 // ensure folder/subfolder chain: (root)/(UserData)/ServerID/ChannelID/UserID
@@ -1033,7 +1033,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       + ":thinking: :bulb: See **!help 2** or ask your GM how to get set up!";
     }
   } else {
-    output += " initiative (w/ Reaction in parenthesis):\n===============================\n";
+    output += "\n*[Roll]* Player or NPC (Reaction)\n===============================\n";
   }
   // if we have a valid setup, roll init
   if (!initWillFail) {
@@ -1620,6 +1620,41 @@ async function handleClearPlayersCommand(msg, cmd, args, user) {
   console.log('🎲🎲');
 }
 async function handleSetInitCommand(msg, cmd, args, user) {
+  if (args) {
+    // deal with the inevitable player who can't grok pressing a spacebar between fields
+    if (args[0] && args.length == 1 && args[0].toLowerCase().indexOf('d6+') !== -1) {
+      args[0] = args[0].toLowerCase();
+      var tmpArr = args[0].split('d6+');
+      args = tmpArr;
+    }
+    // allow the d6 and the +
+    if (args[0] && args[0].length) {
+      var suspect = args[0].substring(args[0].length-2, args[0].length).toLowerCase();
+      if (suspect == 'd6' || suspect == 'D6') {
+        args[0] = args[0].substring(0, args[0].length-2);
+      }
+    }
+    if (args && args[1] && args[1].length) {
+      var suspect = args[1].substring(0, 1);
+      if (suspect == '+') {
+        args[1] = args[1].substring(1, args[1].length);
+      }
+    }
+    var errOutput = '';
+    if (args.length !== 2) {
+      errOutput += 'ERROR: Wrong number of options; it\'s two numbers separated by a space.\n For example: **!setinit 1 5** for **1**d6 +**5**';
+    }
+    if (Number(args[0]) != args[0] || Number(args[1]) != args[1]) {
+      errOutput += 'ERROR: Wrong type of options; it should be two numbers separated by a space.\n For example: **!setinit 1 5** for **1**d6 +**5**';
+    }
+  } else { errOutput += 'ERROR: Options required; two numbers separated by a space.\n For example: **!setinit 1 5** for **1**d6 +**5**'}
+
+  // abort if any errors
+  if (errOutput !== '') {
+    msg.reply(errOutput);
+    return;
+  }
+  // and on to the show
   msg.react('⏳');
   // serverID.channelID.userID.playerInit STRING
   var content = args.join(" ");
@@ -1631,7 +1666,7 @@ async function handleSetInitCommand(msg, cmd, args, user) {
   await setContentsByFilenameAndParent(msg, 'playerInit', userFolderID, content);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   // reformat for output (better user feedback)
-  var tmpArr = content.split(" ");
+  tmpArr = content.split(" ");
   var output = `${tmpArr[0]}d6 +${tmpArr[1]}`;
   // remove reaction
   removeHourglass(msg);
@@ -1640,6 +1675,61 @@ async function handleSetInitCommand(msg, cmd, args, user) {
   console.log('🎲🎲');
 }
 async function handleSetNPCInitCommand(msg, cmd, args, user) {
+  // deal with the inevitable player who can't grok pressing a spacebar between fields
+  if (args && args.length && args.length%2 == 0) {
+    var fixArgs = [];
+    var y = 0;
+    for (var x = 0; x < args.length; x+=2) {
+      if (args[x].toLowerCase().indexOf('d6+') !== -1) {
+        args[x] = args[x].toLowerCase();
+        var tmpArr = args[x].split('d6+');
+        tmpArr[2] = args[x+1]
+        fixArgs[y] = tmpArr[0];
+        fixArgs[y+1] = tmpArr[1];
+        fixArgs[y+2] = tmpArr[2];
+        y += 3;
+      }
+    }
+    args = fixArgs;
+  }
+  // clean out any "d6"'s or "D6"'s or "+"'s that may have sneaked in
+  for (var x = 0; x < args.length; x+=3) {
+    if (args[x].length) {
+      var suspect = args[x].substring(args[x].length-2, args[x].length).toLowerCase();
+      if (suspect == 'd6' || suspect == 'D6') {
+        args[x] = args[x].substring(0, args[x].length-2);
+      }
+    }
+    if (args[x+1].length) {
+      var suspect = args[x+1].substring(0, 1);
+      if (suspect == '+') {
+        args[x+1] = args[x+1].substring(1, args[x+1].length);
+      }
+    }
+  }
+  // some input validation
+  var errOutput = '';
+  if (args.length%3 !== 0) {
+    errOutput += 'ERROR: Wrong number of options; maybe you accidentally put spaces in a label?\n';
+  }
+  for (var x = 0; x < args.length; x++) {
+    if (args[x].indexOf(',') !== -1) {
+      errOutput += 'ERROR: No commas allowed anywhere in this command.\n';
+    }
+  }
+  var gotIt_Stop = false;
+  for (var x = 0; x < args.length; x+=3) {
+    if (gotIt_Stop == false && (Number(args[x]) != args[x] || Number(args[x+1]) != args[x+1])) {
+      errOutput += 'ERROR: see ":dragon_face:Adding NPC\'s:dragon_face:" in **!inithelp** for correct use of this command.\n';
+      gotIt_Stop = true;
+    }
+  }
+  // abort if any errors
+  if (errOutput !== '') {
+    msg.reply(errOutput);
+    return;
+  }
+  // and on to the show
   msg.react('⏳');
   await ensureFolderTriplet(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -1661,6 +1751,60 @@ async function handleSetNPCInitCommand(msg, cmd, args, user) {
   console.log('🎲🎲');
 }
 async function handleAddNPCInitCommand(msg, cmd, args, user) {
+  // deal with the inevitable player who can't grok pressing a spacebar between fields
+  if (args && args.length && args.length%2 == 0) {
+    var fixArgs = [];
+    var y = 0;
+    for (var x = 0; x < args.length; x+=2) {
+      if (args[x].toLowerCase().indexOf('d6+') !== -1) {
+        args[x] = args[x].toLowerCase();
+        var tmpArr = args[x].split('d6+');
+        tmpArr[2] = args[x+1]
+        fixArgs[y] = tmpArr[0];
+        fixArgs[y+1] = tmpArr[1];
+        fixArgs[y+2] = tmpArr[2];
+        y += 3;
+      }
+    }
+    args = fixArgs;
+  }
+  // clean out any "d6"'s or "D6"'s or "+"'s that may have sneaked in
+  for (var x = 0; x < args.length; x+=3) {
+    if (args[x] && args[x].length) {
+      var suspect = args[x].substring(args[x].length-2, args[x].length).toLowerCase();
+      if (suspect == 'd6' || suspect == 'D6') {
+        args[x] = args[x].substring(0, args[x].length-2);
+      }
+    }
+    if (args[x+1] && args[x+1].length) {
+      var suspect = args[x+1].substring(0, 1);
+      if (suspect == '+') {
+        args[x+1] = args[x+1].substring(1, args[x+1].length);
+      }
+    }
+  }
+  // some input validation
+  var errOutput = '';
+  if (args.length%3 !== 0) {
+    errOutput += 'ERROR: Wrong number of options; maybe you accidentally put spaces in a label?\n';
+  }
+  for (var x = 0; x < args.length; x++) {
+    if (args[x].indexOf(',') !== -1) {
+      errOutput += 'ERROR: No commas allowed anywhere in this command.\n';
+    }
+  }
+  var gotIt_Stop = false;
+  for (var x = 0; x < args.length; x+=3) {
+    if (gotIt_Stop == false && (Number(args[x]) != args[x] || Number(args[x+1]) != args[x+1])) {
+      errOutput += 'ERROR: see ":dragon_face:Adding NPC\'s:dragon_face:" in **!inithelp** for correct use of this command.\n';
+      gotIt_Stop = true;
+    }
+  }
+  // abort if any errors
+  if (errOutput !== '') {
+    msg.reply(errOutput);
+    return;
+  }
   msg.react('⏳');
   await ensureFolderTriplet(msg);
   var content = args.join(" ");
@@ -1821,7 +1965,7 @@ async function handleListNPCInitCommand(msg, cmd, args, user) {
       var output = " your NPC's inits in this channel are:";
       for (var x = 0; x < contentArray.length; x++) {
         var [dice,mod,label] = contentArray[x].split(" ");
-        output = `${output}\n:arrow_right: ${dice}d6+${mod} :label: ${label}`
+        output += `\n:arrow_right: ${dice}d6 +${mod} :label: ${label}`
       }
     } else {
       // file exists but was blank
@@ -1883,9 +2027,9 @@ function handleMessage(msg, user=msg.author) {
           case 'list':
             if (user.id == '360086569778020352') listAllFiles();
           break;
-          case 'delall':
+/*           case 'delall':
             if (user.id == '360086569778020352') deleteAllFiles();
-          break;
+          break; */
           case 'open':
             if (user.id == '360086569778020352') openFile(args);
           break;
