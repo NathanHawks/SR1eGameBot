@@ -460,6 +460,69 @@ function removeHourglass(msg) {
     if (reaction.emoji.name == '⏳') { reaction.remove(); }
   });
 }
+function validateNPCInput(msg, args) {
+  // allow human-readable format without space
+  if (args && args.length && args.length%2 == 0) {
+    var gotCha = false;
+    var fixArgs = [];
+    var y = 0;
+    for (var x = 0; x < args.length; x+=2) {
+      if (args[x].toLowerCase().indexOf('d6+') !== -1) {
+        gotCha = true;
+        args[x] = args[x].toLowerCase();
+        var tmpArr = args[x].split('d6+');
+        tmpArr[2] = args[x+1]
+        fixArgs[y] = tmpArr[0];
+        fixArgs[y+1] = tmpArr[1];
+        fixArgs[y+2] = tmpArr[2];
+        y += 3;
+      }
+    }
+    if (gotCha) args = fixArgs;
+  }
+  // allow human-readable format with space
+  for (var x = 0; x < args.length; x+=3) {
+    if (args[x] && args[x].length) {
+      var suspect = args[x].substring(args[x].length-2, args[x].length).toLowerCase();
+      if (suspect == 'd6' || suspect == 'D6') {
+        args[x] = args[x].substring(0, args[x].length-2);
+      }
+    }
+    if (args[x+1] && args[x+1].length) {
+      var suspect = args[x+1].substring(0, 1);
+      if (suspect == '+') {
+        args[x+1] = args[x+1].substring(1, args[x+1].length);
+      }
+    }
+  }
+  // some input validation
+  var errOutput = '';
+  if (args.length%3 !== 0) {
+    errOutput += ':no_entry_sign: Wrong number of options; '
+      + 'maybe you put spaces in a label?\n';
+  }
+  for (var x = 0; x < args.length; x++) {
+    if (args[x].indexOf(',') !== -1) {
+      errOutput += ':no_entry_sign: No commas allowed anywhere in this command.\n';
+    }
+  }
+  var gotIt_Stop = false;
+  for (var x = 0; x < args.length; x+=3) {
+    if (gotIt_Stop == false
+      && (Number(args[x]) != args[x] || Number(args[x+1]) != args[x+1]))
+    {
+      errOutput += ':thinking: see ":dragon_face: Adding NPC\'s :dragon_face:" '
+        + 'in **!inithelp** for help.\n';
+      gotIt_Stop = true;
+    }
+  }
+  // abort if any errors
+  if (errOutput !== '') {
+    msg.reply(`there was a problem.\n${errOutput}`);
+    return false;
+  } else return true;
+}
+
 // @ ================= INIT INITIATIVE ================
 // Init the Initiative system. See also callbackInitInitiative, immediately below
 function initInitiative(auth) {
@@ -736,7 +799,7 @@ function handleRollCommand(msg, cmd, args, user) {
   var opponentTNInt = retarr[2];
   var isOpposedTestBool = retarr[3];
   if (isOpposedTestBool === true && opponentTNInt === -1) {
-    msg.reply("ERROR: you ordered an opposed test, without specifying an "
+    msg.reply(":no_entry_sign: you ordered an opposed test, without specifying an "
     + "opponent TN (the **otn** option).\nExample: **!6! tn4 vs5! otn4**");
     return;
   }
@@ -868,8 +931,8 @@ function handleHelpCommand(msg, cmd, args, user) {
       + '```'
     + '\n'
     + ':dragon_face: **Adding NPC\'s** :dragon_face:\n'
-    + '**!setnpcinits** and **!addnpcinits** syntax: !(command) **X Y label** -- labels cannot have spaces or commas --'
-      + 'e.g. **!addnpcinits 1 5 thugs** (means the thugs have 1d6+5 initiative). Add as many NPCs as you want, separated by spaces.\n'
+    + '**!setnpcinits** and **!addnpcinits** syntax: !(command) **X Y label**\n -- labels cannot have spaces or commas\n --'
+      + ' e.g. **!addnpcinits 1 5 thugs** (means the thugs have 1d6+5 initiative).\n -- Add as many NPCs as you want, separated by spaces.\n'
     + '\n'
     + 'If you have multiple NPC\'s with the same label, !removeNPCInits also accepts '
       + 'the format **!removenpcinits X Y label** which requires a full match. But, '
@@ -1666,16 +1729,24 @@ async function handleSetInitCommand(msg, cmd, args, user) {
     }
     var errOutput = '';
     if (args.length !== 2) {
-      errOutput += 'ERROR: Wrong number of options; it\'s two numbers separated by a space.\n For example: **!setinit 1 5** for **1**d6 +**5**';
+      errOutput += ':no_entry_sign: Wrong number of options; \n'
+        + 'it\'s two numbers separated by a space.\n'
+        + 'For example: **!setinit 1 5** for **1**d6 +**5**';
     }
-    if (Number(args[0]) != args[0] || Number(args[1]) != args[1]) {
-      errOutput += 'ERROR: Wrong type of options; it should be two numbers separated by a space.\n For example: **!setinit 1 5** for **1**d6 +**5**';
+    if (Number(args[0]) != args[0] || (args[1] && Number(args[1]) != args[1])) {
+      errOutput += ':no_entry_sign: Wrong type of options; '
+        + 'it should be two numbers separated by a space.\n'
+        + 'For example: **!setinit 1 5** for **1**d6 +**5**';
     }
-  } else { errOutput += 'ERROR: Options required; two numbers separated by a space.\n For example: **!setinit 1 5** for **1**d6 +**5**'}
+  } else {
+    errOutput += ':no_entry_sign: Options required; \n'
+      + 'two numbers separated by a space.\n'
+      + 'For example: **!setinit 1 5** for **1**d6 +**5**'
+    }
 
   // abort if any errors
   if (errOutput !== '') {
-    msg.reply(errOutput);
+    msg.reply(`There was a problem.\n${errOutput}`);
     return;
   }
   // and on to the show
@@ -1699,60 +1770,7 @@ async function handleSetInitCommand(msg, cmd, args, user) {
   console.log('🎲🎲');
 }
 async function handleSetNPCInitCommand(msg, cmd, args, user) {
-  // allow human-readable format without space
-  if (args && args.length && args.length%2 == 0) {
-    var gotCha = false;
-    var fixArgs = [];
-    var y = 0;
-    for (var x = 0; x < args.length; x+=2) {
-      if (args[x].toLowerCase().indexOf('d6+') !== -1) {
-        gotCha = true;
-        args[x] = args[x].toLowerCase();
-        var tmpArr = args[x].split('d6+');
-        tmpArr[2] = args[x+1]
-        fixArgs[y] = tmpArr[0];
-        fixArgs[y+1] = tmpArr[1];
-        fixArgs[y+2] = tmpArr[2];
-        y += 3;
-      }
-    }
-    if (gotCha) args = fixArgs;
-  }
-  // allow human-readable format with space
-  for (var x = 0; x < args.length; x+=3) {
-    if (args[x].length) {
-      var suspect = args[x].substring(args[x].length-2, args[x].length).toLowerCase();
-      if (suspect == 'd6' || suspect == 'D6') {
-        args[x] = args[x].substring(0, args[x].length-2);
-      }
-    }
-    if (args[x+1].length) {
-      var suspect = args[x+1].substring(0, 1);
-      if (suspect == '+') {
-        args[x+1] = args[x+1].substring(1, args[x+1].length);
-      }
-    }
-  }
-  // some input validation
-  var errOutput = '';
-  if (args.length%3 !== 0) {
-    errOutput += 'ERROR: Wrong number of options; maybe you accidentally put spaces in a label?\n';
-  }
-  for (var x = 0; x < args.length; x++) {
-    if (args[x].indexOf(',') !== -1) {
-      errOutput += 'ERROR: No commas allowed anywhere in this command.\n';
-    }
-  }
-  var gotIt_Stop = false;
-  for (var x = 0; x < args.length; x+=3) {
-    if (gotIt_Stop == false && (Number(args[x]) != args[x] || Number(args[x+1]) != args[x+1])) {
-      errOutput += 'ERROR: see ":dragon_face:Adding NPC\'s:dragon_face:" in **!inithelp** for correct use of this command.\n';
-      gotIt_Stop = true;
-    }
-  }
-  // abort if any errors
-  if (errOutput !== '') {
-    msg.reply(errOutput);
+  if (!validateNPCInput(msg, args)) {
     return;
   }
   // and on to the show
@@ -1772,65 +1790,12 @@ async function handleSetNPCInitCommand(msg, cmd, args, user) {
   // remove reaction
   removeHourglass(msg);
   msg.reply(` your NPC's for this channel were reset, `
-  + `and you added ${contentArray.length} NPC's`);
+  + `and you added ${contentArray.length} NPC's.`);
   // listAllFiles();
   console.log('🎲🎲');
 }
 async function handleAddNPCInitCommand(msg, cmd, args, user) {
-  // allow human-readable format without space
-  if (args && args.length && args.length%2 == 0) {
-    var gotCha = false;
-    var fixArgs = [];
-    var y = 0;
-    for (var x = 0; x < args.length; x+=2) {
-      if (args[x].toLowerCase().indexOf('d6+') !== -1) {
-        gotCha = true;
-        args[x] = args[x].toLowerCase();
-        var tmpArr = args[x].split('d6+');
-        tmpArr[2] = args[x+1]
-        fixArgs[y] = tmpArr[0];
-        fixArgs[y+1] = tmpArr[1];
-        fixArgs[y+2] = tmpArr[2];
-        y += 3;
-      }
-    }
-    if (gotCha) args = fixArgs;
-  }
-  // allow human-readable format with space
-  for (var x = 0; x < args.length; x+=3) {
-    if (args[x] && args[x].length) {
-      var suspect = args[x].substring(args[x].length-2, args[x].length).toLowerCase();
-      if (suspect == 'd6' || suspect == 'D6') {
-        args[x] = args[x].substring(0, args[x].length-2);
-      }
-    }
-    if (args[x+1] && args[x+1].length) {
-      var suspect = args[x+1].substring(0, 1);
-      if (suspect == '+') {
-        args[x+1] = args[x+1].substring(1, args[x+1].length);
-      }
-    }
-  }
-  // some input validation
-  var errOutput = '';
-  if (args.length%3 !== 0) {
-    errOutput += 'ERROR: Wrong number of options; maybe you accidentally put spaces in a label?\n';
-  }
-  for (var x = 0; x < args.length; x++) {
-    if (args[x].indexOf(',') !== -1) {
-      errOutput += 'ERROR: No commas allowed anywhere in this command.\n';
-    }
-  }
-  var gotIt_Stop = false;
-  for (var x = 0; x < args.length; x+=3) {
-    if (gotIt_Stop == false && (Number(args[x]) != args[x] || Number(args[x+1]) != args[x+1])) {
-      errOutput += 'ERROR: See ":dragon_face:Adding NPC\'s:dragon_face:" in **!inithelp** for help.\n';
-      gotIt_Stop = true;
-    }
-  }
-  // abort if any errors
-  if (errOutput !== '') {
-    msg.reply(errOutput);
+  if (!validateNPCInput(msg, args)) {
     return;
   }
   msg.react('⏳');
