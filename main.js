@@ -519,10 +519,15 @@ async function callbackInitInitiative(err, res) {
 
 // ====== Original GameBot code ====================================
 // @ ============= DICEBOT LIBRARY FUNCS ==============
+// @ function d6(explode)
 function d6(explode=false) {
     var roll = Math.floor(Math.random() * 6 + 1);
     if (roll == 6 && explode == true) roll += d6(true);
     return roll;
+}
+function d10() {
+  var roll = Math.floor(Math.random() * 10 + 1);
+  return roll;
 }
 function firstTwoLC(ofWhat) {
   var r = ofWhat.substring(0,2);
@@ -658,6 +663,14 @@ function rollDice(numDiceInt, isTestBool, tnInt) {
   // Convenience, or hiding terrible RNG? you decide! (it's both)
   rollsIntArr.sort(sortNumberDesc);
   return [successesInt,rollsIntArr];
+}
+function rollD10s(numDiceInt) {
+  var rollsIntArr = [];
+  for (x = 0; x < numDiceInt; x++) {
+    rollsIntArr[x] = d10();
+  }
+  rollsIntArr.sort(sortNumberDesc);
+  return rollsIntArr;
 }
 // ============= main script =======================================
 // @ ============== DISCORD SETUP SCRIPT ==============
@@ -1033,7 +1046,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       + ":thinking: :bulb: See **!help 2** or ask your GM how to get set up!";
     }
   } else {
-    output += "\n*[Roll]* Player or NPC (Reaction)\n===============================\n";
+    output += "\n*[Roll]* Player or NPC (Total Mod)\n===============================\n";
   }
   // if we have a valid setup, roll init
   if (!initWillFail) {
@@ -1054,12 +1067,19 @@ async function handleInitCommand(msg, cmd, args, user) {
         passTH = [10, 20, 30, 40];
         passSub = [10, 20, 30, 40];
       break;
+      case 'initcp':
+        passTH = [1000, 2000, 3000, 4000];
+        passSub = [0, 0, 0, 0];
+      break;
     }
     // roll & calculate for players
     for (var x = 0; x < gmPlayersArr.length; x++) {
       var total = 0;
       var init = playerInitContent[x].split(" ");
-      var [junk,rolls] = rollDice(init[0], false, -1)
+      if (cmd !== 'initcp') {
+        var [junk,rolls] = rollDice(init[0], false, -1)
+      }
+      else var rolls = rollD10s(init[0]);
       for (var y = 0; y < rolls.length; y++) {
         rolls[y] = Number(rolls[y]);
         total += rolls[y];
@@ -1088,7 +1108,10 @@ async function handleInitCommand(msg, cmd, args, user) {
       if (gmNPCArr[x].length) {
         var total = 0;
         var init = gmNPCArr[x].split(" ");
-        var [junk,rolls] = rollDice(init[0], false, -1)
+        if (cmd !== 'initcp') {
+          var [junk,rolls] = rollDice(init[0], false, -1)
+        }
+        else rolls = rollD10s(init[0]);
         for (var y = 0; y < rolls.length; y++) {
           rolls[y] = Number(rolls[y]);
           total += rolls[y];
@@ -1141,7 +1164,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       // if the player is supposed to go on this phase (init passes aside)
       if (playerPhases[y].indexOf(x) !== -1) {
         var formattedEntry = `*[${x}]* <@${gmPlayersArr[y]}> (${playerInitContent[y].split(" ")[1]})`;
-        if (cmd !== 'init2' && cmd !== 'init2flip') {
+        if (cmd !== 'init2' && cmd !== 'init2flip' && cmd !== 'initcp') {
           // it's not 2nd edition: enforce the init passes rule
           if (playerWentArr.indexOf(y) === -1) {
             // the player hasn't gone yet this pass
@@ -1185,7 +1208,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       // if the npc is supposed to go this phase (init passes aside)
       if (npcPhases[y].indexOf(x) !== -1) {
         var formattedEntry = `*[${x}]* ${gmNPCArr[y].split(" ")[2]} (${gmNPCArr[y].split(" ")[1]})`;
-        if (cmd !== 'init2' && cmd !== 'init2flip') {
+        if (cmd !== 'init2' && cmd !== 'init2flip' && cmd !== 'initcp') {
           // enforce the init passes rule
           if (npcWentArr.indexOf(y) === -1) {
             // the npc hasn't gone yet this pass
@@ -1222,7 +1245,7 @@ async function handleInitCommand(msg, cmd, args, user) {
         }
       }
     }
-    if (cmd !== 'init2' && cmd !== 'init2flip') {
+    if (cmd !== 'init2' && cmd !== 'init2flip' && cmd !== 'initcp') {
       // has everyone gone yet this pass?
       if (playerWentArr.length == gmPlayersArr.length
         && npcWentArr.length == gmNPCArr.length
@@ -1299,6 +1322,7 @@ async function handleInitCommand(msg, cmd, args, user) {
     case 'init':
     case 'init2':
     case 'init3':
+    case 'initcp':
       // add to output from high to low
       for (var x = ordArr.length-1; x > 0; x--) {
         if (ordArr[x].length) { output += `${ordArr[x]}\n`; }
@@ -1675,12 +1699,14 @@ async function handleSetInitCommand(msg, cmd, args, user) {
   console.log('🎲🎲');
 }
 async function handleSetNPCInitCommand(msg, cmd, args, user) {
-  // deal with the inevitable player who can't grok pressing a spacebar between fields
+  // allow human-readable format without space
   if (args && args.length && args.length%2 == 0) {
+    var gotCha = false;
     var fixArgs = [];
     var y = 0;
     for (var x = 0; x < args.length; x+=2) {
       if (args[x].toLowerCase().indexOf('d6+') !== -1) {
+        gotCha = true;
         args[x] = args[x].toLowerCase();
         var tmpArr = args[x].split('d6+');
         tmpArr[2] = args[x+1]
@@ -1690,9 +1716,9 @@ async function handleSetNPCInitCommand(msg, cmd, args, user) {
         y += 3;
       }
     }
-    args = fixArgs;
+    if (gotCha) args = fixArgs;
   }
-  // clean out any "d6"'s or "D6"'s or "+"'s that may have sneaked in
+  // allow human-readable format with space
   for (var x = 0; x < args.length; x+=3) {
     if (args[x].length) {
       var suspect = args[x].substring(args[x].length-2, args[x].length).toLowerCase();
@@ -1751,12 +1777,14 @@ async function handleSetNPCInitCommand(msg, cmd, args, user) {
   console.log('🎲🎲');
 }
 async function handleAddNPCInitCommand(msg, cmd, args, user) {
-  // deal with the inevitable player who can't grok pressing a spacebar between fields
+  // allow human-readable format without space
   if (args && args.length && args.length%2 == 0) {
+    var gotCha = false;
     var fixArgs = [];
     var y = 0;
     for (var x = 0; x < args.length; x+=2) {
       if (args[x].toLowerCase().indexOf('d6+') !== -1) {
+        gotCha = true;
         args[x] = args[x].toLowerCase();
         var tmpArr = args[x].split('d6+');
         tmpArr[2] = args[x+1]
@@ -1766,9 +1794,9 @@ async function handleAddNPCInitCommand(msg, cmd, args, user) {
         y += 3;
       }
     }
-    args = fixArgs;
+    if (gotCha) args = fixArgs;
   }
-  // clean out any "d6"'s or "D6"'s or "+"'s that may have sneaked in
+  // allow human-readable format with space
   for (var x = 0; x < args.length; x+=3) {
     if (args[x] && args[x].length) {
       var suspect = args[x].substring(args[x].length-2, args[x].length).toLowerCase();
@@ -1796,7 +1824,7 @@ async function handleAddNPCInitCommand(msg, cmd, args, user) {
   var gotIt_Stop = false;
   for (var x = 0; x < args.length; x+=3) {
     if (gotIt_Stop == false && (Number(args[x]) != args[x] || Number(args[x+1]) != args[x+1])) {
-      errOutput += 'ERROR: see ":dragon_face:Adding NPC\'s:dragon_face:" in **!inithelp** for correct use of this command.\n';
+      errOutput += 'ERROR: See ":dragon_face:Adding NPC\'s:dragon_face:" in **!inithelp** for help.\n';
       gotIt_Stop = true;
     }
   }
@@ -2039,6 +2067,7 @@ function handleMessage(msg, user=msg.author) {
           case 'initflip':
           case 'init2flip':
           case 'init3flip':
+          case 'initcp':
             handleInitCommand(msg, cmd, args, user);
           break;
           case 'setgm':
