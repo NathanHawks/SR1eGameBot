@@ -54,7 +54,7 @@ function cacheHas(file, cacheAs) {
     // valid matches: id match; or parent & discordID (filename) match together
     if (obj.id == file.id) found = true;
     if (obj.discordID == file.name && file.parents && file.parents.length
-      && obj.parentID == file.parents[0]) found = true;
+      && obj.parentID.length && obj.parentID == file.parents[0]) found = true;
     if (found) return found;
   });
   return found;
@@ -67,7 +67,7 @@ function getCacheIndex(file, cacheAs, create=true) {
     // valid matches: id match; or parent & discordID (filename) match together
     if (obj.id == file.id) r = i;
     if (obj.discordID == file.name && file.parents && file.parents.length
-      && obj.parentID === file.parents[0]) r = i;
+      & obj.parentID.length && obj.parentID === file.parents[0]) r = i;
       // servers don't need a parent, just the filename
     if (cacheAs === 'server' && obj.discordID === file.name) r = i;
     if (r) return r;
@@ -205,6 +205,13 @@ function listAllFiles() {
       console.log('No files found.');
     }
   });
+}
+function deleteFile(args) {
+  if (args && args[0]) {
+    deleteFileById(args[0], (err, res) => {
+      console.log(args[0] + ' deleted.')
+    });
+  }
 }
 /* function deleteAllFiles() {
   var auth = global.auth;
@@ -1182,7 +1189,7 @@ async function handleInitCommand(msg, cmd, args, user) {
     }
     else if (initWillFail) {
       output += " -- can't roll initiative: players aren't ready.\n"
-      + ":thinking: :bulb: See **!help 2** or ask your GM how to get set up!";
+      + ":thinking: :bulb: See **!inithelp** or ask your GM how to get set up!";
     }
   } else {
     output += "\n*[Roll]* Player or NPC (Total Mod)\n===============================\n";
@@ -1482,7 +1489,7 @@ async function handleInitCommand(msg, cmd, args, user) {
   // report
   msg.reply(output);
   unlockDiskForChannel(msg.channel.id);
-  console.log('🎲🎲');
+  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleSetGMCommand(msg, cmd, args, user) {
@@ -1516,7 +1523,7 @@ async function handleSetGMCommand(msg, cmd, args, user) {
   if (targetID == msg.author.id) msg.reply(' you are now a GM in this channel.');
   else msg.reply(` your GM is now <@${targetID}> in this channel.`);
   // listAllFiles();
-  console.log('🎲🎲');
+  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleSetPlayersCommand(msg, cmd, args, user) {
   msg.react('⏳');
@@ -1537,7 +1544,7 @@ async function handleSetPlayersCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(` your group in this channel is now ${args.length} players.`);
   // listAllFiles();
-  console.log('🎲🎲');
+  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleAddPlayersCommand(msg, cmd, args, user) {
   msg.react('⏳');
@@ -1601,7 +1608,7 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
   } catch (e) {
     return console.error(e);
   }
-  console.log('🎲🎲');
+  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleListPlayersCommand(msg, cmd, args, user) {
   msg.react('⏳');
@@ -1664,7 +1671,7 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
     msg.reply(` your group for this channel is ${playersArr.length} players `
     + `strong: ${output}`);
   // listAllFiles();
-  console.log('🎲🎲');
+  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleRemovePlayersCommand(msg, cmd, args, user) {
   msg.react('⏳');
@@ -1745,7 +1752,7 @@ async function handleRemovePlayersCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(` you removed ${removedIndex.length} players. `
   + `You now have ${newContentArray.length} players in this channel.`)
-  console.log('🎲🎲');
+  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleClearPlayersCommand(msg, cmd, args, user) {
   msg.react('⏳');
@@ -1779,7 +1786,7 @@ async function handleClearPlayersCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(' your group for this channel was reset to 0 players.');
   // listAllFiles();
-  console.log('🎲🎲');
+  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleSetInitCommand(msg, cmd, args, user) {
   if (args) {
@@ -1842,7 +1849,7 @@ async function handleSetInitCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(` your initiative formula (in this channel) is now ${output}.`);
   // listAllFiles();
-  console.log('🎲🎲');
+  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleSetNPCInitCommand(msg, cmd, args, user) {
   args = modifyNPCInput(args);
@@ -1868,7 +1875,7 @@ async function handleSetNPCInitCommand(msg, cmd, args, user) {
   msg.reply(` your NPC's for this channel were reset, `
   + `and you added ${contentArray.length} NPC's.`);
   // listAllFiles();
-  console.log('🎲🎲');
+  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleAddNPCInitCommand(msg, cmd, args, user) {
   args = modifyNPCInput(args);
@@ -1915,7 +1922,7 @@ async function handleAddNPCInitCommand(msg, cmd, args, user) {
   setContentsByFilenameAndParent(msg, filename, userFolderID, newContentString);
   removeHourglass(msg);
   msg.reply(` you now have ${contentArray.length} NPC's in this channel.`)
-  console.log('🎲🎲');
+  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
   msg.react('⏳');
@@ -2000,7 +2007,7 @@ async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(` you removed ${removedIndex.length} NPC's. `
   + `You now have ${newContentArray.length} NPC's in this channel.`)
-  console.log('🎲🎲');
+  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleListNPCInitCommand(msg, cmd, args, user) {
   msg.react('⏳');
@@ -2045,7 +2052,7 @@ async function handleListNPCInitCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(output);
   // listAllFiles();
-  console.log('🎲🎲');
+  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleClearNPCInitCommand(msg, cmd, args, user) {
   msg.react('⏳');
@@ -2076,7 +2083,7 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(' you cleared your NPC initiative formulas for this channel.');
   // listAllFiles();
-  console.log('🎲🎲');
+  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 // @ =========== HANDLEMESSAGE FUNCTION ============
 function handleMessage(msg, user=msg.author) {
@@ -2100,6 +2107,9 @@ function handleMessage(msg, user=msg.author) {
 /*           case 'delall':
             if (user.id == '360086569778020352') deleteAllFiles();
           break; */
+          case 'del':
+            if (user.id == '360086569778020352') deleteFile(args);
+          break;
           case 'open':
             if (user.id == '360086569778020352') openFile(args);
           break;
