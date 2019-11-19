@@ -335,17 +335,17 @@ async function findUserFolderFromUserID(msg, userID) {
   // a User's folder exists in (root)/UserData/ServerID/ChannelID/UserID
   var r = null;
   // try to get it from cache first
-  var q = {name: msg.channel.guild.id};
-  if (cacheHas(q, 'server')) {
-    q = {name: msg.channel.id, parents: [getFromCache(q, 'server').googleID]};
-    if (cacheHas(q, 'channel')) {
-      q = {name: userID, parents: [getFromCache(q, 'channel').googleID]};
-      if (cacheHas(q, 'userInChannel')) {
-        r = getFromCache(q, 'userInChannel').googleID;
-        return r;
-      }
-    }
-  }
+  // var q = {name: msg.channel.guild.id};
+  // if (cacheHas(q, 'server')) {
+  //   q = {name: msg.channel.id, parents: [getFromCache(q, 'server').googleID]};
+  //   if (cacheHas(q, 'channel')) {
+  //     q = {name: userID, parents: [getFromCache(q, 'channel').googleID]};
+  //     if (cacheHas(q, 'userInChannel')) {
+  //       r = getFromCache(q, 'userInChannel').googleID;
+  //       return r;
+  //     }
+  //   }
+  // }
   // cache didn't return -- do it the slow way
   var serverFolderID = await findFolderByName(msg.channel.guild.id,
     global.folderID.UserData, doNothing, msg.channel.id);
@@ -364,9 +364,7 @@ function ensureFolderByName(name, parentID=null, channelID="system") {
     const files = res.data.files;
     if (files.length === 0) {
       console.log('It doesn\'t exist; creating it');
-      // create folder & let callback perform another find to get id
       createFolder(name, parentID, (err, file) => {
-        // after-creation action
         if (err) return console.error(err);
       }, channelID);
     }
@@ -506,7 +504,7 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
     (err, res) => {
       if (err) return console.error(err);
       // no, the file doesn't exist for this channel/user pairing
-      if (res.data.files.length == 0) {
+      if (res.data.files.length === 0) {
         // create it
         drive.files.create({
           resource: { 'name': filename, 'parents': [parentFolderID] },
@@ -516,7 +514,7 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
           if (err) return console.error(err);
           unlockDiskForChannel(channelID);
         });
-      } else {
+      } else if (res.data.files.length===1) {
         // it already exists, update it
         res.data.files.map((file) => {
             drive.files.update({
