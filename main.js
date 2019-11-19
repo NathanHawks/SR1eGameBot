@@ -418,7 +418,7 @@ async function findFolderByName(
       res.data.files.map((file)=>{
         global.lastFoundFileID[channelID] = file.id;
       });
-    } else { global.lastFoundFileID[msg.channel.id] = -1; }
+    } else { global.lastFoundFileID[channelID] = -1; }
     // hope this either is brief or manages locks well
     unlockDiskForChannel(channelID);
     callback(err, res);
