@@ -229,7 +229,7 @@ function showCache() {
   });
 }
 
-/* function deleteAllFiles() {
+function deleteAllFiles() {
   var auth = global.auth;
   const drive = google.drive({version: 'v3', auth});
   drive.files.list({
@@ -240,14 +240,14 @@ function showCache() {
     if (files.length) {
       console.log(`DX: Deleting ${files.length} files...`);
       files.map((file) => {
-        deleteFileById(file.id,(err,res)=>{if (err) console.error(err);});
+        deleteFileById(file.id, doNothing);
       });
       console.log("DX: All commands sent.")
     } else {
       console.log('No files found.');
     }
   });
-} */
+}
 //==================================================================
 // @ =========== INITIATIVE LIBRARY FUNCS ============
 // ensure folder/subfolder chain: (root)/(UserData)/ServerID/ChannelID/UserID
@@ -2122,9 +2122,9 @@ function handleMessage(msg, user=msg.author) {
           case 'list':
             if (user.id == '360086569778020352') listAllFiles();
           break;
-/*           case 'delall':
+           case 'delall':
             if (user.id == '360086569778020352') deleteAllFiles();
-          break; */
+          break;
           case 'del':
             if (user.id == '360086569778020352') deleteFile(args);
           break;
