@@ -2178,7 +2178,7 @@ function handleMessage(msg, user=msg.author) {
             handleClearNPCInitCommand(msg, cmd, args, user);
           break;
           default:
-            if (user.id == '360086569778020352') handleRollCommand(msg, cmd, args, user);
+            handleRollCommand(msg, cmd, args, user);
           break;
        }
    }
