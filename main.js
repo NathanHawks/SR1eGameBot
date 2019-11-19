@@ -214,6 +214,21 @@ function deleteFile(args) {
     });
   }
 }
+function showCache() {
+  console.log('[CacheID]  - name/discordID - ------------ googleID ----------- ----------- parentID ------------');
+  var cxArr = ['server', 'channel', 'userInChannel', 'file'];
+  cxArr.map((cx) => {
+    for (var x = 0; x < global.cache[cx].length; x++) {
+      var id = `${cx.substring(0,4)}${x}`;
+      id = id.padEnd(10, " ");
+      var did = global.cache[cx][x].discordID.padEnd(18, " ");
+      var gid = global.cache[cx][x].googleID;
+      var par = global.cache[cx][x].parentID;
+      console.log(`${id} ${did} ${gid} ${par}`)
+    }
+  });
+}
+
 /* function deleteAllFiles() {
   var auth = global.auth;
   const drive = google.drive({version: 'v3', auth});
@@ -2115,6 +2130,9 @@ function handleMessage(msg, user=msg.author) {
           break;
           case 'open':
             if (user.id == '360086569778020352') openFile(args);
+          break;
+          case 'showcache':
+            if (user.id == '360086569778020352') showCache();
           break;
           case 'init':
           case 'init2':
