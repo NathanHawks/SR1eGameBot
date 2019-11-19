@@ -92,15 +92,15 @@ function addToCache(file, cacheAs) {
     break;
     case 'file':
       global.cache.file[ci].googleID = file.id;
-      global.cache.file[ci].discordID = file.name; // K.I.S.S.
+      global.cache.file[ci].discordID = file.name;
       global.cache.file[ci].parentID = file.parents[0];
     break;
   }
 }
 function getFromCache(file, cacheAs) {
   var ci = getCacheIndex(file, cacheAs, false);
-  // if (cacheAs === 'file') console.log('RETURNING CACHE:');
-  // if (cacheAs === 'file') console.log(global.cache[cacheAs][ci]);
+  console.log('RETURNING CACHE:');
+  console.log(global.cache[cacheAs][ci]);
   return global.cache[cacheAs][ci];
 }
 
@@ -235,8 +235,11 @@ async function ensureFolderTriplet(msg) {
   var serverDiscordID = msg.channel.guild.id;
   // Get the server folder's googleID
   var q = {name: serverDiscordID};
+  console.log('server q:');
+  console.log(q);
   if (cacheHas(q, 'server')) {
     serverFolderID = getFromCache(q, 'server').googleID;
+    console.log(serverFolderID + ' came from the cache!');
   } else {
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
     await ensureFolderByName(serverDiscordID, userDataFolderID, msg.channel.id);
@@ -245,6 +248,8 @@ async function ensureFolderTriplet(msg) {
         if (err) return console.error(err);
         lockDiskForChannel(msg.channel.id);
         if (res.data.files.length === 1) {
+          console.log('adding server to cache:');
+          console.log(res.data.files[0]);
           addToCache(res.data.files[0], 'server');
         } else {
           console.error(`> BAD: ${msg.channel.guild.id} in UserData.`);
@@ -253,10 +258,14 @@ async function ensureFolderTriplet(msg) {
     }, msg.channel.id);
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   }
+  console.log('=========================================================');
   // channel folder
   q = {name: msg.channel.id, parents: [serverFolderID]};
+  console.log(`channel q = `);
+  console.log(q);
   if (cacheHas(q, 'channel')) {
     channelFolderID = getFromCache(q, 'channel').googleID;
+    console.log(`${channelFolderID} came from the cache!`)
   } else {
     await ensureFolderByName(msg.channel.id, serverFolderID, msg.channel.id);
     channelFolderID = await findFolderByName(msg.channel.id, serverFolderID,
@@ -264,6 +273,8 @@ async function ensureFolderTriplet(msg) {
         if (err) return console.error(err);
         lockDiskForChannel(msg.channel.id);
         if (res.data.files.length === 1) {
+          console.log('Adding channel to cache:');
+          console.log(res.data.files[0]);
           addToCache(res.data.files[0], 'channel');
         } else {
           console.error(`> BAD: ${msg.channel.id} in ${serverFolderID}.`);
@@ -272,10 +283,14 @@ async function ensureFolderTriplet(msg) {
       }, msg.channel.id);
       while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   }
+  console.log('=========================================================');
   // user folder
   q = {name: msg.author.id, parents: [channelFolderID]};
+  console.log('user q');
+  console.log(q);
   if (cacheHas(q, 'userInChannel')) {
     // we're only here to ensure it exists; it does
+    console.log(`${getFromCache(q, 'userInChannel').googleID} came from the cache!`);
   }
   else {
     await ensureFolderByName(msg.author.id, channelFolderID, msg.channel.id);
@@ -283,6 +298,8 @@ async function ensureFolderTriplet(msg) {
       if (err) return console.error(err);
       lockDiskForChannel(msg.channel.id);
       if (res.data.files.length === 1) {
+        console.log('Adding user to cache:');
+        console.log(res.data.files[0]);
         addToCache(res.data.files[0], 'userInChannel');
         // TODO: find out, is this map/global actually needed anywhere?
         res.data.files.map((file)=>{
@@ -309,6 +326,8 @@ async function findUserFolderFromMsg(msg) {
       q = {name: msg.author.id, parents: [o.googleID]};
       if (cacheHas(q, 'userInChannel')) {
         r = getFromCache(q, 'userInChannel').googleID;
+        console.log('findUserFolderFromMsg returning from cache:');
+        console.log(r);
         return r;
       }
     }
@@ -335,6 +354,8 @@ async function findUserFolderFromUserID(msg, userID) {
       q = {name: userID, parents: [getFromCache(q, 'channel').googleID]};
       if (cacheHas(q, 'userInChannel')) {
         r = getFromCache(q, 'userInChannel').googleID;
+        console.log('findUserFolderFromUserID returning from cache:');
+        console.log(r);
         return r;
       }
     }
@@ -448,21 +469,8 @@ async function createFolder(
   });
 }
 
-async function findFileByName(filename, parentID, channelID, tryCache=true) {
+async function findFileByName(filename, parentID, channelID) {
   lockDiskForChannel(channelID);
-  // try from cache first
-  if (tryCache) {
-    var q = {name: filename, parents: [parentID]};
-    // console.log('=============================================== findFileByName');
-    if (cacheHas(q, 'file')) {
-      var r = -1;
-      r = getFromCache(q, 'file').googleID;
-      global.lastFoundFileID[channelID] = r;
-      unlockDiskForChannel(channelID);
-      return r;
-    }
-  }
-  // cache didn't return, check google drive directly
   var auth = global.auth;
   var drive = google.drive({version: 'v3', auth});
   drive.files.list(
@@ -473,7 +481,6 @@ async function findFileByName(filename, parentID, channelID, tryCache=true) {
       if (res.data.files.length === 1) {
         res.data.files.map((file) => {
           global.lastFoundFileID[channelID] = file.id;
-          if (tryCache) addToCache(file, 'file');
         });
       }
       else { global.lastFoundFileID[channelID] = -1; }
@@ -1140,7 +1147,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       filename = "playerInit";
       lockDiskForChannel(msg.channel.id);
       // another index for each player's playerInit fileID
-      playerInitFileID[x] = await findFileByName(filename, playerFolderIDs[x], msg.channel.id, false);
+      playerInitFileID[x] = await findFileByName(filename, playerFolderIDs[x], msg.channel.id);
       while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
       if (playerInitFileID[x] == -1) {
         // not ready because they don't have a playerInit file at all
@@ -1176,7 +1183,7 @@ async function handleInitCommand(msg, cmd, args, user) {
   // get NPC's, if any
   filename = 'gmNPCInit';
   lockDiskForChannel(msg.channel.id);
-  gmNPCFileID = await findFileByName(filename, userFolderID, msg.channel.id, false);
+  gmNPCFileID = await findFileByName(filename, userFolderID, msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   if (gmNPCFileID == -1) {
   } else {
@@ -1493,7 +1500,6 @@ async function handleInitCommand(msg, cmd, args, user) {
   // report
   msg.reply(output);
   unlockDiskForChannel(msg.channel.id);
-  console.log(global.cache.file);
   console.log('🎲🎲');
   removeHourglass(msg);
 }
