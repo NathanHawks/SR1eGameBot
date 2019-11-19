@@ -99,8 +99,6 @@ function addToCache(file, cacheAs) {
 }
 function getFromCache(file, cacheAs) {
   var ci = getCacheIndex(file, cacheAs, false);
-  console.log('RETURNING CACHE:');
-  console.log(global.cache[cacheAs][ci]);
   return global.cache[cacheAs][ci];
 }
 
@@ -235,11 +233,8 @@ async function ensureFolderTriplet(msg) {
   var serverDiscordID = msg.channel.guild.id;
   // Get the server folder's googleID
   var q = {name: serverDiscordID};
-  console.log('server q:');
-  console.log(q);
   if (cacheHas(q, 'server')) {
     serverFolderID = getFromCache(q, 'server').googleID;
-    console.log(serverFolderID + ' came from the cache!');
   } else {
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
     await ensureFolderByName(serverDiscordID, userDataFolderID, msg.channel.id);
@@ -248,8 +243,6 @@ async function ensureFolderTriplet(msg) {
         if (err) return console.error(err);
         lockDiskForChannel(msg.channel.id);
         if (res.data.files.length === 1) {
-          console.log('adding server to cache:');
-          console.log(res.data.files[0]);
           addToCache(res.data.files[0], 'server');
         } else {
           console.error(`> BAD: ${msg.channel.guild.id} in UserData.`);
@@ -258,14 +251,10 @@ async function ensureFolderTriplet(msg) {
     }, msg.channel.id);
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   }
-  console.log('=========================================================');
   // channel folder
   q = {name: msg.channel.id, parents: [serverFolderID]};
-  console.log(`channel q = `);
-  console.log(q);
   if (cacheHas(q, 'channel')) {
     channelFolderID = getFromCache(q, 'channel').googleID;
-    console.log(`${channelFolderID} came from the cache!`)
   } else {
     await ensureFolderByName(msg.channel.id, serverFolderID, msg.channel.id);
     channelFolderID = await findFolderByName(msg.channel.id, serverFolderID,
@@ -273,8 +262,6 @@ async function ensureFolderTriplet(msg) {
         if (err) return console.error(err);
         lockDiskForChannel(msg.channel.id);
         if (res.data.files.length === 1) {
-          console.log('Adding channel to cache:');
-          console.log(res.data.files[0]);
           addToCache(res.data.files[0], 'channel');
         } else {
           console.error(`> BAD: ${msg.channel.id} in ${serverFolderID}.`);
@@ -283,14 +270,10 @@ async function ensureFolderTriplet(msg) {
       }, msg.channel.id);
       while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   }
-  console.log('=========================================================');
   // user folder
   q = {name: msg.author.id, parents: [channelFolderID]};
-  console.log('user q');
-  console.log(q);
   if (cacheHas(q, 'userInChannel')) {
     // we're only here to ensure it exists; it does
-    console.log(`${getFromCache(q, 'userInChannel').googleID} came from the cache!`);
   }
   else {
     await ensureFolderByName(msg.author.id, channelFolderID, msg.channel.id);
@@ -298,8 +281,6 @@ async function ensureFolderTriplet(msg) {
       if (err) return console.error(err);
       lockDiskForChannel(msg.channel.id);
       if (res.data.files.length === 1) {
-        console.log('Adding user to cache:');
-        console.log(res.data.files[0]);
         addToCache(res.data.files[0], 'userInChannel');
         // TODO: find out, is this map/global actually needed anywhere?
         res.data.files.map((file)=>{
@@ -326,8 +307,6 @@ async function findUserFolderFromMsg(msg) {
       q = {name: msg.author.id, parents: [o.googleID]};
       if (cacheHas(q, 'userInChannel')) {
         r = getFromCache(q, 'userInChannel').googleID;
-        console.log('findUserFolderFromMsg returning from cache:');
-        console.log(r);
         return r;
       }
     }
@@ -354,8 +333,6 @@ async function findUserFolderFromUserID(msg, userID) {
       q = {name: userID, parents: [getFromCache(q, 'channel').googleID]};
       if (cacheHas(q, 'userInChannel')) {
         r = getFromCache(q, 'userInChannel').googleID;
-        console.log('findUserFolderFromUserID returning from cache:');
-        console.log(r);
         return r;
       }
     }
@@ -559,12 +536,12 @@ function removeHourglass(msg) {
     if (reaction.emoji.name == '⏳') { reaction.remove(); }
   });
 }
-function validateNPCInput(msg, args) {
+function modifyNPCInput(args) {
   // allow human-readable format without space
-  if (args && args.length && args.length%2 == 0) {
-    var gotCha = false;
-    var fixArgs = [];
-    var y = 0;
+  if (args && args.length && args.length%2 === 0) {
+    var gotCha = false; // true if d6+ detected
+    var fixArgs = []; // to hold the fixed data format
+    var y = 0; // to increment by 3's for the fixed array
     for (var x = 0; x < args.length; x+=2) {
       if (args[x].toLowerCase().indexOf('d6+') !== -1) {
         gotCha = true;
@@ -594,6 +571,9 @@ function validateNPCInput(msg, args) {
       }
     }
   }
+  return args;
+}
+function validateNPCInput(msg, args) {
   // some input validation
   var errOutput = '';
   if (args.length%3 !== 0) {
@@ -1863,6 +1843,7 @@ async function handleSetInitCommand(msg, cmd, args, user) {
   console.log('🎲🎲');
 }
 async function handleSetNPCInitCommand(msg, cmd, args, user) {
+  args = modifyNPCInput(args);
   if (!validateNPCInput(msg, args)) {
     return;
   }
@@ -1888,6 +1869,7 @@ async function handleSetNPCInitCommand(msg, cmd, args, user) {
   console.log('🎲🎲');
 }
 async function handleAddNPCInitCommand(msg, cmd, args, user) {
+  args = modifyNPCInput(args);
   if (!validateNPCInput(msg, args)) {
     return;
   }
