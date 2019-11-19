@@ -52,9 +52,10 @@ function cacheHas(file, cacheAs) {
   var found = false;
   global.cache[cacheAs].map((obj) => {
     // valid matches: id match; or parent & discordID (filename) match together
-    if (obj.id == file.id) found = true;
-    if (obj.discordID == file.name && file.parents && file.parents.length
-      && obj.parentID.length && obj.parentID == file.parents[0]) found = true;
+    if (obj.id && file.id && obj.id == file.id) found = true;
+    if (obj.discordID && file.name && obj.discordID == file.name && file.parents && file.parents.length
+      && obj.parentID && obj.parentID == file.parents[0]) found = true;
+    if (cacheAs === 'server' && obj.discordID === file.name) found = true;
     if (found) return found;
   });
   return found;
@@ -65,9 +66,9 @@ function getCacheIndex(file, cacheAs, create=true) {
   // same as cacheHas
   global.cache[cacheAs].map((obj) => {
     // valid matches: id match; or parent & discordID (filename) match together
-    if (obj.id == file.id) r = i;
-    if (obj.discordID == file.name && file.parents && file.parents.length
-      & obj.parentID.length && obj.parentID === file.parents[0]) r = i;
+    if (obj.id && file.id && obj.id == file.id) r = i;
+    if (obj.discordID && file.name && obj.discordID == file.name && file.parents && file.parents.length
+      && obj.parentID && obj.parentID == file.parents[0]) r = i;
       // servers don't need a parent, just the filename
     if (cacheAs === 'server' && obj.discordID === file.name) r = i;
     if (r) return r;
@@ -309,11 +310,11 @@ async function findUserFolderFromMsg(msg) {
   // first try to get it from cache
   var q = {name: msg.channel.guild.id}
   if (cacheHas(q, 'server')) {
-    var o = getFromCache(q, 'server');
-    q = {name: msg.channel.id, parents: [o.googleID]};
+    var id = getFromCache(q, 'server').googleID;
+    q = {name: msg.channel.id, parents: [o]};
     if (cacheHas(q, 'channel')) {
-      o = getFromCache(q, 'channel');
-      q = {name: msg.author.id, parents: [o.googleID]};
+      var o = getFromCache(q, 'channel').googleID;
+      q = {name: msg.author.id, parents: [o]};
       if (cacheHas(q, 'userInChannel')) {
         r = getFromCache(q, 'userInChannel').googleID;
         return r;
@@ -1647,6 +1648,8 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
   }
   // get contents, parse, and count
   var gmPlayersFileID = global.lastFoundFileID[msg.channel.id];
+  console.log(`userFolderID ${userFolderID}`);
+  console.log('gmPlayersFileID ' + gmPlayersFileID);
   var playersString = await getFileContents(gmPlayersFileID);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   var playersArr = playersString.split(',');
