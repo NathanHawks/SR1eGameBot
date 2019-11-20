@@ -213,7 +213,7 @@ function listAllFiles(msg) {
     if (err) return console.error(err);
     const files = res.data.files;
     if (files.length) {
-      output += '----- File name ----------------- googleID ------------------------- parentID -------------\n';
+      output += '--- [filename] ---   ------------ googleID ------------- ------------ parentID -------------\n';
       files.map((file) => {
         output += `${file.name.padEnd(20)} (${file.id}) [${file.parents}]\n`;
       });
@@ -996,7 +996,7 @@ function handleHelpCommand(msg, cmd, args, user) {
   if (args.length && args[0] == 2 || cmd === 'inithelp') {
     whatToShow = 2;
   }
-  var output = '[page1]\n GameBot usage:\n'
+  var output = '\n GameBot usage:\n'
     + '!***X***         Roll ***X***d6 *without* exploding 6\'s'
     + '  ***example:*** !5   rolls 5d6 without exploding\n'
     + '!X***!***        Roll ***X***d6 ***with*** exploding 6\'s'
@@ -1005,6 +1005,14 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '  ***example:*** !5 tn4   rolls 5d6 w/o exploding vs TN4\n'
     + '!X! ***tnY***     Roll ***with*** exploding 6\'s against Target Number ***Y***'
     + '  ***example:*** !5! tn4   rolls 5d6 w/ exploding vs TN4\n'
+    + '\n'
+    + '**Opposed Rolls:**\n'
+    + '!A! tnB ***vsX!*** ***otnY***\n'
+    + '   Roll *A*d6 (exploding) with tn *B*, opposed by *X*d6 (exploding) with opponent\'s TN *Y*\n'
+    + '   vs*X* = the number of dice the opponent throws (vs*X*! for exploding dice)\n'
+    + '   otn*Y* = the opponent\'s target number\n'
+    + '  ***example:*** !5! tn3 vs6! otn4    '
+    + 'Roll 5d6 (exploding) with TN 3, against 6d6 (exploding) with TN 4\n'
     + '\n'
     + 'Notes are OK, and your TN can be in the middle of the note\n'
     + 'examples:\n'
@@ -1016,15 +1024,7 @@ function handleHelpCommand(msg, cmd, args, user) {
     + 'Anyone can click the :game_die: reaction to reroll any *recent* roll.\n'
     + 'Remove and re-add your reaction to keep re-rolling that roll.\n'
     + '\n'
-    + 'Opposed Rolls:\n'
-    + '!A! tnB ***vsX!*** ***otnY***\n'
-    + '   Roll *A*d6 (exploding) with tn *B*, opposed by *X*d6 (exploding) with opponent\'s tn *Y*\n'
-    + '   vs*X* = the number of dice the opponent throws (vs*X*! for exploding dice)\n'
-    + '   otn*Y* = the opponent\'s target number\n'
-    + '  ***example:*** !5! tn3 vs6! otn4    '
-      + 'Roll 5d6 (exploding) with TN 3, against 6d6 (exploding) with TN 4\n'
-    + '\n'
-    + ':boom: Oh, and one more thing... try **!help 2** to learn about the new **initiative features!**';
+    + ':boom: Oh, and one more thing... try **!inithelp** to learn about the new **initiative features!**';
   var output21 =
       '\n:boom: **EXPERIMENTAL: Initiative System** :boom:\n'
     + '\n'
