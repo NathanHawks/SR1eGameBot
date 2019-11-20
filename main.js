@@ -980,7 +980,7 @@ function handleRollCommand(msg, cmd, args, user) {
   }
   // prep output and deliver it ====================================
   if (isOpposedBool) {
-    output = makeOpposedOutput(isOpposedBool, successesInt,
+    output += makeOpposedOutput(isOpposedBool, successesInt,
       opponentSuccessesInt, user, rollsIntArr, opponentRollsIntArr, note
     );
   }
@@ -989,7 +989,7 @@ function handleRollCommand(msg, cmd, args, user) {
     if (successesInt > 0) {
       successesFormattedString = successesInt + ' successes ';
     }
-    output = user + ', you rolled ' + successesFormattedString
+    output += user + ', you rolled ' + successesFormattedString
     + '(' +rollsIntArr+ ') ' + note;
   }
 
