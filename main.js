@@ -387,21 +387,22 @@ async function findUserFolderFromUserID(msg, userID) {
   // a User's folder exists in (root)/UserData/ServerID/ChannelID/UserID
   var r = null;
   // try to get it from cache first
+  // NOTE THIS LOGSPAM IS VOODOO -- it doesn't work without it (weirdest race condition ever?)
   var q = {name: msg.channel.guild.id};
   if (cacheHas(q, 'server')) {
-    console.log('GOT HERE 1');
+    console.log('>Found server cache');
     var serverID = getFromCache(q, 'server').googleID;
-    console.log(serverID);
+    console.log(`>>Fetched cached googleID for server: ${serverID}`);
     q = {name: msg.channel.id, parents: [serverID]};
     if (cacheHas(q, 'channel')) {
-      console.log('GOT HERE 2');
+      console.log('>>>Found channel cache');
       var channelID = getFromCache(q, 'channel').googleID;
-      console.log(channelID);
+      console.log(`>>>>Found cached googleID for channel: ${channelID}`);
       q = {name: userID, parents: [channelID]};
       if (cacheHas(q, 'userInChannel')) {
-        console.log('GOT HERE 3');
+        console.log('>>>>>Found userInChannel cache');
         r = getFromCache(q, 'userInChannel').googleID;
-        console.log(r);
+        console.log(`>>>>>>Returning cached googleID for userInChannel: ${r}`);
         return r;
       }
     }
