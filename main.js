@@ -510,7 +510,7 @@ async function createFolder(
 
 async function findFileByName(filename, parentID, channelID) {
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
-  global.lastFoundFileID[msg.channel.id] = -1;
+  global.lastFoundFileID[channelID] = -1;
   lockDiskForChannel(channelID);
   var auth = global.auth;
   var drive = google.drive({version: 'v3', auth});
