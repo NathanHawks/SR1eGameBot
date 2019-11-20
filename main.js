@@ -390,19 +390,19 @@ async function findUserFolderFromUserID(msg, userID) {
   // NOTE THIS LOGSPAM IS VOODOO -- it doesn't work without it (weirdest race condition ever?)
   var q = {name: msg.channel.guild.id};
   if (cacheHas(q, 'server')) {
-    console.log('>Found server cache');
+    console.log('Found googleID for server in cache:');
     var serverID = getFromCache(q, 'server').googleID;
-    console.log(`>>Fetched cached googleID for server: ${serverID}`);
+    console.log(serverID);
     q = {name: msg.channel.id, parents: [serverID]};
     if (cacheHas(q, 'channel')) {
-      console.log('>>>Found channel cache');
+      console.log('Found googleID for channel in cache:');
       var channelID = getFromCache(q, 'channel').googleID;
-      console.log(`>>>>Found cached googleID for channel: ${channelID}`);
+      console.log(channelID);
       q = {name: userID, parents: [channelID]};
       if (cacheHas(q, 'userInChannel')) {
-        console.log('>>>>>Found userInChannel cache');
+        console.log('Returning cached googleID for userInChannel');
         r = getFromCache(q, 'userInChannel').googleID;
-        console.log(`>>>>>>Returning cached googleID for userInChannel: ${r}`);
+        console.log(r);
         return r;
       }
     }
