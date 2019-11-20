@@ -1614,24 +1614,27 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   gmPlayersFileID = await findFileByName(filename, userFolderID, msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  lockDiskForChannel(msg.channel.id);
-  if (gmPlayersFileID === -1) {
-    // file doesn't exist; create it
-    unlockDiskForChannel(msg.channel.id);
-    await setContentsByFilenameAndParent(msg, filename, userFolderID, '');
-    unlockDiskForChannel(msg.channel.id);
-  }
-  unlockDiskForChannel(msg.channel.id);
-  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  lockDiskForChannel(msg.channel.id);
-  if (gmPlayersFileID === -1) {
-    // we've created the file, so repeat the search
-    unlockDiskForChannel(msg.channel.id);
-    gmPlayersFileID = await findFileByName(filename, userFolderID, msg.channel.id);
-    unlockDiskForChannel(msg.channel.id);
-  }
-  unlockDiskForChannel(msg.channel.id);
-  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+
+  // if there is no file we fail forward to the !set version of the command
+
+  // lockDiskForChannel(msg.channel.id);
+  // if (gmPlayersFileID === -1) {
+  //   // file doesn't exist; create it
+  //   unlockDiskForChannel(msg.channel.id);
+  //   await setContentsByFilenameAndParent(msg, filename, userFolderID, '');
+  //   unlockDiskForChannel(msg.channel.id);
+  // }
+  // unlockDiskForChannel(msg.channel.id);
+  // while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  // lockDiskForChannel(msg.channel.id);
+  // if (gmPlayersFileID === -1) {
+  //   // we've created the file, so repeat the search
+  //   unlockDiskForChannel(msg.channel.id);
+  //   gmPlayersFileID = await findFileByName(filename, userFolderID, msg.channel.id);
+  //   unlockDiskForChannel(msg.channel.id);
+  // }
+  // unlockDiskForChannel(msg.channel.id);
+  // while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
 
   // first we need to ensure the file
   // drive.files.list(
