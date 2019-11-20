@@ -1603,7 +1603,7 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
     fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
       if (err) console.err(err);
-      if (res.data.files.length == 0) {
+      if (res.data.files.length === 0) {
         // create it if it doesn't exist
         console.log('GOT HERE 5');
         unlockDiskForChannel(msg.channel.id);
@@ -1618,9 +1618,9 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
       }
       unlockDiskForChannel(msg.channel.id);
   });
-  console.log('GOT HERE 7');
+  console.log('GOT HERE 7 ');
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  console.log('GOT HERE 8');
+  console.log('GOT HERE 8 ' + global.lastFoundFileID[msg.channel.id]);
   lockDiskForChannel(msg.channel.id);
   // now the file surely exists -- redo the find, get the file id
   console.log('GOT HERE 9');
@@ -1630,7 +1630,7 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
   console.log('GOT HERE 11');
   // get and parse the contents of the file
   try {
-    if (gmPlayersFileID) {
+    if (gmPlayersFileID !== -1) {
       console.log('GOT HERE 12');
       var oldPlayerString = await getFileContents(gmPlayersFileID);
       console.log('GOT HERE 13');
