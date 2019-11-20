@@ -219,9 +219,9 @@ function listAllFiles(msg) {
     } else {
       output += 'No files found.';
     }
+    if (msg !== undefined) msg.channel.send(`\`\`\`${output}\`\`\``);
+    else console.log(output);
   });
-  if (msg) msg.channel.send(`\`\`\`${output}\`\`\``);
-  else console.log(output);
 }
 function deleteFile(msg, args) {
   if (args && args[0]) {
