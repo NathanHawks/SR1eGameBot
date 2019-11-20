@@ -241,7 +241,14 @@ function showCache() {
     }
   });
 }
-
+// unlock global.lock for a specific channel
+function adminUnlock(msg, args) {
+  var channel = -1;
+  if (args.length === 0) {
+    channel = msg.channel.id
+  } else { channel = args[0]; }
+  global.lock[channel] = false;
+}
 function deleteAllFiles() {
   var auth = global.auth;
   const drive = google.drive({version: 'v3', auth});
@@ -2146,6 +2153,9 @@ function handleMessage(msg, user=msg.author) {
           break;
           case 'showcache':
             if (user.id == '360086569778020352') showCache();
+          break;
+          case 'unlock':
+            if (user.id == '360086569778020352') adminUnlock(msg, args);
           break;
           case 'init':
           case 'init2':
