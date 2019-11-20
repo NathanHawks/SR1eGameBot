@@ -1607,9 +1607,14 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
         // create it if it doesn't exist
         console.log('GOT HERE 5');
         unlockDiskForChannel(msg.channel.id);
-        setContentsByFilenameAndParent(msg, filename, userFolderID, '');
+        await setContentsByFilenameAndParent(msg, filename, userFolderID, '');
+        lockDiskForChannel(msg.channel.id);
         console.log('GOT HERE 6');
         global.lastFoundFileID[msg.channel.id] = -1;
+      }
+      else if (res.data.files.length === 1) {
+        console.log('GOT HERE 5-6b');
+        global.lastFoundFileID[msg.channel.id] = file.id;
       }
       unlockDiskForChannel(msg.channel.id);
   });
@@ -1625,7 +1630,7 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
   console.log('GOT HERE 11');
   // get and parse the contents of the file
   try {
-    if (gmPlayersFileID !== -1) {
+    if (gmPlayersFileID) {
       console.log('GOT HERE 12');
       var oldPlayerString = await getFileContents(gmPlayersFileID);
       console.log('GOT HERE 13');
