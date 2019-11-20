@@ -1132,13 +1132,10 @@ async function handleInitCommand(msg, cmd, args, user) {
   // get author's userFolderID for this channel
   userFolderID = await findUserFolderFromMsg(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  lockDiskForChannel(msg.channel.id);
   // get file ID of gm's (msg.author's) gmPlayers file, if any
   filename = 'gmPlayers';
   gmPlayersFileID = await findFileByName(filename, userFolderID, msg.channel.id);
-  console.log('GOT HERE 1');
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  console.log('GOT HERE 2');
   // make array of playerIDs from msg.author's gmPlayers file content, if any
   if (gmPlayersFileID !== -1) {
     gmPlayersString = await getFileContents(gmPlayersFileID, msg.channel.id);
@@ -1146,7 +1143,6 @@ async function handleInitCommand(msg, cmd, args, user) {
     lockDiskForChannel(msg.channel.id);
     gmPlayersArr = gmPlayersString.split(',');
   }
-  console.log('GOT HERE 3');
   // ensure all players have setgm to user, and have setinit
   // prune empty entries from gmPlayersArr
   var tmpArr = [];
@@ -1161,6 +1157,7 @@ async function handleInitCommand(msg, cmd, args, user) {
     unlockDiskForChannel(msg.channel.id);
     playerFolderIDs[x] = await findUserFolderFromUserID(msg, gmPlayersArr[x]);
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    console.log('GOT HERE 1');
     // if the player doesn't have a user folder in this channel, skip other checks
     if (playerFolderIDs[x] == -1) {
       someoneIsntReady_GM = true;
@@ -1191,6 +1188,7 @@ async function handleInitCommand(msg, cmd, args, user) {
           playersNotSetGM[x] = gmPlayersArr[x];
         }
       }
+      console.log('GOT HERE 2');
       // ensure all players have setinit
       filename = "playerInit";
       lockDiskForChannel(msg.channel.id);
@@ -1213,6 +1211,7 @@ async function handleInitCommand(msg, cmd, args, user) {
           playersNotSetInit[x] = gmPlayersArr[x];
         }
       }
+      console.log('GOT HERE 3');
     }
   }
   console.log('GOT HERE 4');
