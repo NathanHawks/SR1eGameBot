@@ -1614,68 +1614,11 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   gmPlayersFileID = await findFileByName(filename, userFolderID, msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-
-  // if there is no file we fail forward to the !set version of the command
-
-  // lockDiskForChannel(msg.channel.id);
-  // if (gmPlayersFileID === -1) {
-  //   // file doesn't exist; create it
-  //   unlockDiskForChannel(msg.channel.id);
-  //   await setContentsByFilenameAndParent(msg, filename, userFolderID, '');
-  //   unlockDiskForChannel(msg.channel.id);
-  // }
-  // unlockDiskForChannel(msg.channel.id);
-  // while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  // lockDiskForChannel(msg.channel.id);
-  // if (gmPlayersFileID === -1) {
-  //   // we've created the file, so repeat the search
-  //   unlockDiskForChannel(msg.channel.id);
-  //   gmPlayersFileID = await findFileByName(filename, userFolderID, msg.channel.id);
-  //   unlockDiskForChannel(msg.channel.id);
-  // }
-  // unlockDiskForChannel(msg.channel.id);
-  // while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-
-  // first we need to ensure the file
-  // drive.files.list(
-  //   {q: `"${userFolderID}" in parents and name="${filename}"`,
-  //   fields: 'nextPageToken, files(id, name, parents)'},
-  //   (err, res) => {
-  //     if (err) console.err(err);
-  //     if (res.data.files.length === 0) {
-  //       // create it if it doesn't exist
-  //       console.log('GOT HERE 5');
-  //       unlockDiskForChannel(msg.channel.id);
-  //       setContentsByFilenameAndParent(msg, filename, userFolderID, '');
-  //       lockDiskForChannel(msg.channel.id);
-  //       console.log('GOT HERE 6');
-  //       global.lastFoundFileID[msg.channel.id] = -1;
-  //     }
-  //     else if (res.data.files.length === 1) {
-  //       console.log('GOT HERE 5-6b');
-  //       global.lastFoundFileID[msg.channel.id] = file.id;
-  //     }
-  //     unlockDiskForChannel(msg.channel.id);
-  // });
-  // console.log('GOT HERE 7 ');
-  // while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  // console.log('GOT HERE 8 ' + global.lastFoundFileID[msg.channel.id]);
-  // lockDiskForChannel(msg.channel.id);
-  // // now the file surely exists -- redo the find, get the file id
-  // console.log('GOT HERE 9');
-  // gmPlayersFileID = await findFileByName(filename, userFolderID, msg.channel.id);
-  // console.log('GOT HERE 10');
-  // while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  // console.log('GOT HERE 11');
-
   // get and parse the contents of the file
   try {
     if (gmPlayersFileID !== -1) {
-      console.log('GOT HERE 12');
       var oldPlayerString = await getFileContents(gmPlayersFileID);
-      console.log('GOT HERE 13');
       while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-      console.log('GOT HERE 14');
       var newPlayersArr = [];
       newPlayersArr = oldPlayerString.split(",");
       var tmpArr = [];
@@ -1694,16 +1637,14 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
       // format for output/saving
       content = newPlayersArr.join(",");
       // save the new player list
-      console.log('GOT HERE 15');
       await setContentsByFilenameAndParent(msg, filename, userFolderID, content);
-      console.log('GOT HERE 16');
       while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-      console.log('GOT HERE 17');
       msg.reply(` you added ${args.length} players to your group in this channel;`
       + ` now there are ${newPlayersCount}.`);
       removeHourglass(msg);
     } else {
-      handleSetPlayersCommand(msg, cmd, args, user);
+      // if there is no file we fail forward to the !set version of the command
+      return handleSetPlayersCommand(msg, cmd, args, user);
     }
   } catch (e) {
     return console.error(e);
