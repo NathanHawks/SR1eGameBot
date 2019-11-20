@@ -1167,7 +1167,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       playersNotSetInit[x] = gmPlayersArr[x];
       playerInitFileID[x] = -1;
     } else {
-      lockDiskForChannel(msg.channel.id);
+      unlockDiskForChannel(msg.channel.id);
       // another index for each player's gmWhoIsGM fileID
       playerGMFileID[x] = await findFileByName(filename, playerFolderIDs[x], msg.channel.id);
       while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -1191,8 +1191,8 @@ async function handleInitCommand(msg, cmd, args, user) {
       console.log('GOT HERE 2');
       // ensure all players have setinit
       filename = "playerInit";
-      lockDiskForChannel(msg.channel.id);
       // another index for each player's playerInit fileID
+      unlockDiskForChannel(msg.channel.id);
       playerInitFileID[x] = await findFileByName(filename, playerFolderIDs[x], msg.channel.id);
       while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
       if (playerInitFileID[x] == -1) {
