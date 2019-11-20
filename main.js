@@ -200,7 +200,9 @@ function getAccessToken(oAuth2Client, callback) {
 //==================================================================
 // @ ================== DX FUNCS ================
 async function openFile(msg, args) {
-  msg.channel.send("```" + await getFileContents(args[0], 'system') + "```");
+  var output = await getFileContents(args[0], 'system');
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  msg.channel.send("```" + output + "```");
 }
 function listAllFiles(msg) {
   var output = '';
