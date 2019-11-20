@@ -450,7 +450,7 @@ async function findFolderByName(
   callback=doNothing,
   channelID="system"
 ) {
-  global.lastFoundFileID[msg.channel.id] = -1;
+  global.lastFoundFileID[channelID] = -1;
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
   var auth = global.auth;
