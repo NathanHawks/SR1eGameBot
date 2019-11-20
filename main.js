@@ -511,8 +511,8 @@ async function createFolder(
 
 async function findFileByName(filename, parentID, channelID) {
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
-  global.lastFoundFileID[channelID] = -1;
   lockDiskForChannel(channelID);
+  global.lastFoundFileID[channelID] = -1;
   var auth = global.auth;
   var drive = google.drive({version: 'v3', auth});
   drive.files.list(
@@ -1157,7 +1157,6 @@ async function handleInitCommand(msg, cmd, args, user) {
     unlockDiskForChannel(msg.channel.id);
     playerFolderIDs[x] = await findUserFolderFromUserID(msg, gmPlayersArr[x]);
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-    console.log('GOT HERE 1');
     // if the player doesn't have a user folder in this channel, skip other checks
     if (playerFolderIDs[x] == -1) {
       someoneIsntReady_GM = true;
@@ -1188,7 +1187,6 @@ async function handleInitCommand(msg, cmd, args, user) {
           playersNotSetGM[x] = gmPlayersArr[x];
         }
       }
-      console.log('GOT HERE 2');
       // ensure all players have setinit
       filename = "playerInit";
       // another index for each player's playerInit fileID
@@ -1211,10 +1209,8 @@ async function handleInitCommand(msg, cmd, args, user) {
           playersNotSetInit[x] = gmPlayersArr[x];
         }
       }
-      console.log('GOT HERE 3');
     }
   }
-  console.log('GOT HERE 4');
   if (someoneIsntReady_GM) {
     // someone hasn't !setgm; append output to list them; set flag to fail
     output += ` some players haven't set you as their gm yet:\n`;
@@ -1230,7 +1226,7 @@ async function handleInitCommand(msg, cmd, args, user) {
   }
   // get NPC's, if any
   filename = 'gmNPCInit';
-  lockDiskForChannel(msg.channel.id);
+  unlockDiskForChannel(msg.channel.id);
   gmNPCFileID = await findFileByName(filename, userFolderID, msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   if (gmNPCFileID == -1) {
@@ -1253,7 +1249,6 @@ async function handleInitCommand(msg, cmd, args, user) {
   } else {
     output += "\n*[Roll]* Player or NPC (Total Mod)\n===============================\n";
   }
-  console.log('GOT HERE 5');
   // if we have a valid setup, roll init
   if (!initWillFail) {
     playerRolls = [];
