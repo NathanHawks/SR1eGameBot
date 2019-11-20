@@ -2061,24 +2061,17 @@ async function handleListNPCInitCommand(msg, cmd, args, user) {
   var drive = google.drive({version: 'v3', auth});
   var filename = 'gmNPCInit';
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  console.log('GOT HERE 1');
   var parentFolderID = await findUserFolderFromMsg(msg);
-  console.log('GOT HERE 2');
   var gmNPCFileID = await findFileByName(filename, parentFolderID, msg.channel.id);
-  console.log('GOT HERE 3');
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  console.log('GOT HERE 4');
   if (gmNPCFileID == -1) {
     // file doesn't exist
     var output = " you have no NPC's configured in this channel yet.";
   } else {
     // file exists
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-    console.log('GOT HERE 5');
     var contentString = await getFileContents(gmNPCFileID);
-    console.log('GOT HERE 6');
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-    console.log('GOT HERE 7');
 
     var contentArray = contentString.split(",");
     // clean any blank entries
