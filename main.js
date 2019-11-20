@@ -1128,20 +1128,17 @@ async function handleInitCommand(msg, cmd, args, user) {
   var playerPhases = [];
   var auth = global.auth;
   var drive = google.drive({version: 'v3', auth});
-  console.log('GOT HERE 1');
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  console.log('GOT HERE 2');
   // get author's userFolderID for this channel
   userFolderID = await findUserFolderFromMsg(msg);
-  console.log('GOT HERE 3');
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  console.log('GOT HERE 4');
   lockDiskForChannel(msg.channel.id);
-  console.log('GOT HERE 5');
   // get file ID of gm's (msg.author's) gmPlayers file, if any
   filename = 'gmPlayers';
   gmPlayersFileID = await findFileByName(filename, userFolderID, msg.channel.id);
+  console.log('GOT HERE 1');
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  console.log('GOT HERE 2');
   // make array of playerIDs from msg.author's gmPlayers file content, if any
   if (gmPlayersFileID !== -1) {
     gmPlayersString = await getFileContents(gmPlayersFileID, msg.channel.id);
@@ -1149,6 +1146,7 @@ async function handleInitCommand(msg, cmd, args, user) {
     lockDiskForChannel(msg.channel.id);
     gmPlayersArr = gmPlayersString.split(',');
   }
+  console.log('GOT HERE 3');
   // ensure all players have setgm to user, and have setinit
   // prune empty entries from gmPlayersArr
   var tmpArr = [];
@@ -1217,6 +1215,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       }
     }
   }
+  console.log('GOT HERE 4');
   if (someoneIsntReady_GM) {
     // someone hasn't !setgm; append output to list them; set flag to fail
     output += ` some players haven't set you as their gm yet:\n`;
@@ -1255,6 +1254,7 @@ async function handleInitCommand(msg, cmd, args, user) {
   } else {
     output += "\n*[Roll]* Player or NPC (Total Mod)\n===============================\n";
   }
+  console.log('GOT HERE 5');
   // if we have a valid setup, roll init
   if (!initWillFail) {
     playerRolls = [];
