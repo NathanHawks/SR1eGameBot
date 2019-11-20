@@ -226,7 +226,7 @@ function listAllFiles(msg) {
       var outArr = output.split("\n");
       output = '';
       for (var x = 0; x < outArr.length; x++) {
-        output += outArr[x];
+        output += outArr[x] + "\n";
         if (x%20 === 0) {
           msg.channel.send('```' + output + '```');
           output = '';
