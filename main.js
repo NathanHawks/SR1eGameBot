@@ -771,6 +771,20 @@ function getTNFromArgs(args) {
   }
   return tn;
 }
+function getModifierFromArgs(args) {
+  for (x = 0; x < args.length; x++) {
+    var firstchar = args[x].substring(0, 1);
+    if (firstchar === '+' || firstchar === '-')) {
+      // make sure the rest of the arg is a number
+      var subj = args[x].substring(1, args[x].length);
+      if (subj == Number(subj)) {
+        // return the version with the +/- sign as a Number()
+        return Number(args[x]);
+      }
+    }
+  }
+}
+
 /* Credit to
   stackoverflow.com/questions/1063007/how-to-sort-an-array-of-integers-correctly
 */
@@ -928,16 +942,15 @@ function handleRollCommand(msg, cmd, args, user) {
   var isTotalBool = false;
   var numDiceInt = 0;
   var lastchar = lastChar(cmd);
+  var modifier = 0;
   if (lastchar == '!') {
     isTestBool = true;
     numDiceInt = cmd.substring(0, cmd.length-1);
   } else if (lastchar == 't') {
     isTotalBool = true;
     numDiceInt = cmd.substring(0, cmd.length-1);
-
-    // TODO: look for a modifier
-
-
+    // look for a modifier
+    modifier = getModifierFromArgs(args);
   }
   else {
     numDiceInt = cmd.substring(0, cmd.length);
@@ -966,12 +979,6 @@ function handleRollCommand(msg, cmd, args, user) {
   var successesInt = retarr[0];
   var rollsIntArr = retarr[1];
   var output = '';
-  // handle total'd roll
-  if (isTotalBool) {
-    var total = 0;
-    rollsIntArr.map((roll)=>{total+=roll;})
-    output += `Total: ${total} `;
-  }
   // handle opposed roll
   if (isOpposedBool) {
     var retarr = rollDice(opponentDiceInt, isOpposedTestBool, opponentTNInt);
@@ -979,6 +986,13 @@ function handleRollCommand(msg, cmd, args, user) {
     var opponentRollsIntArr = retarr[1];
   }
   // prep output and deliver it ====================================
+  // handle total'd roll
+  if (isTotalBool) {
+    var total = 0;
+    rollsIntArr.map((roll)=>{total+=roll;})
+    if (modifier) total += modifier;
+    output += `[Total: ${total}] | `;
+  }
   if (isOpposedBool) {
     output += makeOpposedOutput(isOpposedBool, successesInt,
       opponentSuccessesInt, user, rollsIntArr, opponentRollsIntArr, note
@@ -1013,6 +1027,8 @@ function handleHelpCommand(msg, cmd, args, user) {
   var output = '\n GameBot usage:\n'
     + '!***X***         Roll ***X***d6 *without* exploding 6\'s'
     + '  ***example:*** !5   rolls 5d6 without exploding\n'
+    + '!X***t***        Roll Xd6 *and total them*.'
+    + '  ***example:*** !6t rolls 6d6 and adds them up.\n'
     + '!X***!***        Roll ***X***d6 ***with*** exploding 6\'s'
     + '  ***example:*** !5!  rolls 5d6 with exploding\n'
     + '!X ***tnY***     Roll *without* exploding 6\'s against Target Number ***Y***'
