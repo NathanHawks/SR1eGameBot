@@ -1589,9 +1589,13 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
   var filename = 'gmPlayers';
   var auth = global.auth;
   var drive = google.drive({version: 'v3', auth});
+  console.log('GOT HERE 1');
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  console.log('GOT HERE 2');
   var userFolderID = await findUserFolderFromMsg(msg);
+  console.log('GOT HERE 3');
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  console.log('GOT HERE 4');
   lockDiskForChannel(msg.channel.id);
   // first we need to ensure the file
   drive.files.list(
@@ -1601,22 +1605,32 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
       if (err) console.err(err);
       if (res.data.files.length == 0) {
         // create it if it doesn't exist
+        console.log('GOT HERE 5');
         unlockDiskForChannel(msg.channel.id);
         setContentsByFilenameAndParent(msg, filename, userFolderID, '');
+        console.log('GOT HERE 6');
         global.lastFoundFileID[msg.channel.id] = -1;
       }
       unlockDiskForChannel(msg.channel.id);
   });
+  console.log('GOT HERE 7');
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  console.log('GOT HERE 8');
   lockDiskForChannel(msg.channel.id);
   // now the file surely exists -- redo the find, get the file id
+  console.log('GOT HERE 9');
   gmPlayersFileID = await findFileByName(filename, userFolderID, msg.channel.id);
+  console.log('GOT HERE 10');
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  console.log('GOT HERE 11');
   // get and parse the contents of the file
   try {
     if (gmPlayersFileID !== -1) {
+      console.log('GOT HERE 12');
       var oldPlayerString = await getFileContents(gmPlayersFileID);
+      console.log('GOT HERE 13');
       while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+      console.log('GOT HERE 14');
       var newPlayersArr = [];
       newPlayersArr = oldPlayerString.split(",");
       var tmpArr = [];
@@ -1635,8 +1649,11 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
       // format for output/saving
       content = newPlayersArr.join(",");
       // save the new player list
+      console.log('GOT HERE 15');
       await setContentsByFilenameAndParent(msg, filename, userFolderID, content);
+      console.log('GOT HERE 16');
       while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+      console.log('GOT HERE 17');
       msg.reply(` you added ${args.length} players to your group in this channel;`
       + ` now there are ${newPlayersCount}.`);
       removeHourglass(msg);
