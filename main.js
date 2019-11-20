@@ -387,19 +387,25 @@ async function findUserFolderFromUserID(msg, userID) {
   // a User's folder exists in (root)/UserData/ServerID/ChannelID/UserID
   var r = null;
   // try to get it from cache first
-  // var q = {name: msg.channel.guild.id};
-  // if (cacheHas(q, 'server')) {
-  //   var serverID = getFromCache(q, 'server').googleID;
-  //   q = {name: msg.channel.id, parents: [serverID]};
-  //   if (cacheHas(q, 'channel')) {
-  //     var channelID = getFromCache(q, 'channel').googleID;
-  //     q = {name: userID, parents: [channelID]};
-  //     if (cacheHas(q, 'userInChannel')) {
-  //       r = getFromCache(q, 'userInChannel').googleID;
-  //       return r;
-  //     }
-  //   }
-  // }
+  var q = {name: msg.channel.guild.id};
+  if (cacheHas(q, 'server')) {
+    console.log('GOT HERE 1');
+    var serverID = getFromCache(q, 'server').googleID;
+    console.log(serverID);
+    q = {name: msg.channel.id, parents: [serverID]};
+    if (cacheHas(q, 'channel')) {
+      console.log('GOT HERE 2');
+      var channelID = getFromCache(q, 'channel').googleID;
+      console.log(channelID);
+      q = {name: userID, parents: [channelID]};
+      if (cacheHas(q, 'userInChannel')) {
+        console.log('GOT HERE 3');
+        r = getFromCache(q, 'userInChannel').googleID;
+        console.log(r);
+        return r;
+      }
+    }
+  }
   // cache didn't return -- do it the slow way
   var serverFolderID = await findFolderByName(msg.channel.guild.id,
     global.folderID.UserData, doNothing, msg.channel.id);
