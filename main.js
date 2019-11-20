@@ -1,4 +1,4 @@
-function doNothing (err, res) {} // a callback for functions argument defaults
+function doNothing (err, res) {} // a callback for function argument defaults
 // set true to activate warning messages
 var isMaintenanceModeBool = false;
 // set status message to send as warning when isMaintenanceModeBool is true
@@ -29,10 +29,10 @@ global.folderID = {UserData : null};
 global.lastCreatedFolder = { };
 // a cursor for returning found files per channel
 global.lastFoundFileID = { };
-// semaphores per channel id, to avoid race conditions
-global.lock = { };
-// a place to store the results of getFileContents
+// a place to store the (per channel) results of getFileContents
 global.lastFileContents = { };
+// google drive API lock per channel id, to avoid race conditions
+global.lock = { };
 // config (debugging flags, etc)
 global.config = {
   // debugging options
@@ -48,14 +48,28 @@ global.cache = {
   userInChannel: [], // arr of obj: googleID, discordID, parentID
   file: [] // arr of obj: googleID, name, parentID, content
 };
+function _cache_googleIDMatch(obj, file) {
+  if (obj.googleID && file.id && obj.googleID == file.id)
+    return true;
+  else return false;
+}
+function _cache_nameAndParentMatch(obj, file) {
+  if (obj.discordID && file.name && obj.discordID == file.name
+    && file.parents && file.parents.length && obj.parentID
+    && obj.parentID == file.parents[0])
+    return true;
+  else return false;
+}
+function _cache_serverNameMatch(obj, file) {
+  if (obj.discordID === file.name) return true else return false;
+}
 function cacheHas(file, cacheAs) {
   var found = false;
   global.cache[cacheAs].map((obj) => {
     // valid matches: id match; or parent & discordID (filename) match together
-    if (obj.id && file.id && obj.id == file.id) found = true;
-    if (obj.discordID && file.name && obj.discordID == file.name && file.parents && file.parents.length
-      && obj.parentID && obj.parentID == file.parents[0]) found = true;
-    if (cacheAs === 'server' && obj.discordID === file.name) found = true;
+    if (_cache_googleIDMatch(obj, file)) found = true;
+    if (_cache_nameAndParentMatch(obj, file)) found = true;
+    if (cacheAs === 'server' && _cache_serverNameMatch(obj, file)) found = true;
     if (found) return found;
   });
   return found;
@@ -66,11 +80,10 @@ function getCacheIndex(file, cacheAs, create=true) {
   // same as cacheHas
   global.cache[cacheAs].map((obj) => {
     // valid matches: id match; or parent & discordID (filename) match together
-    if (obj.id && file.id && obj.id == file.id) r = i;
-    if (obj.discordID && file.name && obj.discordID == file.name && file.parents && file.parents.length
-      && obj.parentID && obj.parentID == file.parents[0]) r = i;
+    if (_cache_googleIDMatch(obj, file)) r = i;
+    if (_cache_nameAndParentMatch(obj, file)) r = i;
       // servers don't need a parent, just the filename
-    if (cacheAs === 'server' && obj.discordID === file.name) r = i;
+    if (cacheAs === 'server' && _cache_serverNameMatch(obj, file)) r = i;
     if (r) return r;
   });
   if (create === false) return r;
