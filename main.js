@@ -219,7 +219,8 @@ function listAllFiles(msg) {
     } else {
       output += 'No files found.';
     }
-    if (msg !== undefined) msg.channel.send(`\`\`\`${output}\`\`\``);
+    if (msg !== undefined && output.length < 1994)
+      msg.channel.send(`\`\`\`${output}\`\`\``);
     else console.log(output);
   });
 }
@@ -243,7 +244,7 @@ function showCache(msg) {
       output += `${id} ${did} ${gid} ${par}\n`
     }
   });
-  msg.channel.send(output);
+  msg.channel.send('```' + output + '```');
 }
 // unlock global.lock for a specific channel
 function adminUnlock(args) {
