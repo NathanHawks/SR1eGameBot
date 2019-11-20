@@ -221,7 +221,17 @@ function listAllFiles(msg) {
     }
     if (msg !== undefined && output.length < 1994)
       msg.channel.send(`\`\`\`${output}\`\`\``);
-    else console.log(output);
+    else if (msg !== undefined) {
+      var outArr = output.split("\n");
+      output = '';
+      for (var x = 0; x < outArr.length; x++) {
+        output += outArr[x];
+        if (x == 20 || outArr.length - x < 20) {
+          msg.channel.send('```' + output + '```');
+          output = '';
+        }
+      }
+    } else console.log(output);
   });
 }
 function deleteFile(msg, args) {
