@@ -549,8 +549,8 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
           media: { 'mimeType': 'text/plain', 'body': `${contents}/2` },
           fields: 'id'
         }, (err, file) => {
-          if (err) return console.error(err);
           unlockDiskForChannel(channelID);
+          if (err) return console.error(err);
         });
       } else if (res.data.files.length===1) {
         // it already exists, update it
@@ -558,8 +558,8 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
             drive.files.update({
               fileId: file.id, media: {body: `${contents}/2`}},
               (err, res) => {
-                if (err) return console.error(err);
                 unlockDiskForChannel(channelID);
+                if (err) return console.error(err);
             });
         });
       }
@@ -1595,7 +1595,7 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
   console.log(' GOT HERE 0 ' + gmPlayersFileID);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   gmPlayersFileID = await findFileByName(filename, userFolderID, msg.channel.id);
-  console.log(' GOT HERE X 1' + gmPlayersFileID);
+  console.log(' GOT HERE X 1 ' + gmPlayersFileID);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   lockDiskForChannel(msg.channel.id);
   if (gmPlayersFileID === -1) {
@@ -1605,6 +1605,7 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
     console.log(' GOT HERE X2 ' + gmPlayersFileID);
     unlockDiskForChannel(msg.channel.id);
   }
+  unlockDiskForChannel(msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   lockDiskForChannel(msg.channel.id);
   if (gmPlayersFileID === -1) {
@@ -1614,6 +1615,7 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
     console.log(' GOT HERE X3 ' + gmPlayersFileID);
     unlockDiskForChannel(msg.channel.id);
   }
+  unlockDiskForChannel(msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   console.log(' GOT HERE X4 ' + gmPlayersFileID);
 
