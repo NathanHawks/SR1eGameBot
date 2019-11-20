@@ -245,7 +245,7 @@ function showCache(msg) {
   msg.channel.send(output);
 }
 // unlock global.lock for a specific channel
-function adminUnlock(msg, args) {
+function adminUnlock(args) {
   var channel = -1;
   if (args.length === 0) {
     channel = msg.channel.id
