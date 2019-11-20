@@ -385,9 +385,9 @@ async function findUserFolderFromMsg(msg) {
 
 async function findUserFolderFromUserID(msg, userID) {
   // a User's folder exists in (root)/UserData/ServerID/ChannelID/UserID
+  lockDiskForChannel(msg.channel.id);
   var r = null;
   // try to get it from cache first
-  // NOTE THIS LOGSPAM IS VOODOO -- it doesn't work without it (weirdest race condition ever?)
   var q = {name: msg.channel.guild.id};
   if (cacheHas(q, 'server')) {
     console.log('GOT HERE 1');
@@ -403,6 +403,7 @@ async function findUserFolderFromUserID(msg, userID) {
         console.log('GOT HERE 3');
         r = getFromCache(q, 'userInChannel').googleID;
         console.log(r);
+        unlockDiskForChannel(msg.channel.id);
         return r;
       }
     }
@@ -414,6 +415,7 @@ async function findUserFolderFromUserID(msg, userID) {
     doNothing, msg.channel.id);
   r = await findFolderByName(userID, channelFolderID, doNothing, msg.channel.id);
   // return the file ID
+  unlockDiskForChannel(msg.channel.id);
   return r;
 }
 
