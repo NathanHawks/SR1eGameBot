@@ -210,7 +210,7 @@ function listAllFiles(msg) {
   drive.files.list({
     fields: 'nextPageToken, files(id, name, parents)',
   }, (err, res) => {
-    if (err) return console.log('The API returned an error: ' + err);
+    if (err) return console.error(err);
     const files = res.data.files;
     if (files.length) {
       output += '----- File name ----------------- googleID ------------------------- parentID -------------\n';
@@ -275,7 +275,7 @@ function deleteAllFiles() {
   drive.files.list({
     fields: 'nextPageToken, files(id, name)',
   }, (err, res) => {
-    if (err) return console.log('The API returned an error: ' + err);
+    if (err) return console.error(err);
     const files = res.data.files;
     if (files.length) {
       console.log(`DX: Deleting ${files.length} files...`);
@@ -387,19 +387,19 @@ async function findUserFolderFromUserID(msg, userID) {
   // a User's folder exists in (root)/UserData/ServerID/ChannelID/UserID
   var r = null;
   // try to get it from cache first
-  // var q = {name: msg.channel.guild.id};
-  // if (cacheHas(q, 'server')) {
-  //   var serverID = getFromCache(q, 'server').googleID;
-  //   q = {name: msg.channel.id, parents: [serverID]};
-  //   if (cacheHas(q, 'channel')) {
-  //     var channelID = getFromCache(q, 'channel').googleID;
-  //     q = {name: userID, parents: [channelID]};
-  //     if (cacheHas(q, 'userInChannel')) {
-  //       r = getFromCache(q, 'userInChannel').googleID;
-  //       return r;
-  //     }
-  //   }
-  // }
+  var q = {name: msg.channel.guild.id};
+  if (cacheHas(q, 'server')) {
+    var serverID = getFromCache(q, 'server').googleID;
+    q = {name: msg.channel.id, parents: [serverID]};
+    if (cacheHas(q, 'channel')) {
+      var channelID = getFromCache(q, 'channel').googleID;
+      q = {name: userID, parents: [channelID]};
+      if (cacheHas(q, 'userInChannel')) {
+        r = getFromCache(q, 'userInChannel').googleID;
+        return r;
+      }
+    }
+  }
   // cache didn't return -- do it the slow way
   var serverFolderID = await findFolderByName(msg.channel.guild.id,
     global.folderID.UserData, doNothing, msg.channel.id);
@@ -703,7 +703,7 @@ async function callbackInitInitiative(err, res) {
     findAndSetFolderID(files, folderName);
     if (global.config.deleteUserDataIfFoundOnStartup == true) {
       // testing/debugging: delete UserData folder (to test installer again)
-      deleteFileById(global.folderID[folderName],(err,res)=>{if(err)console.log(err);});
+      deleteFileById(global.folderID[folderName],(err,res)=>{if(err)console.error(err);});
     }
   } else {
     // INSTALL =====================================================
