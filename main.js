@@ -390,19 +390,13 @@ async function findUserFolderFromUserID(msg, userID) {
   // try to get it from cache first
   var q = {name: msg.channel.guild.id};
   if (cacheHas(q, 'server')) {
-    console.log('GOT HERE 1');
     var serverID = getFromCache(q, 'server').googleID;
-    console.log(serverID);
     q = {name: msg.channel.id, parents: [serverID]};
     if (cacheHas(q, 'channel')) {
-      console.log('GOT HERE 2');
       var channelID = getFromCache(q, 'channel').googleID;
-      console.log(channelID);
       q = {name: userID, parents: [channelID]};
       if (cacheHas(q, 'userInChannel')) {
-        console.log('GOT HERE 3');
         r = getFromCache(q, 'userInChannel').googleID;
-        console.log(r);
         unlockDiskForChannel(msg.channel.id);
         return r;
       }
