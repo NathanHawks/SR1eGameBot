@@ -61,7 +61,7 @@ function _cache_nameAndParentMatch(obj, file) {
   else return false;
 }
 function _cache_serverNameMatch(obj, file) {
-  if (obj.discordID === file.name) return true else return false;
+  if (obj.discordID === file.name) return true; else return false;
 }
 function cacheHas(file, cacheAs) {
   var found = false;
