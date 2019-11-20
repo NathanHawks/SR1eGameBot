@@ -25,8 +25,6 @@ function doNothing() {}
 // internal setup
 // system folder(s)
 global.folderID = {UserData : null};
-// a way to get recently created IDs per channel
-global.lastCreatedFolder = { };
 // a cursor for returning found files per channel
 global.lastFoundFileID = { };
 // a place to store the (per channel) results of getFileContents
@@ -349,10 +347,6 @@ async function ensureFolderTriplet(msg) {
       lockDiskForChannel(msg.channel.id);
       if (res.data.files.length === 1) {
         addToCache(res.data.files[0], 'userInChannel');
-        // TODO: find out, is this map/global actually needed anywhere?
-        res.data.files.map((file)=>{
-          global.lastCreatedFolder[msg.channel.id] = file.id;
-        });
       }
       else { console.error(`> BAD: ${msg.author.id} in ${channelFolderID}.`)}
       unlockDiskForChannel(msg.channel.id);
@@ -456,6 +450,7 @@ async function findFolderByName(
   callback=doNothing,
   channelID="system"
 ) {
+  global.lastFoundFileID[msg.channel.id] = -1;
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
   var auth = global.auth;
@@ -514,6 +509,8 @@ async function createFolder(
 }
 
 async function findFileByName(filename, parentID, channelID) {
+  while (isDiskLockedForChannel(channelID)) { await sleep(15); }
+  global.lastFoundFileID[msg.channel.id] = -1;
   lockDiskForChannel(channelID);
   var auth = global.auth;
   var drive = google.drive({version: 'v3', auth});
@@ -1723,12 +1720,12 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
   drive.files.list({q:`"${userFolderID}" in parents and name="${filename}"`,
     fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
+      global.lastFoundFileID[msg.channel.id] = -1;
       if (err) return console.error(err);
       // the file doesn't exist for this channel/user pairing
       if (res.data.files.length == 0) {
         // no group; report so, and prep to abort
         msg.reply(' you currently have no group in this channel.')
-        global.lastFoundFileID[msg.channel.id] = -1;
         unlockDiskForChannel(msg.channel.id);
       } else {
         // be sure it's the right file
@@ -1776,6 +1773,7 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
   console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleRemovePlayersCommand(msg, cmd, args, user) {
+  global.lastFoundFileID[msg.channel.id] = -1;
   msg.react('⏳');
   await ensureFolderTriplet(msg);
   var content = args.join(" ");
@@ -2027,6 +2025,7 @@ async function handleAddNPCInitCommand(msg, cmd, args, user) {
   console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
+  global.lastFoundFileID[msg.channel.id] = -1;
   msg.react('⏳');
   await ensureFolderTriplet(msg);
   var content = args.join(" ");
