@@ -1607,7 +1607,7 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
         // create it if it doesn't exist
         console.log('GOT HERE 5');
         unlockDiskForChannel(msg.channel.id);
-        await setContentsByFilenameAndParent(msg, filename, userFolderID, '');
+        setContentsByFilenameAndParent(msg, filename, userFolderID, '');
         lockDiskForChannel(msg.channel.id);
         console.log('GOT HERE 6');
         global.lastFoundFileID[msg.channel.id] = -1;
