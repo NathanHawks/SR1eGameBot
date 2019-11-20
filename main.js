@@ -262,9 +262,9 @@ function showCache(msg) {
   msg.channel.send('```' + output + '```');
 }
 // unlock global.lock for a specific channel
-function adminUnlock(args) {
+function adminUnlock(msg, args) {
   var channel = -1;
-  if (args.length === 0) {
+  if (msg && msg.channel && args.length === 0) {
     channel = msg.channel.id
   } else { channel = args[0]; }
   global.lock[channel] = false;
@@ -2217,7 +2217,7 @@ function handleMessage(msg, user=msg.author) {
             if (user.id == '360086569778020352') showCache(msg);
           break;
           case 'unlock':
-            if (user.id == '360086569778020352') adminUnlock(args);
+            if (user.id == '360086569778020352') adminUnlock(msg, args);
           break;
           case 'init':
           case 'init2':
