@@ -204,6 +204,7 @@ async function openFile(msg, args) {
 }
 function listAllFiles(msg) {
   var output = '';
+  var finalout = '';
   var auth = global.auth;
   const drive = google.drive({version: 'v3', auth});
   drive.files.list({
@@ -226,11 +227,15 @@ function listAllFiles(msg) {
       output = '';
       for (var x = 0; x < outArr.length; x++) {
         output += outArr[x];
-        if (x == 20 || outArr.length - x < 20) {
+        if (x%20 === 0) {
           msg.channel.send('```' + output + '```');
           output = '';
+        } else if (outArr.length - x < 20) {
+          finalout = output;
         }
       }
+      if (finalout !== output)
+        msg.channel.send('```' + finalout + '```');
     } else console.log(output);
   });
 }
