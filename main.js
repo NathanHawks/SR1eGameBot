@@ -464,6 +464,7 @@ async function findFolderByName(
     fields: 'files(id, name, parents)',
   };
   drive.files.list(q, (err, res) => {
+    if (err) return console.error(err);
     // optimistically, there will usually be a unique result
     if (res.data.files.length === 1) {
       // prep to return the file id
@@ -1127,11 +1128,16 @@ async function handleInitCommand(msg, cmd, args, user) {
   var playerPhases = [];
   var auth = global.auth;
   var drive = google.drive({version: 'v3', auth});
+  console.log('GOT HERE 1');
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  console.log('GOT HERE 2');
   // get author's userFolderID for this channel
   userFolderID = await findUserFolderFromMsg(msg);
+  console.log('GOT HERE 3');
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  console.log('GOT HERE 4');
   lockDiskForChannel(msg.channel.id);
+  console.log('GOT HERE 5');
   // get file ID of gm's (msg.author's) gmPlayers file, if any
   filename = 'gmPlayers';
   gmPlayersFileID = await findFileByName(filename, userFolderID, msg.channel.id);
