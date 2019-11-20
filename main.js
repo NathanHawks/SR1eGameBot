@@ -749,7 +749,7 @@ function firstThreeLC(ofWhat) {
   return r;
 }
 function lastChar(ofWhat) {
-  var r = ofWhat.substring(ofWhat.length-1, ofWhat.length);
+  var r = ofWhat.substring(ofWhat.length-1, ofWhat.length).toLowerCase();
   return r;
 }
 function getTNFromArgs(args) {
@@ -925,11 +925,19 @@ function handleRollCommand(msg, cmd, args, user) {
 
   // SETUP: how many dice, and do we explode?
   var isTestBool = false;
+  var isTotalBool = false;
   var numDiceInt = 0;
   var lastchar = lastChar(cmd);
   if (lastchar == '!') {
     isTestBool = true;
     numDiceInt = cmd.substring(0, cmd.length-1);
+  } else if (lastchar == 't') {
+    isTotalBool = true;
+    numDiceInt = cmd.substring(0, cmd.length-1);
+
+    // TODO: look for a modifier
+
+
   }
   else {
     numDiceInt = cmd.substring(0, cmd.length);
@@ -958,6 +966,12 @@ function handleRollCommand(msg, cmd, args, user) {
   var successesInt = retarr[0];
   var rollsIntArr = retarr[1];
   var output = '';
+  // handle total'd roll
+  if (isTotalBool) {
+    var total = 0;
+    rollsIntArr.map((roll)=>{total+=roll;})
+    output += `Total: ${total} `;
+  }
   // handle opposed roll
   if (isOpposedBool) {
     var retarr = rollDice(opponentDiceInt, isOpposedTestBool, opponentTNInt);
@@ -1003,7 +1017,7 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '  ***example:*** !5!  rolls 5d6 with exploding\n'
     + '!X ***tnY***     Roll *without* exploding 6\'s against Target Number ***Y***'
     + '  ***example:*** !5 tn4   rolls 5d6 w/o exploding vs TN4\n'
-    + '!X! ***tnY***     Roll ***with*** exploding 6\'s against Target Number ***Y***'
+    + '!X***! tnY***     Roll ***with*** exploding 6\'s against Target Number ***Y***'
     + '  ***example:*** !5! tn4   rolls 5d6 w/ exploding vs TN4\n'
     + '\n'
     + '**Opposed Rolls:**\n'
