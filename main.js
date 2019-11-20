@@ -774,7 +774,7 @@ function getTNFromArgs(args) {
 function getModifierFromArgs(args) {
   for (x = 0; x < args.length; x++) {
     var firstchar = args[x].substring(0, 1);
-    if (firstchar === '+' || firstchar === '-')) {
+    if (firstchar === '+' || firstchar === '-') {
       // make sure the rest of the arg is a number
       var subj = args[x].substring(1, args[x].length);
       if (subj == Number(subj)) {
