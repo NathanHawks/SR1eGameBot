@@ -213,7 +213,7 @@ function listAllFiles(msg) {
     if (err) return console.log('The API returned an error: ' + err);
     const files = res.data.files;
     if (files.length) {
-      output += '----- File list -------------------- IDs ------------------------------ parents ------------\n';
+      output += '----- File name ----------------- googleID ------------------------- parentID -------------\n';
       files.map((file) => {
         output += `${file.name.padEnd(20)} (${file.id}) [${file.parents}]\n`;
       });
