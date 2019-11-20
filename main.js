@@ -199,10 +199,11 @@ function getAccessToken(oAuth2Client, callback) {
 }
 //==================================================================
 // @ ================== DX FUNCS ================
-async function openFile(args) {
-  console.log(await getFileContents(args[0], 'system'));
+async function openFile(msg, args) {
+  msg.channel.send("```" + await getFileContents(args[0], 'system') + "```");
 }
-function listAllFiles() {
+function listAllFiles(msg) {
+  var output = '';
   var auth = global.auth;
   const drive = google.drive({version: 'v3', auth});
   drive.files.list({
@@ -211,24 +212,25 @@ function listAllFiles() {
     if (err) return console.log('The API returned an error: ' + err);
     const files = res.data.files;
     if (files.length) {
-      console.log('----- File list -------------------- IDs ------------------------------ parents ------------');
+      output += '----- File list -------------------- IDs ------------------------------ parents ------------\n';
       files.map((file) => {
-        console.log(`${file.name.padEnd(20)} (${file.id}) [${file.parents}]`);
+        output += `${file.name.padEnd(20)} (${file.id}) [${file.parents}]\n`;
       });
     } else {
-      console.log('No files found.');
+      output += 'No files found.';
     }
   });
+  msg.channel.send(`\`\`\`${output}\`\`\``);
 }
-function deleteFile(args) {
+function deleteFile(msg, args) {
   if (args && args[0]) {
     deleteFileById(args[0], (err, res) => {
-      console.log(args[0] + ' deleted.')
+      msg.channel.send("```" + args[0] + ' deleted.```')
     });
   }
 }
-function showCache() {
-  console.log('[CacheID]  - name/discordID - ------------ googleID ----------- ----------- parentID ------------');
+function showCache(msg) {
+  var output = '[CacheID]  - name/discordID - ------------ googleID ----------- ----------- parentID ------------\n';
   var cxArr = ['server', 'channel', 'userInChannel', 'file'];
   cxArr.map((cx) => {
     for (var x = 0; x < global.cache[cx].length; x++) {
@@ -237,9 +239,10 @@ function showCache() {
       var did = global.cache[cx][x].discordID.padEnd(18, " ");
       var gid = global.cache[cx][x].googleID;
       var par = global.cache[cx][x].parentID;
-      console.log(`${id} ${did} ${gid} ${par}`)
+      output += `${id} ${did} ${gid} ${par}\n`
     }
   });
+  msg.channel.send(output);
 }
 // unlock global.lock for a specific channel
 function adminUnlock(msg, args) {
@@ -2182,19 +2185,19 @@ function handleMessage(msg, user=msg.author) {
             handleHelpCommand(msg, cmd, args, user);
           break;
           case 'list':
-            if (user.id == '360086569778020352') listAllFiles();
+            if (user.id == '360086569778020352') listAllFiles(msg);
           break;
            case 'delall':
             if (user.id == '360086569778020352') deleteAllFiles();
           break;
           case 'del':
-            if (user.id == '360086569778020352') deleteFile(args);
+            if (user.id == '360086569778020352') deleteFile(msg, args);
           break;
           case 'open':
-            if (user.id == '360086569778020352') openFile(args);
+            if (user.id == '360086569778020352') openFile(msg, args);
           break;
           case 'showcache':
-            if (user.id == '360086569778020352') showCache();
+            if (user.id == '360086569778020352') showCache(msg);
           break;
           case 'unlock':
             if (user.id == '360086569778020352') adminUnlock(msg, args);
