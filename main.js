@@ -256,6 +256,7 @@ function showCache(msg) {
       var did = global.cache[cx][x].discordID.padEnd(18, " ");
       var gid = global.cache[cx][x].googleID;
       var par = global.cache[cx][x].parentID;
+      if (par === undefined) par = "[UserData]".padStart(11, " ");
       output += `${id} ${did} ${gid} ${par}\n`
     }
   });
@@ -513,6 +514,18 @@ async function createFolder(
 }
 
 async function findFileByName(filename, parentID, channelID) {
+  // while (isDiskLockedForChannel(channelID)) { await sleep(15); }
+  // var q = {name: filename, parents: [parentID]};
+  // if (cacheHas(q, 'file')) {
+  //   lockDiskForChannel(channelID);
+  //   console.log('Getting file metadata from cache!');
+  //   var c = getFromCache(q, 'file');
+  //   console.log(c.googleID);
+  //   global.lastFoundFileID[channelID] = c.googleID;
+  //   unlockDiskForChannel(channelID);
+  //   return c.googleID;
+  // }
+
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
   global.lastFoundFileID[channelID] = -1;
@@ -522,10 +535,11 @@ async function findFileByName(filename, parentID, channelID) {
     {q: `"${parentID}" in parents and name="${filename}"`,
     fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
-      if (err) console.err(err);
+      if (err) console.error(err);
       if (res.data.files.length === 1) {
         res.data.files.map((file) => {
           global.lastFoundFileID[channelID] = file.id;
+          // addToCache(file, 'file');
         });
       }
       else { global.lastFoundFileID[channelID] = -1; }
@@ -1776,7 +1790,7 @@ async function handleRemovePlayersCommand(msg, cmd, args, user) {
     {q: `"${userFolderID}" in parents and name="${filename}"`,
     fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
-      if (err) console.err(err);
+      if (err) console.error(err);
       // in the event of no match
       if (res.data.files.length) {
         res.data.files.map((file) => {
@@ -2028,7 +2042,7 @@ async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
     {q: `"${userFolderID}" in parents and name="${filename}"`,
     fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
-      if (err) console.err(err);
+      if (err) console.error(err);
       // in the event of no match
       if (res.data.files.length) {
         res.data.files.map((file) => {
@@ -2228,11 +2242,7 @@ async function handleSaveMacroCommand(msg, cmd, args, user) {
     savedRollsStr = savedRollsArr.join("\n");
     await setContentsByFilenameAndParent(msg, filename, parentFolderID, savedRollsStr);
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-    // get savedRollsFileID -- not working nor actually needed
-    // savedRollsFileID = await findFileByName(filename, parentFolderID, msg.channel.id);
-    // while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   }
-  console.log(`fileID=${savedRollsFileID} & content=${savedRollsStr}`);
   msg.reply(` you now have ${savedRollsArr.length} roll macros saved.`);
   removeHourglass(msg);
 }
