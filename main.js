@@ -47,14 +47,14 @@ global.cache = {
   file: [] // arr of obj: googleID, name, parentID, content
 };
 function _cache_googleIDMatch(obj, file) {
-  if (obj.googleID && file.id && obj.googleID == file.id)
+  if (obj.googleID && file.id && obj.googleID === file.id)
     return true;
   else return false;
 }
 function _cache_nameAndParentMatch(obj, file) {
-  if (obj.discordID && file.name && obj.discordID == file.name
+  if (obj.discordID && file.name && obj.discordID === file.name
     && file.parents && file.parents.length && obj.parentID
-    && obj.parentID == file.parents[0])
+    && obj.parentID === file.parents[0])
     return true;
   else return false;
 }
@@ -68,7 +68,11 @@ function cacheHas(file, cacheAs) {
     if (_cache_googleIDMatch(obj, file)) found = true;
     if (_cache_nameAndParentMatch(obj, file)) found = true;
     if (cacheAs === 'server' && _cache_serverNameMatch(obj, file)) found = true;
-    if (found) return found;
+    if (found && cacheAs == 'file') {
+      if (obj.discordID !== file.name || obj.parentID !== file.parents[0])
+        doNothing(false, false);
+      else return found;
+    } else if (found) return found;
   });
   return found;
 }
@@ -82,7 +86,12 @@ function getCacheIndex(file, cacheAs, create=true) {
     if (_cache_nameAndParentMatch(obj, file)) r = i;
       // servers don't need a parent, just the filename
     if (cacheAs === 'server' && _cache_serverNameMatch(obj, file)) r = i;
-    if (r) return r;
+    if (r && cacheAs == 'file') {
+      if (obj.discordID !== file.name || obj.parentID !== file.parents[0])
+        doNothing(false, false);
+      else return r;
+    } else if (r) return r;
+    i++;
   });
   if (create === false) return r;
   // if there was no match, reserve an index and return it
@@ -514,17 +523,17 @@ async function createFolder(
 }
 
 async function findFileByName(filename, parentID, channelID) {
-  // while (isDiskLockedForChannel(channelID)) { await sleep(15); }
-  // var q = {name: filename, parents: [parentID]};
-  // if (cacheHas(q, 'file')) {
-  //   lockDiskForChannel(channelID);
-  //   console.log('Getting file metadata from cache!');
-  //   var c = getFromCache(q, 'file');
-  //   console.log(c.googleID);
-  //   global.lastFoundFileID[channelID] = c.googleID;
-  //   unlockDiskForChannel(channelID);
-  //   return c.googleID;
-  // }
+  while (isDiskLockedForChannel(channelID)) { await sleep(15); }
+  var q = {name: filename, parents: [parentID]};
+  if (cacheHas(q, 'file')) {
+    lockDiskForChannel(channelID);
+    console.log('Getting file metadata from cache!');
+    var c = getFromCache(q, 'file');
+    console.log(`${filename} :: ${parentID} :: ${c.googleID}`);
+    global.lastFoundFileID[channelID] = c.googleID;
+    unlockDiskForChannel(channelID);
+    return c.googleID;
+  }
 
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
@@ -539,7 +548,7 @@ async function findFileByName(filename, parentID, channelID) {
       if (res.data.files.length === 1) {
         res.data.files.map((file) => {
           global.lastFoundFileID[channelID] = file.id;
-          // addToCache(file, 'file');
+          addToCache(file, 'file');
         });
       }
       else { global.lastFoundFileID[channelID] = -1; }
@@ -551,6 +560,7 @@ async function findFileByName(filename, parentID, channelID) {
 }
 
 async function getFileContents(fileID, channelID) {
+  global.lastFileContents[channelID] = '';
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
   var auth = global.auth;
