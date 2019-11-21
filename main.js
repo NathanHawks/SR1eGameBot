@@ -2335,8 +2335,7 @@ async function handleListMacrosCommand(msg, cmd, args, user) {
       });
       msg.reply(` you have the following macros in this channel:\n${output}`);
     }
-  }
-  if (!savedRollsFileID) {
+  } else {
     // savedRolls file didn't exist
     msg.reply(" you don't have any saved macros in this channel yet.")
   }
