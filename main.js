@@ -574,6 +574,7 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
         }, (err, file) => {
           unlockDiskForChannel(channelID);
           if (err) return console.error(err);
+          else return;
         });
       } else if (res.data.files.length===1) {
         // it already exists, update it
@@ -583,11 +584,13 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
               (err, res) => {
                 unlockDiskForChannel(channelID);
                 if (err) return console.error(err);
+                else return;
             });
         });
       }
     }
   );
+  while (isDiskLockedForChannel(channelID)) { await sleep(15); }
 }
 async function deleteFileById(fileId, callback=(err,res)=>{}, channelID="system") {
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
@@ -2169,6 +2172,118 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
   // listAllFiles();
   console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
+async function handleSaveMacroCommand(msg, cmd, args, user) {
+  if (args.length < 2) return msg.reply('Not enough options.')
+  msg.react('⏳');
+  await ensureFolderTriplet(msg);
+  var auth = global.auth;
+  var drive = google.drive({version: 'v3', auth});
+  var filename = 'savedRolls';
+  var parentFolderID = -1;
+  var savedRollsFileID = -1;
+  var savedRollsStr = '';
+  var savedRollsArr = [];
+  var savedRollsNames = [];
+  var inputName = args[0];
+  var inputRoll = args;
+  inputRoll.splice(0, 1);
+  inputRoll = inputRoll.join(" ");
+  var formattedEntry = `${inputName} ${inputRoll}`;
+  // console.log(`inputName=${inputName} & inputRoll=${inputRoll}`);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  parentFolderID = await findUserFolderFromMsg(msg);
+  savedRollsFileID = await findFileByName(filename, parentFolderID, msg.channel.id);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  if (savedRollsFileID) {
+    // get existing file content
+    savedRollsStr = await getFileContents(savedRollsFileID, msg.channel.id);
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    if (savedRollsStr) {
+      savedRollsArr = savedRollsStr.split("\n");
+      // get an index of name per line
+      savedRollsArr.map((macro)=>{
+        var tmpArr = macro.split(" ");
+        savedRollsNames[savedRollsNames.length] = tmpArr[0];
+      });
+      var found = false;
+      var i = savedRollsNames.indexOf(inputName);
+      if (i !== -1) {
+        // if name already exists, update that entry
+        savedRollsArr[i] = formattedEntry;
+      } else {
+        // if name is new, append to existing rolls
+        savedRollsArr[savedRollsArr.length] = formattedEntry;
+      }
+    } else {
+      // empty file; put entry
+      savedRollsArr = [formattedEntry];
+    }
+    savedRollsStr = savedRollsArr.join("\n");
+    await setContentsByFilenameAndParent(msg, filename, parentFolderID, savedRollsStr);
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  }
+  if (!savedRollsFileID) {
+    // savedRolls file didn't exist; initialize it with this roll macro
+    savedRollsArr = [formattedEntry];
+    savedRollsStr = savedRollsArr.join("\n");
+    await setContentsByFilenameAndParent(msg, filename, parentFolderID, savedRollsStr);
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    // get savedRollsFileID -- not working nor actually needed
+    // savedRollsFileID = await findFileByName(filename, parentFolderID, msg.channel.id);
+    // while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  }
+  console.log(`fileID=${savedRollsFileID} & content=${savedRollsStr}`);
+  msg.reply(` you now have ${savedRollsArr.length} roll macros saved.`);
+  removeHourglass(msg);
+}
+async function handleRollMacroCommand(msg, cmd, args, user) {
+  if (args.length < 1) return msg.reply('Not enough options.')
+  msg.react('⏳');
+  await ensureFolderTriplet(msg);
+  var auth = global.auth;
+  var drive = google.drive({version: 'v3', auth});
+  var filename = 'savedRolls';
+  var parentFolderID = -1;
+  var savedRollsFileID = -1;
+  var savedRollsStr = '';
+  var savedRollsArr = [];
+  var savedRollsNames = [];
+  var inputName = args[0];
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  parentFolderID = await findUserFolderFromMsg(msg);
+  savedRollsFileID = await findFileByName(filename, parentFolderID, msg.channel.id);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  if (savedRollsFileID) {
+    // get existing file content
+    savedRollsStr = await getFileContents(savedRollsFileID, msg.channel.id);
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    if (savedRollsStr) {
+      savedRollsArr = savedRollsStr.split("\n");
+      // get an index of name per line
+      savedRollsArr.map((macro)=>{
+        var tmpArr = macro.split(" ");
+        savedRollsNames[savedRollsNames.length] = tmpArr[0];
+      });
+      var found = false;
+      var i = savedRollsNames.indexOf(inputName);
+      if (i !== -1) {
+        // found it; roll it
+        var roll = savedRollsArr[i];
+        roll = roll.split(" ");
+        cmd = roll[1];
+        roll.splice(0, 2);
+        args = roll;
+        console.log(`cmd: ${cmd} & args: ${args}`);
+        handleRollCommand(msg, cmd, args, user);
+        removeHourglass(msg);
+      }
+    }
+  }
+  if (!savedRollsFileID) {
+    // savedRolls file didn't exist
+    msg.reply(" you don't have any saved macros in this channel yet.")
+  }
+}
 // @ =========== HANDLEMESSAGE FUNCTION ============
 function handleMessage(msg, user=msg.author) {
   // stop confusing people during development!!
@@ -2276,6 +2391,12 @@ function handleMessage(msg, user=msg.author) {
           case 'clearnpcinits':
           case 'clearnpcinit':
             handleClearNPCInitCommand(msg, cmd, args, user);
+          break;
+          case 'save':
+            handleSaveMacroCommand(msg, cmd, args, user);
+          break;
+          case 'roll':
+            handleRollMacroCommand(msg, cmd, args, user);
           break;
           default:
             handleRollCommand(msg, cmd, args, user);
