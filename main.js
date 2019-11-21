@@ -2302,6 +2302,46 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
     msg.reply(" you don't have any saved macros in this channel yet.")
   }
 }
+async function handleListMacrosCommand(msg, cmd, args, user) {
+  msg.react('⏳');
+  await ensureFolderTriplet(msg);
+  var auth = global.auth;
+  var drive = google.drive({version: 'v3', auth});
+  var filename = 'savedRolls';
+  var parentFolderID = -1;
+  var savedRollsFileID = -1;
+  var savedRollsStr = '';
+  var savedRollsArr = [];
+  var savedRollsNames = [];
+  var output = '';
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  parentFolderID = await findUserFolderFromMsg(msg);
+  savedRollsFileID = await findFileByName(filename, parentFolderID, msg.channel.id);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  if (savedRollsFileID) {
+    // get existing file content
+    savedRollsStr = await getFileContents(savedRollsFileID, msg.channel.id);
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    if (savedRollsStr) {
+      savedRollsArr = savedRollsStr.split("\n");
+      // get an index of name per line
+      savedRollsArr.map((macro)=>{
+        var tmpArr = macro.split(" ");
+        var name = tmpArr[0];
+        tmpArr.splice(0, 1);
+        var tmpStr = tmpArr.join(" ");
+        var macro = tmpStr;
+        output += `${name} | ${macro}\n`;
+      });
+      msg.reply(` you have the following macros in this channel:\n${output}`);
+      removeHourglass(msg);
+    }
+  }
+  if (!savedRollsFileID) {
+    // savedRolls file didn't exist
+    msg.reply(" you don't have any saved macros in this channel yet.")
+  }
+}
 // @ =========== HANDLEMESSAGE FUNCTION ============
 function handleMessage(msg, user=msg.author) {
   // stop confusing people during development!!
@@ -2415,6 +2455,10 @@ function handleMessage(msg, user=msg.author) {
           break;
           case 'roll':
             handleRollMacroCommand(msg, cmd, args, user);
+          break;
+          case 'lm':
+          case 'listmacros':
+            handleListMacrosCommand(msg, cmd, args, user);
           break;
           default:
             handleRollCommand(msg, cmd, args, user);
