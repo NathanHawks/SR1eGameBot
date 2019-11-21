@@ -69,6 +69,7 @@ function cacheHas(file, cacheAs) {
     if (_cache_nameAndParentMatch(obj, file)) found = true;
     if (cacheAs === 'server' && _cache_serverNameMatch(obj, file)) found = true;
     if (found && cacheAs == 'file') {
+      // this shouldn't be necessary, i don't know why i'm getting bad matches
       if (obj.discordID !== file.name || obj.parentID !== file.parents[0])
         doNothing(false, false);
       else return found;
@@ -523,17 +524,15 @@ async function createFolder(
 }
 
 async function findFileByName(filename, parentID, channelID) {
-  while (isDiskLockedForChannel(channelID)) { await sleep(15); }
-  var q = {name: filename, parents: [parentID]};
-  if (cacheHas(q, 'file')) {
-    lockDiskForChannel(channelID);
-    console.log('Getting file metadata from cache!');
-    var c = getFromCache(q, 'file');
-    console.log(`${filename} :: ${parentID} :: ${c.googleID}`);
-    global.lastFoundFileID[channelID] = c.googleID;
-    unlockDiskForChannel(channelID);
-    return c.googleID;
-  }
+  // while (isDiskLockedForChannel(channelID)) { await sleep(15); }
+  // var q = {name: filename, parents: [parentID]};
+  // if (cacheHas(q, 'file')) {
+  //   lockDiskForChannel(channelID);
+  //   var c = getFromCache(q, 'file');
+  //   global.lastFoundFileID[channelID] = c.googleID;
+  //   unlockDiskForChannel(channelID);
+  //   return c.googleID;
+  // }
 
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
@@ -548,7 +547,7 @@ async function findFileByName(filename, parentID, channelID) {
       if (res.data.files.length === 1) {
         res.data.files.map((file) => {
           global.lastFoundFileID[channelID] = file.id;
-          addToCache(file, 'file');
+          // addToCache(file, 'file');
         });
       }
       else { global.lastFoundFileID[channelID] = -1; }
