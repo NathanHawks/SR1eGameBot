@@ -2331,7 +2331,7 @@ async function handleListMacrosCommand(msg, cmd, args, user) {
         tmpArr.splice(0, 1);
         var tmpStr = tmpArr.join(" ");
         var macro = tmpStr;
-        output += `${name} | ${macro}\n`;
+        output += `***${name}*** :arrow_right: ${macro}\n`;
       });
       msg.reply(` you have the following macros in this channel:\n${output}`);
       removeHourglass(msg);
