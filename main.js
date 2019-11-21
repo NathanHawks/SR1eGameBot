@@ -396,7 +396,6 @@ async function findUserFolderFromMsg(msg) {
 
 async function findUserFolderFromUserID(msg, userID) {
   // a User's folder exists in (root)/UserData/ServerID/ChannelID/UserID
-  lockDiskForChannel(msg.channel.id);
   var r = null;
   // try to get it from cache first
   // var q = {name: msg.channel.guild.id};
