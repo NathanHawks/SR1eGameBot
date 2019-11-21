@@ -2334,13 +2334,13 @@ async function handleListMacrosCommand(msg, cmd, args, user) {
         output += `***${name}*** :arrow_right: ${macro}\n`;
       });
       msg.reply(` you have the following macros in this channel:\n${output}`);
-      removeHourglass(msg);
     }
   }
   if (!savedRollsFileID) {
     // savedRolls file didn't exist
     msg.reply(" you don't have any saved macros in this channel yet.")
   }
+  removeHourglass(msg);
 }
 // @ =========== HANDLEMESSAGE FUNCTION ============
 function handleMessage(msg, user=msg.author) {
