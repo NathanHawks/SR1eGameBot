@@ -399,20 +399,20 @@ async function findUserFolderFromUserID(msg, userID) {
   lockDiskForChannel(msg.channel.id);
   var r = null;
   // try to get it from cache first
-  var q = {name: msg.channel.guild.id};
-  if (cacheHas(q, 'server')) {
-    var serverID = getFromCache(q, 'server').googleID;
-    q = {name: msg.channel.id, parents: [serverID]};
-    if (cacheHas(q, 'channel')) {
-      var channelID = getFromCache(q, 'channel').googleID;
-      q = {name: userID, parents: [channelID]};
-      if (cacheHas(q, 'userInChannel')) {
-        r = getFromCache(q, 'userInChannel').googleID;
-        unlockDiskForChannel(msg.channel.id);
-        return r;
-      }
-    }
-  }
+  // var q = {name: msg.channel.guild.id};
+  // if (cacheHas(q, 'server')) {
+  //   var serverID = getFromCache(q, 'server').googleID;
+  //   q = {name: msg.channel.id, parents: [serverID]};
+  //   if (cacheHas(q, 'channel')) {
+  //     var channelID = getFromCache(q, 'channel').googleID;
+  //     q = {name: userID, parents: [channelID]};
+  //     if (cacheHas(q, 'userInChannel')) {
+  //       r = getFromCache(q, 'userInChannel').googleID;
+  //       unlockDiskForChannel(msg.channel.id);
+  //       return r;
+  //     }
+  //   }
+  // }
   // cache didn't return -- do it the slow way
   var serverFolderID = await findFolderByName(msg.channel.guild.id,
     global.folderID.UserData, doNothing, msg.channel.id);
