@@ -960,12 +960,13 @@ bot.on('messageReactionAdd', (reaction, user) => {
 function handleRollCommand(msg, cmd, args, user) {
   // allow multiple roll commands separated by semicolon
   var cmdArr = msg.content.split(";");
+  var output = '';
   for (var x = 0; x < cmdArr.length; x++) {
     args = cmdArr[x].substring(1).split(' ');
     cmd = args[0];
     args = args.splice(1);
     cmd = cmd.toLowerCase();
-
+    if (cmd.substring(0, 1) === '!') cmd = cmd.substring(1);
     // SETUP: how many dice, and do we explode?
     var isTestBool = false;
     var isTotalBool = false;
@@ -1002,7 +1003,6 @@ function handleRollCommand(msg, cmd, args, user) {
 
     // SETUP: anything remaining is a note; prepare to pass it thru
     var note = prepRollNote(cmd, args, tnInt);
-    var output = '';
 
     // GO: Roll the bones ============================================
     var retarr = rollDice(numDiceInt, isTestBool, tnInt);
