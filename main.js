@@ -1092,7 +1092,7 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '***example:*** !1 (grenade scatter direction);'
     + ' 2t (max non-aero grenade scatter distance)\n';
     var output2 =
-    '**====== Notes ======**\n'
+    '\n**====== Notes ======**\n'
     + 'Notes are OK, and your options can be in the middle of the note\n'
     + 'examples:\n'
     + '  !3! TN4 resist wagemage sorcery      works\n'
