@@ -962,11 +962,13 @@ function handleRollCommand(msg, cmd, args, user) {
   var cmdArr = msg.content.split(";");
   var output = '';
   for (var x = 0; x < cmdArr.length; x++) {
-    if (output !== '') output += `\nRoll #${x}: `;
+    if (output !== '') output += `\nRoll #${x+1}: `;
+    // kill preceding or trailing space before it kills my parsing
+    cmdArr[x] = cmdArr[x].trim();
     args = cmdArr[x].split(' ');
     cmd = args[0];
     args = args.splice(1);
-    cmd = cmd.toLowerCase().trim();
+    cmd = cmd.toLowerCase();
     if (cmd.substring(0, 1) === '!') cmd = cmd.substring(1);
     // SETUP: how many dice, and do we explode?
     var isTestBool = false;
