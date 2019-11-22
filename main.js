@@ -962,7 +962,8 @@ function handleRollCommand(msg, cmd, args, user) {
   var cmdArr = msg.content.split(";");
   var output = '';
   for (var x = 0; x < cmdArr.length; x++) {
-    args = cmdArr[x].substring(1).split(' ');
+    if (output !== '') output += `\nRoll #${x}: `;
+    args = cmdArr[x].split(' ');
     cmd = args[0];
     args = args.splice(1);
     cmd = cmd.toLowerCase().trim();
