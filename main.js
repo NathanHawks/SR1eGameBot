@@ -1061,7 +1061,7 @@ function handleHelpCommand(msg, cmd, args, user) {
   if (args.length && args[0] == 2 || cmd === 'inithelp') {
     whatToShow = 2;
   }
-  var output = '\n GameBot usage:\n'
+  var output1 = '\n Main Help:\n'
     + '**====== Plain Old d6\'s ======**\n'
     + '!***X***         Roll ***X***d6 *without* Rule of 6'
     + '  ***example:*** !5        rolls 5d6 *without* Rule of 6\n'
@@ -1086,13 +1086,13 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '  ***example:*** !5! tn3 vs6! otn4    '
     + 'Roll 5d6 (Rule of 6) with TN 3, against 6d6 (Rule of 6) with TN 4\n'
     + '\n'
-    + '**===== Multiple Rolls per Message =====*\n'
+    + '**===== Multiple Rolls per Message =====**\n'
     + 'You can order GameBot to do more than one roll without sending multiple '
     + ' messages. Just separate the commands with semicolons.\n'
     + '***example:*** !1 (grenade scatter direction);'
-    + ' 2t (max non-aero grenade scatter distance)\n'
-    + '\n'
-    + '**====== Notes ======**\n'
+    + ' 2t (max non-aero grenade scatter distance)\n';
+    var output2 =
+    '**====== Notes ======**\n'
     + 'Notes are OK, and your options can be in the middle of the note\n'
     + 'examples:\n'
     + '  !3! TN4 resist wagemage sorcery      works\n'
@@ -1184,8 +1184,9 @@ function handleHelpCommand(msg, cmd, args, user) {
       msg.reply(output22);
     break;
     case 1:
-      output = addMaintenanceStatusMessage(output);
-      msg.reply(output);
+      output1 = addMaintenanceStatusMessage(output2);
+      msg.reply(output1);
+      msg.reply(output2);
     break;
   }
 }
