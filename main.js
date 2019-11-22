@@ -1093,7 +1093,7 @@ function handleHelpCommand(msg, cmd, args, user) {
     + ' 2t (max non-aero grenade scatter distance)\n';
     var output2 =
     '\n**====== Notes ======**\n'
-    + 'Notes are OK, and your options can be in the middle of the note\n'
+    + 'Notes are OK, and your options can be in the middle of the note.\n'
     + 'examples:\n'
     + '  !3! TN4 resist wagemage sorcery      works\n'
     + '  !3! resist wagemage sorcery TN4      works\n'
@@ -2309,7 +2309,6 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
         var tmpArr = macro.split(" ");
         savedRollsNames[savedRollsNames.length] = tmpArr[0];
       });
-      var found = false;
       var i = savedRollsNames.indexOf(inputName);
       if (i !== -1) {
         // found it; roll it
@@ -2332,6 +2331,53 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
     // savedRolls file didn't exist
     msg.reply(" you don't have any saved macros in this channel yet.")
   }
+}
+async function handleRemoveMacroCommand(msg, cmd, args, user) {
+  if (args.length < 1) return msg.reply(':no_entry_sign: You didn\'t specify which macro I should remove.')
+  msg.react('⏳');
+  await ensureFolderTriplet(msg);
+  var auth = global.auth;
+  var drive = google.drive({version: 'v3', auth});
+  var filename = 'savedRolls';
+  var parentFolderID = -1;
+  var savedRollsFileID = -1;
+  var savedRollsStr = '';
+  var savedRollsArr = [];
+  var savedRollsNames = [];
+  var inputName = args[0];
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  parentFolderID = await findUserFolderFromMsg(msg);
+  savedRollsFileID = await findFileByName(filename, parentFolderID, msg.channel.id);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  if (savedRollsFileID) {
+    // get existing file content
+    savedRollsStr = await getFileContents(savedRollsFileID, msg.channel.id);
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    if (savedRollsStr) {
+      savedRollsArr = savedRollsStr.split("\n");
+      // get an index of name per line
+      savedRollsArr.map((macro)=>{
+        var tmpArr = macro.split(" ");
+        savedRollsNames[savedRollsNames.length] = tmpArr[0];
+      });
+      var i = savedRollsNames.indexOf(inputName);
+      if (i !== -1) {
+        // found it; remove it
+        savedRollsArr.splice(i, 1);
+        savedRollsStr = savedRollsArr.join("\n");
+        await setContentsByFilenameAndParent(msg, filename, parentFolderID, savedRollsStr);
+        while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+        msg.reply(`Removed the macro; `
+          + `you now have ${savedRollsArr.length} macros saved in this channel.`);
+        removeHourglass(msg);
+      } else msg.reply('That name didn\'t match any of your saved macros in this channel.')
+    }
+  }
+  if (!savedRollsFileID) {
+    // savedRolls file didn't exist
+    msg.reply(" you don't have any saved macros in this channel yet.")
+  }
+
 }
 async function handleListMacrosCommand(msg, cmd, args, user) {
   msg.react('⏳');
@@ -2485,6 +2531,10 @@ function handleMessage(msg, user=msg.author) {
           break;
           case 'roll':
             handleRollMacroCommand(msg, cmd, args, user);
+          break;
+          case 'removemacro':
+          case 'rmm':
+            handleRemoveMacroCommand(msg, cmd, args, user);
           break;
           case 'lm':
           case 'listmacros':
