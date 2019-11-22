@@ -68,7 +68,7 @@ function cacheHas(file, cacheAs) {
     if (_cache_googleIDMatch(obj, file)) found = true;
     if (_cache_nameAndParentMatch(obj, file)) found = true;
     if (cacheAs === 'server' && _cache_serverNameMatch(obj, file)) found = true;
-    if (found && cacheAs == 'file') {
+    if (found && cacheAs === 'file') {
       // this shouldn't be necessary, i don't know why i'm getting bad matches
       if (obj.discordID !== file.name || obj.parentID !== file.parents[0])
         doNothing(false, false);
@@ -87,7 +87,7 @@ function getCacheIndex(file, cacheAs, create=true) {
     if (_cache_nameAndParentMatch(obj, file)) r = i;
       // servers don't need a parent, just the filename
     if (cacheAs === 'server' && _cache_serverNameMatch(obj, file)) r = i;
-    if (r && cacheAs == 'file') {
+    if (r && cacheAs === 'file') {
       if (obj.discordID !== file.name || obj.parentID !== file.parents[0])
         doNothing(false, false);
       else return r;
@@ -244,8 +244,7 @@ function listAllFiles(msg) {
           finalout = output;
         }
       }
-      if (finalout !== output)
-        msg.channel.send('```' + finalout + '```');
+      msg.channel.send('```' + finalout + '```');
     } else console.log(output);
   });
 }
