@@ -1089,7 +1089,7 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '**===== Multiple Rolls per Message =====*\n'
     + 'You can order GameBot to do more than one roll without sending multiple '
     + ' messages. Just separate the commands with semicolons.\n'
-    + '***example:*** !6 (grenade scatter direction);'
+    + '***example:*** !1 (grenade scatter direction);'
     + ' 2t (max non-aero grenade scatter distance)\n'
     + '\n'
     + '**====== Notes ======**\n'
