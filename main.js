@@ -2318,7 +2318,7 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
         roll.splice(0, 2);
         args = roll;
         //console.log(`cmd: ${cmd} & args: ${args}`);
-        var newContent = `${cmd} ${args.split(",").join(" ")}`;
+        var newContent = `${cmd} ${args.join(" ")}`;
         console.log(newContent);
         msg.edit(newContent)
           .then(msg => handleRollCommand(msg, cmd, args, user))
