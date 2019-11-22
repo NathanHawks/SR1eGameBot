@@ -2314,12 +2314,15 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
         roll = roll.split(" ");
         cmd = roll[1];
         // be nice if they add the preceding bang, i do it constantly
-        if (cmd.substring(0,1) === '!') cmd = cmd.substring(1, cmd.length);
+        if (cmd.substring(0,1) !== '!') cmd = `!${cmd}`;
         roll.splice(0, 2);
         args = roll;
-        console.log(`cmd: ${cmd} & args: ${args}`);
-        msg.content = `${cmd} ${args.split(",").join(" ")}`;
-        handleRollCommand(msg, cmd, args, user);
+        //console.log(`cmd: ${cmd} & args: ${args}`);
+        var newContent = `${cmd} ${args.split(",").join(" ")}`;
+        console.log(newContent);
+        msg.edit(newContent)
+          .then(msg => handleRollCommand(msg, cmd, args, user))
+          .catch(console.error);
         removeHourglass(msg);
       }
     }
