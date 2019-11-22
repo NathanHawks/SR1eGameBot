@@ -957,9 +957,11 @@ bot.on('messageReactionAdd', (reaction, user) => {
 
 // @ ============== COMMAND HANDLERS ==============
 // handle rolls, tests, & opposed tests
-function handleRollCommand(msg, cmd, args, user) {
+function handleRollCommand(msg, cmd, args, user, override=null) {
   // allow multiple roll commands separated by semicolon
-  var cmdArr = msg.content.split(";");
+  var cmdArr = null;
+  if (override !== null) cmdArr = override.split(";");
+  else cmdArr = msg.content.split(";");
   var output = '';
   for (var x = 0; x < cmdArr.length; x++) {
     if (output !== '') output += `\nRoll #${x+1}: `;
@@ -2320,9 +2322,7 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
         //console.log(`cmd: ${cmd} & args: ${args}`);
         var newContent = `${cmd} ${args.join(" ")}`;
         console.log(newContent);
-        msg.edit(newContent)
-          .then(msg => handleRollCommand(msg, cmd, args, user))
-          .catch(console.error);
+        handleRollCommand(msg, cmd, args, user, newContent);
         removeHourglass(msg);
       }
     }
