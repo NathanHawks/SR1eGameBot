@@ -2318,6 +2318,7 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
         roll.splice(0, 2);
         args = roll;
         console.log(`cmd: ${cmd} & args: ${args}`);
+        msg.content = `${cmd} ${args.split(",").join(" ")}`;
         handleRollCommand(msg, cmd, args, user);
         removeHourglass(msg);
       }
