@@ -958,88 +958,98 @@ bot.on('messageReactionAdd', (reaction, user) => {
 // @ ============== COMMAND HANDLERS ==============
 // handle rolls, tests, & opposed tests
 function handleRollCommand(msg, cmd, args, user) {
+  // allow multiple roll commands separated by semicolon
+  var cmdArr = msg.content.split(";");
+  for (var x = 0; x < cmdArr.length; x++) {
+    args = cmdArr[x].substring(1).split(' ');
+    cmd = args[0];
+    args = args.splice(1);
+    cmd = cmd.toLowerCase();
 
-  // SETUP: how many dice, and do we explode?
-  var isTestBool = false;
-  var isTotalBool = false;
-  var numDiceInt = 0;
-  var lastchar = lastChar(cmd);
-  var modifier = 0;
-  if (lastchar == '!') {
-    isTestBool = true;
-    numDiceInt = cmd.substring(0, cmd.length-1);
-  } else if (lastchar == 't') {
-    isTotalBool = true;
-    numDiceInt = cmd.substring(0, cmd.length-1);
-    // look for a modifier
-    modifier = getModifierFromArgs(args);
-  }
-  else {
-    numDiceInt = cmd.substring(0, cmd.length);
-  }
-
-  // SETUP: was a TN given?
-  var tnInt = getTNFromArgs(args);
-
-  // SETUP: is this an opposed roll?
-  var retarr = getOpposedSetupArr(args);
-  var isOpposedBool = retarr[0];
-  var opponentDiceInt = retarr[1];
-  var opponentTNInt = retarr[2];
-  var isOpposedTestBool = retarr[3];
-  if (isOpposedTestBool === true && opponentTNInt === -1) {
-    msg.reply(":no_entry_sign: you ordered an opposed test, without specifying an "
-    + "opponent TN (the **otn** option).\nExample: **!6! tn4 vs5! otn4**");
-    return;
-  }
-
-  // SETUP: anything remaining is a note; prepare to pass it thru
-  var note = prepRollNote(cmd, args, tnInt);
-
-  // GO: Roll the bones ============================================
-  var retarr = rollDice(numDiceInt, isTestBool, tnInt);
-  var successesInt = retarr[0];
-  var rollsIntArr = retarr[1];
-  var output = '';
-  // handle opposed roll
-  if (isOpposedBool) {
-    var retarr = rollDice(opponentDiceInt, isOpposedTestBool, opponentTNInt);
-    var opponentSuccessesInt = retarr[0];
-    var opponentRollsIntArr = retarr[1];
-  }
-  // prep output and deliver it ====================================
-  // handle total'd roll
-  if (isTotalBool) {
-    var total = 0;
-    rollsIntArr.map((roll)=>{total+=roll;})
-    if (modifier) total += modifier;
-    output += `[Total: ${total}] | `;
-  }
-  if (isOpposedBool) {
-    output += makeOpposedOutput(isOpposedBool, successesInt,
-      opponentSuccessesInt, user, rollsIntArr, opponentRollsIntArr, note
-    );
-  }
-  else {
-    var successesFormattedString = "";
-    if (successesInt > 0) {
-      successesFormattedString = successesInt + ' successes ';
+    // SETUP: how many dice, and do we explode?
+    var isTestBool = false;
+    var isTotalBool = false;
+    var numDiceInt = 0;
+    var lastchar = lastChar(cmd);
+    var modifier = 0;
+    if (lastchar == '!') {
+      isTestBool = true;
+      numDiceInt = cmd.substring(0, cmd.length-1);
+    } else if (lastchar == 't') {
+      isTotalBool = true;
+      numDiceInt = cmd.substring(0, cmd.length-1);
+      // look for a modifier
+      modifier = getModifierFromArgs(args);
     }
-    output += user + ', you rolled ' + successesFormattedString
-    + '(' +rollsIntArr+ ') ' + note;
-  }
+    else {
+      numDiceInt = cmd.substring(0, cmd.length);
+    }
 
+    // SETUP: was a TN given?
+    var tnInt = getTNFromArgs(args);
+
+    // SETUP: is this an opposed roll?
+    var retarr = getOpposedSetupArr(args);
+    var isOpposedBool = retarr[0];
+    var opponentDiceInt = retarr[1];
+    var opponentTNInt = retarr[2];
+    var isOpposedTestBool = retarr[3];
+    if (isOpposedTestBool === true && opponentTNInt === -1) {
+      msg.reply(":no_entry_sign: you ordered an opposed test without an "
+      + "opponent TN (the **otn** option).\nExample: **!6! tn4 vs5! *otn4***");
+      return;
+    }
+
+    // SETUP: anything remaining is a note; prepare to pass it thru
+    var note = prepRollNote(cmd, args, tnInt);
+    var output = '';
+
+    // GO: Roll the bones ============================================
+    var retarr = rollDice(numDiceInt, isTestBool, tnInt);
+    var successesInt = retarr[0];
+    var rollsIntArr = retarr[1];
+    // handle opposed roll
+    if (isOpposedBool) {
+      var retarr = rollDice(opponentDiceInt, isOpposedTestBool, opponentTNInt);
+      var opponentSuccessesInt = retarr[0];
+      var opponentRollsIntArr = retarr[1];
+    }
+    // prep output and deliver it ====================================
+    // handle total'd roll
+    if (isTotalBool) {
+      var total = 0;
+      rollsIntArr.map((roll)=>{total+=roll;})
+      if (modifier) total += modifier;
+      output += `[Total: ${total}] | `;
+    }
+    if (isOpposedBool) {
+      output += makeOpposedOutput(isOpposedBool, successesInt,
+        opponentSuccessesInt, user, rollsIntArr, opponentRollsIntArr, note
+      );
+    }
+    else {
+      var successesFormattedString = "";
+      if (successesInt > 0) {
+        successesFormattedString = successesInt + ' successes ';
+      }
+      output += user + ', you rolled ' + successesFormattedString
+      + '(' +rollsIntArr+ ') ' + note;
+    }
+    // end of for cmdArr loop
+  }
   // avoid false positives e.g. when chatting about Astral Tabeltop dice formats
   if (numDiceInt > 0) {
     // modify output for maintenance mode status
     output = addMaintenanceStatusMessage(output);
     // post results
     msg.channel.send(output);
-    // provide reroll ui (dice reaction)
+    // log activity
     console.log('🎲');
+    // provide reroll ui (dice reaction)
     msg.react('🎲');
     // no return
   }
+
 }
 function handleHelpCommand(msg, cmd, args, user) {
   var whatToShow = 1;
@@ -2200,7 +2210,7 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
   console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleSaveMacroCommand(msg, cmd, args, user) {
-  if (args.length < 2) return msg.reply('Not enough options.')
+  if (args.length < 2) return msg.reply(':no_entry_sign: Not enough options. Needs a name followed by any valid dice roll command.')
   msg.react('⏳');
   await ensureFolderTriplet(msg);
   var auth = global.auth;
@@ -2242,7 +2252,7 @@ async function handleSaveMacroCommand(msg, cmd, args, user) {
         savedRollsArr[savedRollsArr.length] = formattedEntry;
       }
     } else {
-      // empty file; put entry
+      // if empty file, put entry
       savedRollsArr = [formattedEntry];
     }
     savedRollsStr = savedRollsArr.join("\n");
@@ -2260,7 +2270,7 @@ async function handleSaveMacroCommand(msg, cmd, args, user) {
   removeHourglass(msg);
 }
 async function handleRollMacroCommand(msg, cmd, args, user) {
-  if (args.length < 1) return msg.reply('Not enough options.')
+  if (args.length < 1) return msg.reply(':no_entry_sign: You didn\'t specify which macro I should roll.')
   msg.react('⏳');
   await ensureFolderTriplet(msg);
   var auth = global.auth;
@@ -2354,7 +2364,7 @@ function handleMessage(msg, user=msg.author) {
   // if (user.id !== '360086569778020352') return;
   // check if message starts with `!`
   var message = msg.content;
-  if (message.substring(0, 1) == '!') {
+  if (message.substring(0, 1) === '!') {
       var args = message.substring(1).split(' ');
       var cmd = args[0];
       args = args.splice(1);
