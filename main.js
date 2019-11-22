@@ -1106,7 +1106,7 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '!***roll*** *name*\n'
     + 'Rolls the saved "dice command" with the given name.\n'
     + '!***lm***\n'
-    + 'Lists your saved dice command macros for that channel.'
+    + 'Lists your saved dice command macros for that channel.\n'
     + '\n'
     + '**===== Reroll =====**\n'
     + 'Anyone can click the :game_die: reaction to reroll any *recent* roll.\n'
