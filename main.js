@@ -1107,12 +1107,16 @@ function handleHelpCommand(msg, cmd, args, user) {
     + 'Rolls the saved "dice command" with the given name.\n'
     + '!***lm***\n'
     + 'Lists your saved dice command macros for that channel.\n'
+    + '!***removemacro*** *name* or !***rmm*** *name*\n'
+    + 'Removes one of your saved macros in that channel.\n'
     + '\n'
     + '**===== Reroll =====**\n'
     + 'Anyone can click the :game_die: reaction to reroll any *recent* roll.\n'
     + 'Remove and re-add your reaction to keep re-rolling that roll.\n'
     + '\n'
-    + ':boom: Oh, and one more thing... try **!inithelp** to learn about the new **initiative features!**';
+    + ':boom: Oh, and one more thing... try **!inithelp** to learn about the new **initiative features!**\n'
+    + '\n'
+    + 'Patreon: https://patreon.com/nathanhawks | <@360086569778020352>';
   var output21 =
       '\n:boom: **EXPERIMENTAL: Initiative System** :boom:\n'
     + '\n'
@@ -1176,7 +1180,8 @@ function handleHelpCommand(msg, cmd, args, user) {
       + 'The :hourglass_flowing_sand: reaction means it\'s working on your request.\n'
     + '\n'
     + 'Commands are **not** case-sensitive. Go WiLd WitH tHaT.\n'
-    ;
+    + '\n'
+    + 'Patreon: https://patreon.com/nathanhawks | <@360086569778020352>';
   switch (whatToShow) {
     case 2:
       output22 = addMaintenanceStatusMessage(output22);
