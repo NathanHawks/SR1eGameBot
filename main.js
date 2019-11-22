@@ -4,8 +4,6 @@ var isMaintenanceModeBool = false;
 // set status message to send as warning when isMaintenanceModeBool is true
 var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
 /*
-+ 'We\'re back! Occasional disruptions may occur as I prep for initiative.'
-
 + 'The bot\'s in maintenance mode.** If it forgets rerolls faster than normal, '
 + 'it means I rebooted the bot.'
 */
@@ -1080,6 +1078,14 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '  !3! resist wagemage sorcery TN4      works\n'
     + '  !3! resist TN4 wagemage sorcery      works\n'
     + '  resist wagemage sorcery !3! TN4      won\'t work\n'
+    + '\n'
+    + '**===== Macros (Saved Rolls) =====**\n'
+    + '!***save*** *name* *roll_command_without_preceding_bang*\n'
+    + 'Creates or updates a named "dice command". *(See all the sections above for valid "dice commands".)*\n'
+    + '!***roll*** *name*\n'
+    + 'Rolls the saved "dice command" with the given name.\n'
+    + '!***lm***\n'
+    + 'Lists your saved dice command macros for that channel.'
     + '\n'
     + '**===== Reroll =====**\n'
     + 'Anyone can click the :game_die: reaction to reroll any *recent* roll.\n'
@@ -2288,6 +2294,8 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
         var roll = savedRollsArr[i];
         roll = roll.split(" ");
         cmd = roll[1];
+        // be nice if they add the preceding bang, i do it constantly
+        if (cmd.substring(0,1) === '!') cmd = cmd.substring(1, cmd.length);
         roll.splice(0, 2);
         args = roll;
         console.log(`cmd: ${cmd} & args: ${args}`);
