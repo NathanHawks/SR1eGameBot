@@ -965,7 +965,7 @@ function handleRollCommand(msg, cmd, args, user) {
     args = cmdArr[x].substring(1).split(' ');
     cmd = args[0];
     args = args.splice(1);
-    cmd = cmd.toLowerCase();
+    cmd = cmd.toLowerCase().trim();
     if (cmd.substring(0, 1) === '!') cmd = cmd.substring(1);
     // SETUP: how many dice, and do we explode?
     var isTestBool = false;
