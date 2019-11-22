@@ -1184,7 +1184,7 @@ function handleHelpCommand(msg, cmd, args, user) {
       msg.reply(output22);
     break;
     case 1:
-      output1 = addMaintenanceStatusMessage(output2);
+      output2 = addMaintenanceStatusMessage(output2);
       msg.reply(output1);
       msg.reply(output2);
     break;
