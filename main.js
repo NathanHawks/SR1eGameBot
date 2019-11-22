@@ -1116,7 +1116,7 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '\n'
     + ':boom: Oh, and one more thing... try **!inithelp** to learn about the new **initiative features!**\n'
     + '\n'
-    + 'Patreon: <link>https://patreon.com/nathanhawks</link> | <@360086569778020352>';
+    + 'Patreon: <https://patreon.com/nathanhawks> | <@360086569778020352>';
   var output21 =
       '\n:boom: **EXPERIMENTAL: Initiative System** :boom:\n'
     + '\n'
@@ -1181,7 +1181,7 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '\n'
     + 'Commands are **not** case-sensitive. Go WiLd WitH tHaT.\n'
     + '\n'
-    + 'Patreon: <link>https://patreon.com/nathanhawks</link> | <@360086569778020352>';
+    + 'Patreon: <https://patreon.com/nathanhawks> | <@360086569778020352>';
   switch (whatToShow) {
     case 2:
       output22 = addMaintenanceStatusMessage(output22);
