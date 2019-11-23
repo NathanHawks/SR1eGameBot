@@ -26,7 +26,7 @@ A Discord dicebot for SR1e/2e/3e, which also has an **experimental initiative sy
 
 !A! tnB ***vsX!*** ***otnY***<br/>Roll *A*d6 (with Rule of 6) with tn *B*, opposed by *X*d6 (with Rule of 6) with opponent\'s TN *Y*<br/>***vsX*** = the number of dice the opponent throws (***vsX!*** for Rule of 6)<br/>***otnY*** = the opponent\'s target number
 
-***example:*** !5! tn3 vs6! otn4    Roll 5d6 (Rule of 6) with TN 3, against 6d6 (Rule of 6) with TN 4
+***example:*** !5! tn3 vs6! otn4<br/>Roll 5d6 (Rule of 6) with TN 3, against 6d6 (Rule of 6) with TN 4
 
 ### :1234: Multiple Rolls per Message :1234:
 
@@ -40,10 +40,10 @@ Notes are OK, and your options can be in the middle of the note.
 
 examples:
 
-*  !3! TN4 resist wagemage sorcery      works
-*  !3! resist wagemage sorcery TN4      works
-*  !3! resist TN4 wagemage sorcery      works
-*  resist wagemage sorcery !3! TN4      won\'t work
+*  !3! TN4 resist wagemage sorcery :arrow_left: works
+*  !3! resist wagemage sorcery TN4 :arrow_left: works
+*  !3! resist TN4 wagemage sorcery :arrow_left: works
+*  resist wagemage sorcery !3! TN4 :arrow_left: won\'t work
 
 ### :fast_forward: Macros (Saved Rolls) :fast_forward:
 
@@ -128,9 +128,13 @@ examples:
 
   If you have multiple NPC's with the same label, **!removeNPCInits** also accepts the format !removenpcinits X Y label which requires a full match. But, having multiple NPC's with the same label is confusing anyway, so maybe just don't do that.
 
+## Misc ##
+
   All initiative-related commands are slow. The :hourglass_flowing_sand: reaction means it's working on your request.
 
   Commands are not case-sensitive. Go WiLd WitH tHaT.
+
+  You can find my Patreon at https://patreon.com/nathanhawks if this bot helps your games.
 
 ## Legal
 
