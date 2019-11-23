@@ -12,19 +12,15 @@ A Discord dicebot for SR1e/2e/3e, which also has an **experimental initiative sy
 
 ### :game_die: Plain Old d6\'s :game_die:
 
-!***X***         Roll ***X***d6 *without* Rule of 6  ***example:*** !5        rolls 5d6 *without* Rule of 6
-
-!X***t***        Roll Xd6 *and total them*.  ***example:*** !6t       rolls 6d6 and *adds them up*.
-
-!Xt ***+Z***     Roll Xd6, total them, and *add or subtract a modifier*.  ***example:*** !6t -5    rolls 6d6, totals them, and *subtracts 5 from the total*.
+* !***X***         Roll ***X***d6 *without* Rule of 6  ***example:*** !5        rolls 5d6 *without* Rule of 6
+* !X***t***        Roll Xd6 *and total them*.  ***example:*** !6t       rolls 6d6 and *adds them up*.
+* !Xt ***+Z***     Roll Xd6, total them, and *add or subtract a modifier*.  ***example:*** !6t -5    rolls 6d6, totals them, and *subtracts 5 from the total*.
 
 ### :six: Rule of 6 & Target Numbers :dart:
 
-***!X!***        Roll ***X***d6 ***with*** Rule of 6  ***example:*** !5!       rolls 5d6 *with Rule of 6*
-
-!X ***tnY***     Roll *without* Rule of 6 against Target Number ***Y***  ***example:*** !5 tn4    rolls 5d6 w/o Rule of 6 vs TN4
-
-***!X! tnY***    Roll ***with*** Rule of 6 against Target Number ***Y***  ***example:*** !5! tn4   rolls 5d6 w/ Rule of 6 vs TN4
+* ***!X!***        Roll ***X***d6 ***with*** Rule of 6  ***example:*** !5!       rolls 5d6 *with Rule of 6*
+* !X ***tnY***     Roll *without* Rule of 6 against Target Number ***Y***  ***example:*** !5 tn4    rolls 5d6 w/o Rule of 6 vs TN4
+* ***!X! tnY***    Roll ***with*** Rule of 6 against Target Number ***Y***  ***example:*** !5! tn4   rolls 5d6 w/ Rule of 6 vs TN4
 
 ### :boxing_glove: Opposed Rolls :boxing_glove:
 
@@ -38,9 +34,9 @@ A Discord dicebot for SR1e/2e/3e, which also has an **experimental initiative sy
 
   ***example:*** !5! tn3 vs6! otn4    Roll 5d6 (Rule of 6) with TN 3, against 6d6 (Rule of 6) with TN 4
 
-### :bang: Multiple Rolls per Message :bang:
+### :1234: Multiple Rolls per Message :1234:
 
-You can order GameBot to do more than one roll without sending multiple  messages. Just separate the commands with semicolons.
+You can order GameBot to do multiple rolls with one message. Just separate the dice commands with semicolons.
 
 ***example:*** !1 (grenade scatter direction); 2t (max non-aero grenade scatter distance)
 
@@ -50,37 +46,22 @@ Notes are OK, and your options can be in the middle of the note.
 
 examples:
 
-  !3! TN4 resist wagemage sorcery      works
-
-  !3! resist wagemage sorcery TN4      works
-
-  !3! resist TN4 wagemage sorcery      works
-
-  resist wagemage sorcery !3! TN4      won\'t work
+*  !3! TN4 resist wagemage sorcery      works
+*  !3! resist wagemage sorcery TN4      works
+*  !3! resist TN4 wagemage sorcery      works
+*  resist wagemage sorcery !3! TN4      won\'t work
 
 ### :fast_forward: Macros (Saved Rolls) :fast_forward:
 
-!***save*** *name* *roll_command_without_preceding_bang*
-
-Creates or updates a named "dice command". *(See all the sections above for valid "dice commands".)*
-
-!***roll*** *name*
-
-Rolls the saved "dice command" with the given name.
-
-!***lm***
-
-Lists your saved dice command macros for that channel.
-
-!***removemacro*** *name* or !***rmm*** *name*
-
-Removes one of your saved macros in that channel.
+* !***save*** *name* *roll_command_without_preceding_bang*<br/>Creates or updates a named "dice command". *(See all the sections above for valid "dice commands".)*
+* !***roll*** *name*<br/>Rolls the saved "dice command" with the given name.
+* !***lm***<br/>Lists your saved dice command macros for that channel.
+* !***removemacro*** *name* or !***rmm*** *name*<br/>Removes one of your saved macros in that channel.
 
 ### :recycle: Reroll :recycle:
 
-Anyone can click the :game_die: reaction to reroll any *recent* roll.
-
-Remove and re-add your reaction to keep re-rolling that roll.
+* Anyone can click the :game_die: reaction to reroll any *recent* roll.
+* Remove and re-add your reaction to keep re-rolling that roll.
 
 ## :boom: EXPERIMENTAL: Initiative System :boom:
 
