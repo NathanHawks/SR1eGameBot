@@ -12,33 +12,27 @@ A Discord dicebot for SR1e/2e/3e, which also has an **experimental initiative sy
 
 ### :game_die: Plain Old d6\'s :game_die:
 
-* !***X***         Roll ***X***d6 *without* Rule of 6  ***example:*** !5        rolls 5d6 *without* Rule of 6
-* !X***t***        Roll Xd6 *and total them*.  ***example:*** !6t       rolls 6d6 and *adds them up*.
-* !Xt ***+Z***     Roll Xd6, total them, and *add or subtract a modifier*.  ***example:*** !6t -5    rolls 6d6, totals them, and *subtracts 5 from the total*.
+* !***X***<br/>Roll ***X***d6 *without* Rule of 6<br/>***example:*** !5        rolls 5d6 *without* Rule of 6
+* !X***t***<br/>Roll Xd6 *and total them*.<br/>***example:*** !6t       rolls 6d6 and *adds them up*.
+* !Xt ***+Z***<br/>Roll Xd6, total them, and *add or subtract a modifier*.<br/>***example:*** !6t -5    rolls 6d6, totals them, and *subtracts 5 from the total*.
 
 ### :six: Rule of 6 & Target Numbers :dart:
 
-* ***!X!***        Roll ***X***d6 ***with*** Rule of 6  ***example:*** !5!       rolls 5d6 *with Rule of 6*
-* !X ***tnY***     Roll *without* Rule of 6 against Target Number ***Y***  ***example:*** !5 tn4    rolls 5d6 w/o Rule of 6 vs TN4
-* ***!X! tnY***    Roll ***with*** Rule of 6 against Target Number ***Y***  ***example:*** !5! tn4   rolls 5d6 w/ Rule of 6 vs TN4
+* ***!X!***<br/>Roll ***X***d6 ***with*** Rule of 6<br/>***example:*** !5!       rolls 5d6 *with Rule of 6*
+* !X ***tnY***<br/>Roll *without* Rule of 6 against Target Number ***Y***<br/>***example:*** !5 tn4    rolls 5d6 w/o Rule of 6 vs TN4
+* ***!X! tnY***<br/>Roll ***with*** Rule of 6 against Target Number ***Y***<br/>***example:*** !5! tn4   rolls 5d6 w/ Rule of 6 vs TN4
 
 ### :boxing_glove: Opposed Rolls :boxing_glove:
 
-!A! tnB ***vsX!*** ***otnY***
+!A! tnB ***vsX!*** ***otnY***<br/>Roll *A*d6 (with Rule of 6) with tn *B*, opposed by *X*d6 (with Rule of 6) with opponent\'s TN *Y*<br/>***vsX*** = the number of dice the opponent throws (***vsX!*** for Rule of 6)<br/>***otnY*** = the opponent\'s target number
 
-   Roll *A*d6 (with Rule of 6) with tn *B*, opposed by *X*d6 (with Rule of 6) with opponent\'s TN *Y*
-
-   vs*X* = the number of dice the opponent throws (vs*X*! for Rule of 6)
-
-   otn*Y* = the opponent\'s target number
-
-  ***example:*** !5! tn3 vs6! otn4    Roll 5d6 (Rule of 6) with TN 3, against 6d6 (Rule of 6) with TN 4
+***example:*** !5! tn3 vs6! otn4    Roll 5d6 (Rule of 6) with TN 3, against 6d6 (Rule of 6) with TN 4
 
 ### :1234: Multiple Rolls per Message :1234:
 
 You can order GameBot to do multiple rolls with one message. Just separate the dice commands with semicolons.
 
-***example:*** !1 (grenade scatter direction); 2t (max non-aero grenade scatter distance)
+***example:*** !1 ; 2t ; 3!; 4t +5 and a note for good measure
 
 ### :label: Notes :label:
 
