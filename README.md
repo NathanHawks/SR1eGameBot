@@ -122,7 +122,7 @@ examples:
 
 ### :dragon_face: **Adding NPC's** :dragon_face:
 
-  **!setnpcinits** and **!addnpcinits** syntax: **!(command) X Y label** -- labels cannot have spaces or commas. Add as many NPCs as you want, separated by spaces.
+  **!setnpcinits** and **!addnpcinits** syntax:<br/>**!(command) X Y label**<br/>Labels cannot have spaces or commas. Add as many NPCs as you want, separated by spaces.
 
   e.g. **!addnpcinits 1 5 thugs** (means the thugs have 1d6+5 initiative).
 
@@ -130,11 +130,11 @@ examples:
 
 ## Misc ##
 
-  All initiative-related commands are slow. The :hourglass_flowing_sand: reaction means it's working on your request.
+  All initiative-related and macro-related commands are a little slow. They get faster after the first use. The :hourglass_flowing_sand: reaction means it's working on your request.
 
   Commands are not case-sensitive. Go WiLd WitH tHaT.
 
-  You can find my Patreon at https://patreon.com/nathanhawks if this bot helps your games.
+  You can find my Patreon at https://patreon.com/nathanhawks if this bot helps you game.
 
 ## Legal
 
