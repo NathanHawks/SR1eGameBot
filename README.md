@@ -61,17 +61,11 @@ examples:
 
 ### Player setup:
 
-  :one: !setgm @someone
-
-  :two: !setinit X Y
+  :one: !setgm @someone<br/>  :two: !setinit X Y
 
 ### GM setup:
 
-  :one: !setgm
-
-  :two: !setplayers @player1 @player2 (etc)
-
-  :three: !setnpcinits (see below)
+  :one: !setgm<br/>  :two: !setplayers @player1 @player2 (etc)<br/>  :three: !setnpcinits (see below)
 
   **!setinit** syntax is **!setinit X Y** where X is the number of dice and Y is the modifier. For example, !setinit 1 4 sets your initiative formula to 1d6+4.
 
@@ -79,27 +73,11 @@ examples:
 
 ### :game_die: **Rolling Initiative** :game_die:
 
-  :arrow_right: **!init** - Shadowrun 1e initiative
-
-  :arrow_right: **!initflip** - Shadowrun 1e initiative, reversed
-
-  :arrow_right: **!init2** - Shadowrun 2e initiative
-
-  :arrow_right: **!init2flip** - Shadowrun 2e initiative, reversed
-
-  :arrow_right: **!init3** - Shadowrun 3e initiative
-
-  :arrow_right: **!init3flip** - Shadowrun 3e initiative, reversed
+  :arrow_right: **!init** - Shadowrun 1e initiative<br/>  :arrow_right: **!initflip** - Shadowrun 1e initiative, reversed<br/>  :arrow_right: **!init2** - Shadowrun 2e initiative<br/>  :arrow_right: **!init2flip** - Shadowrun 2e initiative, reversed<br/>  :arrow_right: **!init3** - Shadowrun 3e initiative<br/>  :arrow_right: **!init3flip** - Shadowrun 3e initiative, reversed<br/>
 
   The bot remembers stuff; you won't need to redo setup, just update whatever changes. ***However:***
 
-  :arrow_right: Everything is linked to GM **and chat channel.**
-
-  :arrow_right: If you move to a different channel, you must re-enter everything.
-
-  :arrow_right: Multiple GM's can share a channel, but anyone playing in both groups must repeat their set-up steps (starting with !setgm).
-
-  :arrow_right: To play in two games at the same time, you'll need two channels.
+  :arrow_right: Everything is linked to GM **and chat channel.**<br/>  :arrow_right: If you move to a different channel, you must re-enter everything.<br/>  :arrow_right: Multiple GM's can share a channel, but anyone playing in both groups must repeat their set-up steps (starting with !setgm).<br/>  :arrow_right: To play in two games at the same time, you'll need two channels.
 
 ### :game_die: **Other initiative commands** :game_die:
 
