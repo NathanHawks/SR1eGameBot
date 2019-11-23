@@ -10,7 +10,7 @@ A Discord dicebot for SR1e/2e/3e, which also has an **experimental initiative sy
 
 ## Shadowrun Dicebot Features
 
-### Plain Old d6\'s
+### :game_die: Plain Old d6\'s :game_die:
 
 !***X***         Roll ***X***d6 *without* Rule of 6  ***example:*** !5        rolls 5d6 *without* Rule of 6
 
@@ -18,15 +18,15 @@ A Discord dicebot for SR1e/2e/3e, which also has an **experimental initiative sy
 
 !Xt ***+Z***     Roll Xd6, total them, and *add or subtract a modifier*.  ***example:*** !6t -5    rolls 6d6, totals them, and *subtracts 5 from the total*.
 
-### Rule of 6 & Target Numbers
+### :six: Rule of 6 & Target Numbers :dart:
 
-!X***!***        Roll ***X***d6 ***with*** Rule of 6  ***example:*** !5!       rolls 5d6 *with Rule of 6*
+***!X!***        Roll ***X***d6 ***with*** Rule of 6  ***example:*** !5!       rolls 5d6 *with Rule of 6*
 
 !X ***tnY***     Roll *without* Rule of 6 against Target Number ***Y***  ***example:*** !5 tn4    rolls 5d6 w/o Rule of 6 vs TN4
 
-!X***! tnY***    Roll ***with*** Rule of 6 against Target Number ***Y***  ***example:*** !5! tn4   rolls 5d6 w/ Rule of 6 vs TN4
+***!X! tnY***    Roll ***with*** Rule of 6 against Target Number ***Y***  ***example:*** !5! tn4   rolls 5d6 w/ Rule of 6 vs TN4
 
-### Opposed Rolls
+### :boxing_glove: Opposed Rolls :boxing_glove:
 
 !A! tnB ***vsX!*** ***otnY***
 
@@ -38,13 +38,13 @@ A Discord dicebot for SR1e/2e/3e, which also has an **experimental initiative sy
 
   ***example:*** !5! tn3 vs6! otn4    Roll 5d6 (Rule of 6) with TN 3, against 6d6 (Rule of 6) with TN 4
 
-### Multiple Rolls per Message
+### :bang: Multiple Rolls per Message :bang:
 
 You can order GameBot to do more than one roll without sending multiple  messages. Just separate the commands with semicolons.
 
 ***example:*** !1 (grenade scatter direction); 2t (max non-aero grenade scatter distance)
 
-### Notes
+### :label: Notes :label:
 
 Notes are OK, and your options can be in the middle of the note.
 
@@ -58,7 +58,7 @@ examples:
 
   resist wagemage sorcery !3! TN4      won\'t work
 
-### Macros (Saved Rolls)
+### :fast_forward: Macros (Saved Rolls) :fast_forward:
 
 !***save*** *name* *roll_command_without_preceding_bang*
 
@@ -76,7 +76,7 @@ Lists your saved dice command macros for that channel.
 
 Removes one of your saved macros in that channel.
 
-### Reroll
+### :recycle: Reroll :recycle:
 
 Anyone can click the :game_die: reaction to reroll any *recent* roll.
 
