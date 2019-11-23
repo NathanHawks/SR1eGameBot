@@ -12,27 +12,27 @@ A Discord dicebot for SR1e/2e/3e, which also has an **experimental initiative sy
 
 ### :game_die: Plain Old d6\'s :game_die:
 
-* !***X***<br/>Roll ***X***d6 *without* Rule of 6<br/>***example:*** !5        rolls 5d6 *without* Rule of 6
-* !X***t***<br/>Roll Xd6 *and total them*.<br/>***example:*** !6t       rolls 6d6 and *adds them up*.
-* !Xt ***+Z***<br/>Roll Xd6, total them, and *add or subtract a modifier*.<br/>***example:*** !6t -5    rolls 6d6, totals them, and *subtracts 5 from the total*.
+* !***X***<br/>Roll ***X***d6 *without* Rule of 6<br/>***example:*** !5 <br/> rolls 5d6 *without* Rule of 6
+* !X***t***<br/>Roll Xd6 *and total them*.<br/>***example:*** !6t <br/> rolls 6d6 and *adds them up*.
+* !Xt ***+Z***<br/>Roll Xd6, total them, and *add or subtract a modifier*.<br/>***example:*** !6t -5 <br/> rolls 6d6, totals them, and *subtracts 5 from the total*.
 
 ### :six: Rule of 6 & Target Numbers :dart:
 
-* ***!X!***<br/>Roll ***X***d6 ***with*** Rule of 6<br/>***example:*** !5!       rolls 5d6 *with Rule of 6*
-* !X ***tnY***<br/>Roll *without* Rule of 6 against Target Number ***Y***<br/>***example:*** !5 tn4    rolls 5d6 w/o Rule of 6 vs TN4
-* ***!X! tnY***<br/>Roll ***with*** Rule of 6 against Target Number ***Y***<br/>***example:*** !5! tn4   rolls 5d6 w/ Rule of 6 vs TN4
+* ***!X!***<br/>Roll ***X***d6 ***with*** Rule of 6<br/>***example:*** !5! <br/> rolls 5d6 *with Rule of 6*
+* !X ***tnY***<br/>Roll *without* Rule of 6 against Target Number ***Y***<br/>***example:*** !5 tn4 <br/> rolls 5d6 w/o Rule of 6 vs TN4
+* ***!X! tnY***<br/>Roll ***with*** Rule of 6 against Target Number ***Y***<br/>***example:*** !5! tn4 <br/> rolls 5d6 w/ Rule of 6 vs TN4
 
 ### :boxing_glove: Opposed Rolls :boxing_glove:
 
-!A! tnB ***vsX!*** ***otnY***<br/>Roll *A*d6 (with Rule of 6) with tn *B*, opposed by *X*d6 (with Rule of 6) with opponent\'s TN *Y*<br/>***vsX*** = the number of dice the opponent throws (***vsX!*** for Rule of 6)<br/>***otnY*** = the opponent\'s target number
-
-***example:*** !5! tn3 vs6! otn4<br/>Roll 5d6 (Rule of 6) with TN 3, against 6d6 (Rule of 6) with TN 4
+* !A! tnB ***vsX!*** ***otnY***<br/>Roll *A*d6 (with Rule of 6) with tn *B*, opposed by *X*d6 (with Rule of 6) with opponent\'s TN *Y*<br/>:arrow_right: ***vsX*** = the number of dice the opponent throws (***vsX! for Rule of 6***)<br/>:arrow_right: ***otnY*** = the opponent\'s target number<br/>***example:*** !5! tn3 vs6! otn4<br/>Roll 5d6 (Rule of 6) with TN 3, against 6d6 (Rule of 6) with TN 4
 
 ### :1234: Multiple Rolls per Message :1234:
 
 You can order GameBot to do multiple rolls with one message. Just separate the dice commands with semicolons.
 
 ***example:*** !1 ; 2t ; 3!; 4t +5 and a note for good measure
+
+Be careful not to use semicolons for any other reason.
 
 ### :label: Notes :label:
 
@@ -47,7 +47,7 @@ examples:
 
 ### :fast_forward: Macros (Saved Rolls) :fast_forward:
 
-* !***save*** *name* *roll_command_without_preceding_bang*<br/>Creates or updates a named "dice command". *(See all the sections above for valid "dice commands".)*
+* !***save*** *name* *dice_command_without_preceding_bang*<br/>Creates or updates a named "dice command". *(See all the sections above for valid "dice commands".)*
 * !***roll*** *name*<br/>Rolls the saved "dice command" with the given name.
 * !***lm***<br/>Lists your saved dice command macros for that channel.
 * !***removemacro*** *name* or !***rmm*** *name*<br/>Removes one of your saved macros in that channel.
@@ -77,7 +77,10 @@ examples:
 
   The bot remembers stuff; you won't need to redo setup, just update whatever changes. ***However:***
 
-  :arrow_right: Everything is linked to GM **and chat channel.**<br/>  :arrow_right: If you move to a different channel, you must re-enter everything.<br/>  :arrow_right: Multiple GM's can share a channel, but anyone playing in both groups must repeat their set-up steps (starting with !setgm).<br/>  :arrow_right: To play in two games at the same time, you'll need two channels.
+* Everything is linked to GM **and chat channel.**
+* If you move to a different channel, you must re-enter everything.
+* Multiple GM's can share a channel, but anyone playing in both groups must repeat their set-up steps (starting with !setgm).
+* To play in two games at the same time, you'll need two channels.
 
 ### :game_die: **Other initiative commands** :game_die:
 
