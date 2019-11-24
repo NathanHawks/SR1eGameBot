@@ -8,6 +8,20 @@ A Discord dicebot for SR1e/2e/3e, which also has an **experimental initiative sy
 
 [Click here to deploy the bot on your server](https://discordapp.com/oauth2/authorize?client_id=609274260007026689&scope=bot&permissions=0).
 
+To self-host:
+
+1. Get your Discord auth token and put it in a discordauth.json file.
+2. Run GameBot locally and follow the instructions to authorize the bot as a Google app.
+ * If you plan on self-hosting at home or pushing files to the web via FTP, you can skip the rest of these steps and just do that.
+ * If you plan on hosting via Heroku and deploying via GitHub, continue with the following steps:
+3. On your deployment server, create 3 environment variables:
+ * GOOGLE_CREDENTIALS should have the contents of googlecredentials.json
+ * GOOGLE_TOKEN should have the contents of the googletoken.json file.
+ * TOKEN should have the contents of the discordauth.json file.
+4. Use the "worker dyno", not the "web dyno".
+5. Push your copy of the bot to your repo under the master branch.
+6. Link Heroku to your GitHub and tell it to auto-deploy when you push to master.
+
 ## Shadowrun Dicebot Features
 
 ### :game_die: Plain Old d6\'s :game_die:
