@@ -2,7 +2,9 @@
 
 ## What It Is
 
-A Discord dicebot for SR1e/2e/3e, which also has an **experimental initiative system** to help run Shadowrun 1st-3rd Editions over Discord.
+A Discord dicebot for SR1e/2e/3e, which does d6 rolls with modifiers, as well as Success Tests and Opposed Success Tests. It can also store **dice macros,** and even generates **initiative** for Shadowrun 1st-3rd Editions -- both forwards and backwards.
+
+Usage instructions come after the self-hosting instructions, below.
 
 ## How to Install
 
