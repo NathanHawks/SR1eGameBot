@@ -4,7 +4,7 @@
 
 A Discord dicebot for SR1e/2e/3e, which does d6 rolls with modifiers, as well as Success Tests and Opposed Success Tests. It can also store **dice macros,** and even generates **initiative** for Shadowrun 1st-3rd Editions -- both forwards and backwards.
 
-Usage instructions come after the self-hosting instructions, below.
+Instructions on using the bot are below, after the self-hosting instructions.
 
 ## How to Install
 
@@ -21,9 +21,9 @@ Usage instructions come after the self-hosting instructions, below.
   * ***GOOGLE_CREDENTIALS*** should have the contents of the ***googlecredentials.json*** file.
   * ***GOOGLE_TOKEN*** should have the contents of the ***googletoken.json*** file.
   * ***TOKEN*** should have the contents of the ***discordauth.json*** file.
-5. Use the "worker dyno", not the "web dyno".
-6. Publish your copy of the bot to your repo under the master branch.
-7. Link Heroku to your GitHub and tell it to auto-deploy when you push to master.
+5. Publish your copy of the bot to your repo under the master branch.
+6. Link Heroku to your GitHub repo, and tell Heroku to auto-deploy when you push to master.
+7. In Heroku, under "Configure Dynos", use the "worker dyno", not the "web dyno".
 8. Invite the bot to your server! Replace the XX's in the following link with your bot's ID number: discordapp.com/oauth2/authorize?client_id=XXXXXXXXXXX&scope=bot&permissions=0
 
 ### Gaining access to admin commands:
@@ -137,7 +137,7 @@ examples:
 
 ## Misc ##
 
-  All initiative-related and macro-related commands are a little slow. They get faster after the first use. The :hourglass_flowing_sand: reaction means it's working on your request.
+  All initiative-related and macro-related commands are a little slow (due to communication with Google Drive). They get faster after the first use. The :hourglass_flowing_sand: reaction means it's working on your request.
 
   Commands are not case-sensitive. Go WiLd WitH tHaT.
 
