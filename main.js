@@ -264,7 +264,7 @@ function deleteFile(msg, args) {
   }
 }
 function showCache(msg) {
-  var output = '```[CacheID]  - name/discordID - ------------ googleID ----------- ----------- parentID ------------```';
+  var output = '[CacheID]  - name/discordID - ------------ googleID ----------- ----------- parentID ------------';
   var finalout = '';
   var cxArr = ['server', 'channel', 'userInChannel', 'file'];
   cxArr.map((cx) => {
@@ -282,7 +282,7 @@ function showCache(msg) {
   var outArr = output.split("\n");
   output = '';
   for (var i = 0; i < outArr.length; i++) {
-    output += outArr[i];
+    output += outArr[i] + "\n";
     if (i%15===0) {
       msg.channel.send('```' + output + '```');
       output = '';
