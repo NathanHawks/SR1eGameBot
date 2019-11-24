@@ -264,10 +264,8 @@ function deleteFile(msg, args) {
   }
 }
 function showCache(msg) {
-  msg.channel.send('```[CacheID]  - name/discordID - ------------ googleID ----------- ----------- parentID ------------```');
-  var output = '';
+  var output = '```[CacheID]  - name/discordID - ------------ googleID ----------- ----------- parentID ------------```';
   var finalout = '';
-  i = 0;
   var cxArr = ['server', 'channel', 'userInChannel', 'file'];
   cxArr.map((cx) => {
     for (var x = 0; x < global.cache[cx].length; x++) {
@@ -278,19 +276,19 @@ function showCache(msg) {
       var par = global.cache[cx][x].parentID;
       if (par === undefined) par = "[UserData]".padStart(11, " ");
       output += `${id} ${did} ${gid} ${par}\n`
-      // 2000 or fewer characters please
-      if ((i === 10) || (x % 10 === 0 && x !== 0) || x === global.cache[cx].length) {
-        msg.channel.send('```' + output + '```');
-        output = '';
-        i = 0;
-      } else if (global.cache[cx].length - x < 10) {
-        finalout += output;
-        output = '';
-      }
-      i++;
     }
   });
-  // msg.channel.send('```' + finalout + '```');
+  var outArr = output.split("\n");
+  output = '';
+  for (var i = 0; i < outArr.length; i++) {
+    output += outArr[i];
+    if (i%15===0) {
+      msg.channel.send(output);
+      output = '';
+    } else if (outArr.length - i < 15) {
+      finalout = output;
+    }
+  }
   if (finalout) msg.channel.send('```' + finalout + '```');
 
   // var x = 0;
