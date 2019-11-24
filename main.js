@@ -66,20 +66,10 @@ function _cache_serverNameMatch(obj, file) {
   if (obj.discordID === file.name) return true; else return false;
 }
 function cacheHas(file, cacheAs) {
-  var found = false;
-  global.cache[cacheAs].map((obj) => {
-    // valid matches: id match; or parent & discordID (filename) match together
-    if (_cache_googleIDMatch(obj, file)) found = true;
-    if (_cache_nameAndParentMatch(obj, file)) found = true;
-    if (cacheAs === 'server' && _cache_serverNameMatch(obj, file)) found = true;
-    if (found && cacheAs === 'file') {
-      // this shouldn't be necessary, i don't know why i'm getting bad matches
-      if (obj.discordID !== file.name || obj.parentID !== file.parents[0])
-        doNothing(false, false);
-      else return found;
-    } else if (found) return found;
-  });
-  return found;
+  var i = getCacheIndex(file, cacheAs, false);
+  if (i > -1) return true;
+  else return false;
+
 }
 function getCacheIndex(file, cacheAs, create=true) {
   var r = -1;
@@ -278,6 +268,15 @@ function showCache(msg) {
       output += `${id} ${did} ${gid} ${par}\n`
     }
   });
+  // var x = 0;
+  // global.cache.fileContent.map((c) => {
+  //   var id = `fcon${x}`.padEnd(10, " ");
+  //   var spa = " ".padEnd(18, " ");
+  //   var gid = c.googleID;
+  //   var con = c.content.substring(0, 33);
+  //   output += `${id} ${spa} ${gid} ${con}\n`;
+  //   x++;
+  // });
   // 2000 or fewer characters please
   var outArr = output.split("\n");
   output = '';
@@ -291,15 +290,6 @@ function showCache(msg) {
     }
   }
   if (finalout) msg.channel.send('```' + finalout + '```');
-
-  // var x = 0;
-  // global.cache.fileContent.map((c) => {
-  //   var id = `cont${x}`.padEnd(10, " ");
-  //   var gid = c.googleID;
-  //   var con = c.content;
-  //   output += `${id} ${gid} ${con}\n`;
-  //   x++;
-  // });
 }
 // unlock global.lock for a specific channel
 function adminUnlock(msg, args) {
@@ -597,7 +587,7 @@ async function getFileContents(fileID, channelID) {
   //   if (c.hasOwnProperty('content')) {
   //     global.lastFileContents[channelID] = c.content;
   //     unlockDiskForChannel(channelID);
-  //     console.log('I win the race: ' + c.content)
+  //     console.log('I win the race: ' + fileID + " :: " + c.content);
   //     return c.content;
   //   }
   // }
