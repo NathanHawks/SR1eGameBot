@@ -275,7 +275,7 @@ function showCache(msg) {
       var par = global.cache[cx][x].parentID;
       if (par === undefined) par = "[UserData]".padStart(11, " ");
       output += `${id} ${did} ${gid} ${par}\n`
-      if (x%20===0) {
+      if (x%20===0 && x > 0) {
         msg.channel.send('```' + output + '```');
         output = '';
       } else if (global.cache[cx].length - x < 20) {
