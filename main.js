@@ -283,6 +283,7 @@ function showCache(msg) {
     }
   });
   var x = 0;
+  var output += '[CacheID] ------------------- ------------ googleID ----------- ------------ content ------------';
   global.cache.fileContent.map((c) => {
     var id = `fcon${x}`.padEnd(10, " ");
     var spa = " ".padEnd(18, " ");
