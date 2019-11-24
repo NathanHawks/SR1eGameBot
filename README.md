@@ -10,18 +10,19 @@ A Discord dicebot for SR1e/2e/3e, which also has an **experimental initiative sy
 
 To self-host:
 
-1. Get your Discord auth token via the *New Application* button at http://discordapp.com/developers/applications/me and put the auth token in a ***discordauth.json*** file, in the same directory as main.js.
-2. Run GameBot locally and follow the instructions to authorize the bot as a Google app. By the time you're done you'll have authorized the bot to use its own private slice of your Google Drive (for storing settings like initiative and macros). When you paste the authorization code into the bot's console input, it will create and populate the files ***googlecredentials.json*** and ***googletoken.json,*** in the same directory as main.js.
- * If you plan on self-hosting at home or pushing files to the web via FTP, you can skip the rest of these steps and just do that.
- * If you plan on hosting via Heroku and deploying via GitHub, continue with the following steps:
-3. On your deployment server, create 3 environment variables:
- * GOOGLE_CREDENTIALS should have the contents of googlecredentials.json
- * GOOGLE_TOKEN should have the contents of the googletoken.json file.
- * TOKEN should have the contents of the discordauth.json file.
-4. Use the "worker dyno", not the "web dyno".
-5. Publish your copy of the bot to your repo under the master branch.
-6. Link Heroku to your GitHub and tell it to auto-deploy when you push to master.
-7. Invite the bot to your server!
+1. Install node.js and test that it's working. You'll need this in order to set up the bot.
+2. Get your Discord auth token via the *New Application* button at http://discordapp.com/developers/applications/me and put the auth token in a ***discordauth.json*** file, in the same directory as main.js.
+3. Run GameBot locally by going to its directory and running `node .` (with the period). Follow the instructions to authorize the bot as a Google app. *By the time you're done you'll have authorized the bot to use its own private slice of your Google Drive (for storing settings like initiative and macros).* When you paste the authorization code into the bot's console input, it will create and populate the files ***googlecredentials.json*** and ***googletoken.json,*** in the same directory as main.js.
+  * If you plan on self-hosting at home or pushing files to the web via FTP, you can skip the rest of these steps and just do that.
+  * If you plan on hosting via Heroku and deploying via GitHub, continue with the following steps:
+4. On your deployment server, create 3 environment variables:
+  * ***GOOGLE_CREDENTIALS*** should have the contents of the ***googlecredentials.json*** file.
+  * ***GOOGLE_TOKEN*** should have the contents of the ***googletoken.json*** file.
+  * ***TOKEN*** should have the contents of the ***discordauth.json*** file.
+5. Use the "worker dyno", not the "web dyno".
+6. Publish your copy of the bot to your repo under the master branch.
+7. Link Heroku to your GitHub and tell it to auto-deploy when you push to master.
+8. Invite the bot to your server!
 
 ## Shadowrun Dicebot Features
 
