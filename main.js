@@ -265,7 +265,7 @@ function deleteFile(msg, args) {
   }
 }
 function showCache(msg) {
-  var output = '[CacheID]  - name/discordID - ------------ googleID ----------- ----------- parentID ------------';
+  var output = '[CacheID]  - name/discordID - ------------ googleID ----------- ----------- parentID ------------\n';
   var finalout = '';
   var cxArr = ['server', 'channel', 'userInChannel', 'file'];
   cxArr.map((cx) => {
@@ -283,7 +283,7 @@ function showCache(msg) {
     }
   });
   var x = 0;
-  var output += '[CacheID] ------------------- ------------ googleID ----------- ------------ content ------------';
+  var output = '[CacheID] ------------------- ------------ googleID ----------- ------------ content ------------\n';
   global.cache.fileContent.map((c) => {
     var id = `fcon${x}`.padEnd(10, " ");
     var spa = " ".padEnd(18, " ");
