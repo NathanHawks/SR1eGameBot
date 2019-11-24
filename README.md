@@ -22,7 +22,7 @@ To self-host:
 5. Use the "worker dyno", not the "web dyno".
 6. Publish your copy of the bot to your repo under the master branch.
 7. Link Heroku to your GitHub and tell it to auto-deploy when you push to master.
-8. Invite the bot to your server!
+8. Invite the bot to your server! Replace the XX's in the following link with your bot's ID number: discordapp.com/oauth2/authorize?client_id=XXXXXXXXXXX&scope=bot&permissions=0
 
 ## Shadowrun Dicebot Features
 
