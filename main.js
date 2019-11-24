@@ -275,17 +275,23 @@ function showCache(msg) {
       var par = global.cache[cx][x].parentID;
       if (par === undefined) par = "[UserData]".padStart(11, " ");
       output += `${id} ${did} ${gid} ${par}\n`
+      if (x%20===0) {
+        msg.channel.send('```' + output + '```');
+        output = '';
+      } else if (global.cache[cx].length - x < 20) {
+        finalout = output;
+      }
     }
   });
-  var x = 0;
-  global.cache.fileContent.map((c) => {
-    var id = `cont${x}`.padEnd(10, " ");
-    var gid = c.googleID;
-    var con = c.content;
-    output += `${id} ${gid} ${con}\n`;
-    x++;
-  });
-  msg.channel.send('```' + output + '```');
+  if (finalout) msg.channel.send('```' + finalout + '```');
+  // var x = 0;
+  // global.cache.fileContent.map((c) => {
+  //   var id = `cont${x}`.padEnd(10, " ");
+  //   var gid = c.googleID;
+  //   var con = c.content;
+  //   output += `${id} ${gid} ${con}\n`;
+  //   x++;
+  // });
 }
 // unlock global.lock for a specific channel
 function adminUnlock(msg, args) {
