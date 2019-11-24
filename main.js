@@ -278,7 +278,7 @@ function showCache(msg) {
       if (par === undefined) par = "[UserData]".padStart(11, " ");
       output += `${id} ${did} ${gid} ${par}\n`
       // 2000 or fewer characters please
-      if (i % 10 === 0 || x % 10 === 0 || x === global.cache[cx].length) {
+      if ((i % 10 === 0 && x !== 0) || x % 10 === 0 || x === global.cache[cx].length) {
         msg.channel.send('```' + output + '```');
         output = '';
       } else if (global.cache[cx].length - x < 10) {
