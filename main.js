@@ -278,10 +278,10 @@ function showCache(msg) {
       if (par === undefined) par = "[UserData]".padStart(11, " ");
       output += `${id} ${did} ${gid} ${par}\n`
       // 2000 or fewer characters please
-      if (i % 15 === 0 && i > 0) {
+      if (i % 10 === 0) {
         msg.channel.send('```' + output + '```');
         output = '';
-      } else if (global.cache[cx].length - i < 15) {
+      } else if (global.cache[cx].length - x < 10) {
         finalout += output;
         output = '';
       }
