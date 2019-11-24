@@ -270,9 +270,12 @@ function showCache(msg) {
   var cxArr = ['server', 'channel', 'userInChannel', 'file'];
   cxArr.map((cx) => {
     for (var x = 0; x < global.cache[cx].length; x++) {
+      if (!global.cache[cx][x]) continue;
       var id = `${cx.substring(0,4)}${x}`;
       id = id.padEnd(10, " ");
-      var did = global.cache[cx][x].discordID.padEnd(18, " ");
+      var did = (global.cache[cx][x].hasOwnProperty('discordID'))
+        ? global.cache[cx][x].discordID.padEnd(18, " ")
+        : " ".padEnd(18, " ");
       var gid = global.cache[cx][x].googleID;
       var par = global.cache[cx][x].parentID;
       if (par === undefined) par = "[UserData]".padStart(11, " ");
