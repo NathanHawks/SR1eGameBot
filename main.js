@@ -275,10 +275,11 @@ function showCache(msg) {
       var par = global.cache[cx][x].parentID;
       if (par === undefined) par = "[UserData]".padStart(11, " ");
       output += `${id} ${did} ${gid} ${par}\n`
-      if (x % 15 === 0 && x > 0) {
+      // 2000 or fewer characters please
+      if (x % 10 === 0 && x > 0) {
         msg.channel.send('```' + output + '```');
         output = '';
-      } else if (global.cache[cx].length - x < 15) {
+      } else if (global.cache[cx].length - x < 10) {
         finalout = output;
       }
     }
