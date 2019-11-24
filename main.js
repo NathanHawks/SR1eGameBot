@@ -47,8 +47,8 @@ global.cache = {
   server: [],  // arr of obj: googleID, discordID
   channel: [], // arr of obj: googleID, discordID, parentID,
   userInChannel: [], // arr of obj: googleID, discordID, parentID
-  file: [], // arr of obj: googleID, name, parentID, content
-  fileContent: []
+  file: [], // arr of obj: googleID, name, parentID
+  fileContent: [] // arr of obj: googleID, content
 };
 function _cache_googleIDMatch(obj, file) {
   if (obj.googleID && file.id && obj.googleID === file.id)
@@ -74,7 +74,18 @@ function cacheHas(file, cacheAs) {
 function getCacheIndex(file, cacheAs, create=true) {
   var r = -1;
   var i = 0;
-  // same as cacheHas
+  var id = file.id;
+  if (cacheAs === 'fileContent') {
+    // fast track id => index seeking
+    var idIndex = [];
+    global.cache.fileContent.map((c) => {
+      idIndex[i] = c.googleID;
+      i++;
+    });
+    r = idIndex.indexOf(id);
+    if (r > -1) return r;
+  }
+  r = -1;
   global.cache[cacheAs].map((obj) => {
     // valid matches: id match; or parent & discordID (filename) match together
     if (_cache_googleIDMatch(obj, file)) r = i;
@@ -268,15 +279,15 @@ function showCache(msg) {
       output += `${id} ${did} ${gid} ${par}\n`
     }
   });
-  // var x = 0;
-  // global.cache.fileContent.map((c) => {
-  //   var id = `fcon${x}`.padEnd(10, " ");
-  //   var spa = " ".padEnd(18, " ");
-  //   var gid = c.googleID;
-  //   var con = c.content.substring(0, 33);
-  //   output += `${id} ${spa} ${gid} ${con}\n`;
-  //   x++;
-  // });
+  var x = 0;
+  global.cache.fileContent.map((c) => {
+    var id = `fcon${x}`.padEnd(10, " ");
+    var spa = " ".padEnd(18, " ");
+    var gid = c.googleID;
+    var con = c.content.substring(0, 33);
+    output += `${id} ${spa} ${gid} ${con}\n`;
+    x++;
+  });
   // 2000 or fewer characters please
   var outArr = output.split("\n");
   output = '';
@@ -581,16 +592,15 @@ async function getFileContents(fileID, channelID) {
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
 
-  // var q = {id: fileID};
-  // if (cacheHas(q, 'fileContent')) {
-  //   var c = getFromCache(q, 'fileContent');
-  //   if (c.hasOwnProperty('content')) {
-  //     global.lastFileContents[channelID] = c.content;
-  //     unlockDiskForChannel(channelID);
-  //     console.log('I win the race: ' + fileID + " :: " + c.content);
-  //     return c.content;
-  //   }
-  // }
+  var q = {id: fileID};
+  if (cacheHas(q, 'fileContent')) {
+    var c = getFromCache(q, 'fileContent');
+    if (c.hasOwnProperty('content')) {
+      global.lastFileContents[channelID] = c.content;
+      unlockDiskForChannel(channelID);
+      return c.content;
+    }
+  }
 
   var auth = global.auth;
   const drive = google.drive({version: 'v3', auth});
@@ -598,7 +608,7 @@ async function getFileContents(fileID, channelID) {
     if (err) { unlockDiskForChannel(channelID); return console.error(err); }
     // strip padding which was added to bypass a very weird API error
     global.lastFileContents[channelID]=res.data.substring(0,res.data.length-2);
-    // addToCache({id: fileID, content: global.lastFileContents[channelID]}, 'fileContent');
+    addToCache({id: fileID, content: global.lastFileContents[channelID]}, 'fileContent');
     unlockDiskForChannel(channelID);
   });
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
@@ -628,7 +638,8 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
         }, (err, file) => {
           unlockDiskForChannel(channelID);
           if (err) return console.error(err);
-          else return;
+          addToCache(file, 'file');
+          return;
         });
       } else if (res.data.files.length===1) {
         // it already exists, update it
@@ -640,6 +651,8 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
                 if (err) return console.error(err);
                 else return;
             });
+            var q = {id: file.id, content: contents};
+            addToCache(q, 'fileContent');
         });
       }
     }
