@@ -8,7 +8,7 @@ A Discord dicebot for SR1e/2e/3e, which also has an **experimental initiative sy
 
 [Click here to deploy the bot on your server](https://discordapp.com/oauth2/authorize?client_id=609274260007026689&scope=bot&permissions=0).
 
-To self-host:
+### To self-host:
 
 1. Install node.js and test that it's working. You'll need this in order to set up the bot.
 2. Get your Discord auth token via the *New Application* button at http://discordapp.com/developers/applications/me and put the auth token in a ***discordauth.json*** file, in the same directory as main.js.
@@ -23,6 +23,14 @@ To self-host:
 6. Publish your copy of the bot to your repo under the master branch.
 7. Link Heroku to your GitHub and tell it to auto-deploy when you push to master.
 8. Invite the bot to your server! Replace the XX's in the following link with your bot's ID number: discordapp.com/oauth2/authorize?client_id=XXXXXXXXXXX&scope=bot&permissions=0
+
+### Gaining access to admin commands:
+
+There are a few admin commands that are hard-coded only to respond to me, the bot's author. If you self-host, you can gain access to them:
+
+1. Find out your Discord ID (it's ***not*** your username followed by a few numbers; it's all numbers; it will be the third number that appears in your bot's logfile when you use any of the initiative commands).
+2. Do a find-and-replace in main.js, replacing all occurrences of my Discord ID, 360086569778020352, with your Discord ID.
+3. Push the changes and restart the bot.
 
 ## Shadowrun Dicebot Features
 
