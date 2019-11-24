@@ -1,4 +1,12 @@
-function doNothing (err, res) {} // a callback for function argument defaults
+/*
+ * Shadowrun 1e GameBot by Discord user AstroMacGuffin#1486 (Nathan Hawks)
+ * Yes I do regret baking 1e into the name
+ * version 0.13, yeah that sounds good
+ * Released under the terms of the UnLicense. This work is in the public domain.
+ * Released as-is with no warranty or claim of usability for any purpose.
+ * The file cache doesn't work, don't enable it.
+ */
+function doNothing (err=null, res=null) {} // for defaulting if's & callbacks
 // set true to activate warning messages
 var isMaintenanceModeBool = false;
 // set status message to send as warning when isMaintenanceModeBool is true
@@ -16,10 +24,7 @@ function addMaintenanceStatusMessage(output) {
   else r = output;
   return r;
 }
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-function doNothing() {}
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 // internal setup
 // system folder(s)
 global.folderID = {UserData : null};
@@ -42,7 +47,8 @@ global.cache = {
   server: [],  // arr of obj: googleID, discordID
   channel: [], // arr of obj: googleID, discordID, parentID,
   userInChannel: [], // arr of obj: googleID, discordID, parentID
-  file: [] // arr of obj: googleID, name, parentID, content
+  file: [], // arr of obj: googleID, name, parentID, content
+  fileContent: []
 };
 function _cache_googleIDMatch(obj, file) {
   if (obj.googleID && file.id && obj.googleID === file.id)
@@ -113,9 +119,13 @@ function addToCache(file, cacheAs) {
       global.cache[cacheAs][ci].parentID = file.parents[0];
     break;
     case 'file':
-      global.cache.file[ci].googleID = file.id;
-      global.cache.file[ci].discordID = file.name;
-      global.cache.file[ci].parentID = file.parents[0];
+      if (file.id)      global.cache.file[ci].googleID = file.id;
+      if (file.name)    global.cache.file[ci].discordID = file.name;
+      if (file.parents) global.cache.file[ci].parentID = file.parents[0];
+    break;
+    case 'fileContent':
+      if (file.id)      global.cache.fileContent[ci].googleID = file.id;
+      if (file.content) global.cache.fileContent[ci].content = file.content;
     break;
   }
 }
@@ -266,6 +276,14 @@ function showCache(msg) {
       if (par === undefined) par = "[UserData]".padStart(11, " ");
       output += `${id} ${did} ${gid} ${par}\n`
     }
+  });
+  var x = 0;
+  global.cache.fileContent.map((c) => {
+    var id = `cont${x}`.padEnd(10, " ");
+    var gid = c.googleID;
+    var con = c.content;
+    output += `${id} ${gid} ${con}\n`;
+    x++;
   });
   msg.channel.send('```' + output + '```');
 }
@@ -520,15 +538,15 @@ async function createFolder(
 }
 
 async function findFileByName(filename, parentID, channelID) {
-  // while (isDiskLockedForChannel(channelID)) { await sleep(15); }
-  // var q = {name: filename, parents: [parentID]};
-  // if (cacheHas(q, 'file')) {
-  //   lockDiskForChannel(channelID);
-  //   var c = getFromCache(q, 'file');
-  //   global.lastFoundFileID[channelID] = c.googleID;
-  //   unlockDiskForChannel(channelID);
-  //   return c.googleID;
-  // }
+  while (isDiskLockedForChannel(channelID)) { await sleep(15); }
+  var q = {name: filename, parents: [parentID]};
+  if (cacheHas(q, 'file')) {
+    lockDiskForChannel(channelID);
+    var c = getFromCache(q, 'file');
+    global.lastFoundFileID[channelID] = c.googleID;
+    unlockDiskForChannel(channelID);
+    return c.googleID;
+  }
 
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
@@ -543,7 +561,7 @@ async function findFileByName(filename, parentID, channelID) {
       if (res.data.files.length === 1) {
         res.data.files.map((file) => {
           global.lastFoundFileID[channelID] = file.id;
-          // addToCache(file, 'file');
+          addToCache(file, 'file');
         });
       }
       else { global.lastFoundFileID[channelID] = -1; }
@@ -558,12 +576,25 @@ async function getFileContents(fileID, channelID) {
   global.lastFileContents[channelID] = '';
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
+
+  // var q = {id: fileID};
+  // if (cacheHas(q, 'fileContent')) {
+  //   var c = getFromCache(q, 'fileContent');
+  //   if (c.hasOwnProperty('content')) {
+  //     global.lastFileContents[channelID] = c.content;
+  //     unlockDiskForChannel(channelID);
+  //     console.log('I win the race: ' + c.content)
+  //     return c.content;
+  //   }
+  // }
+
   var auth = global.auth;
   const drive = google.drive({version: 'v3', auth});
   drive.files.get({fileId: fileID, alt: "media"}, (err, res) => {
     if (err) { unlockDiskForChannel(channelID); return console.error(err); }
     // strip padding which was added to bypass a very weird API error
     global.lastFileContents[channelID]=res.data.substring(0,res.data.length-2);
+    // addToCache({id: fileID, content: global.lastFileContents[channelID]}, 'fileContent');
     unlockDiskForChannel(channelID);
   });
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
@@ -677,7 +708,9 @@ function validateNPCInput(msg, args) {
   }
   var gotIt_Stop = false;
   for (var x = 0; x < args.length; x+=3) {
-    if (gotIt_Stop == false
+    // filter non-numeric inputs for 1st & 2nd args (& display error only once)
+    if (gotIt_Stop === false
+      // loose comparison below is intentional DO NOT FIX
       && (Number(args[x]) != args[x] || Number(args[x+1]) != args[x+1]))
     {
       errOutput += ':thinking: see ":dragon_face: Adding NPC\'s :dragon_face:" '
