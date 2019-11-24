@@ -278,12 +278,13 @@ function showCache(msg) {
       output += `${id} ${did} ${gid} ${par}\n`
     }
   });
+  // 2000 or fewer characters please
   var outArr = output.split("\n");
   output = '';
   for (var i = 0; i < outArr.length; i++) {
     output += outArr[i];
     if (i%15===0) {
-      msg.channel.send(output);
+      msg.channel.send('```' + output + '```');
       output = '';
     } else if (outArr.length - i < 15) {
       finalout = output;
