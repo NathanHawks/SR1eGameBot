@@ -592,7 +592,7 @@ async function findFileByName(filename, parentID, channelID) {
     {q: `"${parentID}" in parents and name="${filename}"`,
     fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
-      if (err) console.error(err);
+      if (err) return console.error(err);
       if (res.data.files.length === 1) {
         res.data.files.map((file) => {
           global.lastFoundFileID[channelID] = file.id;
