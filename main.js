@@ -93,7 +93,9 @@ function getCacheIndex(file, cacheAs, create=true) {
       // servers don't need a parent, just the filename
     if (cacheAs === 'server' && _cache_serverNameMatch(obj, file)) r = i;
     if (r && cacheAs === 'file') {
-      if (obj.discordID !== file.name || obj.parentID !== file.parents[0])
+      if (file.parents && file.parents.length
+        && (obj.discordID !== file.name || obj.parentID !== file.parents[0])
+      )
         doNothing(false, false);
       else return r;
     } else if (r) return r;
@@ -1398,7 +1400,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       + ":thinking: :bulb: See **!inithelp** or ask your GM how to get set up!";
     }
   } else {
-    output += "\n*[Roll]* Player or NPC (Total Mod)\n===============================\n";
+    output += "\n*[Roll]* Player or NPC (Mod)\n===============================\n";
   }
   // if we have a valid setup, roll init
   if (!initWillFail) {
