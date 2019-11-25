@@ -644,7 +644,7 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
         }, (err, file) => {
           unlockDiskForChannel(channelID);
           if (err) return console.error(err);
-          addToCache(file, 'file');
+          // don't add to cache -- let it happen on next load
           return;
         });
       } else if (res.data.files.length===1) {
