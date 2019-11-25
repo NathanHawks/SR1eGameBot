@@ -50,11 +50,11 @@ global.cache = {
   file: [], // arr of obj: googleID, name, parentID
   fileContent: [] // arr of obj: googleID, content
 };
-function _cache_googleIDMatch(obj, file) {
-  if (obj.googleID && file.id && obj.googleID === file.id)
-    return true;
-  else return false;
-}
+// function _cache_googleIDMatch(obj, file) {
+//   if (obj.googleID && file.id && obj.googleID === file.id)
+//     return true;
+//   else return false;
+// }
 function _cache_nameAndParentMatch(obj, file) {
   if (obj.discordID && file.name && obj.discordID === file.name
     && file.parents && file.parents.length && obj.parentID
@@ -63,7 +63,20 @@ function _cache_nameAndParentMatch(obj, file) {
   else return false;
 }
 function _cache_serverNameMatch(obj, file) {
-  if (obj.discordID === file.name) return true; else return false;
+  var did = file.name; // discordID
+  var i = 0;
+  var r = -1;
+  if (did) {
+    var didIndex = [];
+    global.cache.server.map((c) => {
+      didIndex[i] = c.discordID;
+      i++;
+    });
+    r = didIndex.indexOf(did);
+    if (r > -1) return true;
+    else return false;
+  }
+  // if (obj.discordID === file.name) return true; else return false;
 }
 function cacheHas(file, cacheAs) {
   var i = getCacheIndex(file, cacheAs, false);
@@ -75,10 +88,10 @@ function getCacheIndex(file, cacheAs, create=true) {
   var r = -1;
   var i = 0;
   var id = file.id;
-  if (cacheAs === 'fileContent') {
+  if (id) {
     // fast track id => index seeking
     var idIndex = [];
-    global.cache.fileContent.map((c) => {
+    global.cache[cacheAs].map((c) => {
       idIndex[i] = c.googleID;
       i++;
     });
@@ -88,7 +101,7 @@ function getCacheIndex(file, cacheAs, create=true) {
   r = -1;
   global.cache[cacheAs].map((obj) => {
     // valid matches: id match; or parent & discordID (filename) match together
-    if (_cache_googleIDMatch(obj, file)) r = i;
+    // if (_cache_googleIDMatch(obj, file)) r = i;
     if (_cache_nameAndParentMatch(obj, file)) r = i;
       // servers don't need a parent, just the filename
     if (cacheAs === 'server' && _cache_serverNameMatch(obj, file)) r = i;
@@ -406,19 +419,19 @@ async function findUserFolderFromMsg(msg) {
   // a User's folder exists in (root)/UserData/ServerID/ChannelID/UserID
   var r = null; // the userFolderID
   // first try to get it from cache
-  // var q = {name: msg.channel.guild.id}
-  // if (cacheHas(q, 'server')) {
-  //   var id = getFromCache(q, 'server').googleID;
-  //   q = {name: msg.channel.id, parents: [o]};
-  //   if (cacheHas(q, 'channel')) {
-  //     var o = getFromCache(q, 'channel').googleID;
-  //     q = {name: msg.author.id, parents: [o]};
-  //     if (cacheHas(q, 'userInChannel')) {
-  //       r = getFromCache(q, 'userInChannel').googleID;
-  //       return r;
-  //     }
-  //   }
-  // }
+  var q = {name: msg.channel.guild.id}
+  if (cacheHas(q, 'server')) {
+    var id = getFromCache(q, 'server').googleID;
+    q = {name: msg.channel.id, parents: [o]};
+    if (cacheHas(q, 'channel')) {
+      var o = getFromCache(q, 'channel').googleID;
+      q = {name: msg.author.id, parents: [o]};
+      if (cacheHas(q, 'userInChannel')) {
+        r = getFromCache(q, 'userInChannel').googleID;
+        return r;
+      }
+    }
+  }
   // the cache didn't return -- do it the slow way
   var serverFolderID = await findFolderByName(msg.channel.guild.id,
     global.folderID.UserData, doNothing, msg.channel.id);
@@ -434,20 +447,20 @@ async function findUserFolderFromUserID(msg, userID) {
   // a User's folder exists in (root)/UserData/ServerID/ChannelID/UserID
   var r = null;
   // try to get it from cache first
-  // var q = {name: msg.channel.guild.id};
-  // if (cacheHas(q, 'server')) {
-  //   var serverID = getFromCache(q, 'server').googleID;
-  //   q = {name: msg.channel.id, parents: [serverID]};
-  //   if (cacheHas(q, 'channel')) {
-  //     var channelID = getFromCache(q, 'channel').googleID;
-  //     q = {name: userID, parents: [channelID]};
-  //     if (cacheHas(q, 'userInChannel')) {
-  //       r = getFromCache(q, 'userInChannel').googleID;
-  //       unlockDiskForChannel(msg.channel.id);
-  //       return r;
-  //     }
-  //   }
-  // }
+  var q = {name: msg.channel.guild.id};
+  if (cacheHas(q, 'server')) {
+    var serverID = getFromCache(q, 'server').googleID;
+    q = {name: msg.channel.id, parents: [serverID]};
+    if (cacheHas(q, 'channel')) {
+      var channelID = getFromCache(q, 'channel').googleID;
+      q = {name: userID, parents: [channelID]};
+      if (cacheHas(q, 'userInChannel')) {
+        r = getFromCache(q, 'userInChannel').googleID;
+        unlockDiskForChannel(msg.channel.id);
+        return r;
+      }
+    }
+  }
   // cache didn't return -- do it the slow way
   var serverFolderID = await findFolderByName(msg.channel.guild.id,
     global.folderID.UserData, doNothing, msg.channel.id);
@@ -560,6 +573,7 @@ async function createFolder(
 
 async function findFileByName(filename, parentID, channelID) {
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
+
   var q = {name: filename, parents: [parentID]};
   if (cacheHas(q, 'file')) {
     lockDiskForChannel(channelID);
