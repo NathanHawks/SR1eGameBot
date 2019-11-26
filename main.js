@@ -1717,21 +1717,18 @@ async function handleInitCommand(msg, cmd, args, user) {
 async function handleSetGMCommand(msg, cmd, args, user) {
   // serverID.channelID.userID.gmWhoIsGM STRING
   // without flag: set self as GM
-  msg.react('⏳');
   var targetID = "";
   if (args.length) {
+    if (args[0].substring(0,2) !== '<@') {
+      msg.reply('This command requires you to "@" people correctly.')
+      return;
+    }
     targetID = args[0].substring(2, args[0].length-1);
     if (targetID.substring(0, 1) == '!')
       targetID = args[0].substring(3, args[0].length-1);
   }
   else targetID = user.id;
-  /*
-  msg.reply(`User ${user}, ID: ${user.id}\n`
-    + `Channel ${msg.channel}, ID: ${msg.channel.id}\n`
-    + `Server ${msg.channel.guild}, ID: ${msg.channel.guild.id}\n\n`
-    + `<@${user.id}>\n`   + `${args[0]}\n`   + targetID
-  );
-  */
+  msg.react('⏳');
   // ensure folder/subfolder chain: (root)/(UserData)/ServerID/ChannelID/UserID
   await ensureFolderTriplet(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -1769,6 +1766,12 @@ async function handleSetPlayersCommand(msg, cmd, args, user) {
   console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleAddPlayersCommand(msg, cmd, args, user) {
+  if (args.length) {
+    if (args[0].substring(0,2) !== '<@') {
+      msg.reply('This command requires you to "@" people correctly.')
+      return;
+    }
+  }
   msg.react('⏳');
   await ensureFolderTriplet(msg);
   var gmPlayersFileID = null;
