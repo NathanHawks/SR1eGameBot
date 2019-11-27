@@ -2552,7 +2552,7 @@ function handleMessage(msg, user=msg.author) {
             if (user.id == '360086569778020352') showCache(msg);
           break;
           case 'unlock':
-            if (user.id == '360086569778020352') adminUnlock(msg, args);
+            adminUnlock(msg, args);
           break;
           case 'init':
           case 'init2':
