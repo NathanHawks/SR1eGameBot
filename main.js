@@ -2059,13 +2059,27 @@ async function handleSetInitCommand(msg, cmd, args, user) {
   msg.react('⏳');
   // serverID.channelID.userID.playerInit STRING
   var content = args.join(" ");
+  if (global.config.logspam)
+    console.log(`handleSetInitCommand entering ensureFolderTriplet`);
   await ensureFolderTriplet(msg);
+  if (global.config.logspam)
+    console.log(`handleSetInitCommand finished ensureFolderTriplet`);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   // now get the folderID of the user folder in this channel
+  if (global.config.logspam)
+    console.log(`handleSetInitCommand entering findUserFolderFromMsg`);
   var userFolderID = await findUserFolderFromMsg(msg);
+  if (global.config.logspam)
+    console.log(`handleSetInitCommand finished findUserFolderFromMsg`);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  if (global.config.logspam)
+    console.log(`handleSetInitCommand entering setContentsByFilenameAndParent`);
   await setContentsByFilenameAndParent(msg, 'playerInit', userFolderID, content);
+  if (global.config.logspam)
+    console.log(`handleSetInitCommand finished setContentsByFilenameAndParent`);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  if (global.config.logspam)
+    console.log(`handleSetInitCommand moving along home`);
   // reformat for output (better user feedback)
   tmpArr = content.split(" ");
   var output = `${tmpArr[0]}d6 +${tmpArr[1]}`;
