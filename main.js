@@ -37,10 +37,11 @@ global.lock = { };
 // config (debugging flags, etc)
 global.config = {
   // debugging options
+  logspam:                            true,
+  // disables initial google drive setup
   skipInitInitiative:                 false,
-  deleteUserDataIfFoundOnStartup:     false,
-  listAllFilesOnStartup:              true,
-  deleteAllFilesOnStartup:            false,
+  // this gets spammy and you can !list in chat now
+  listAllFilesOnStartup:              false,
 };
 // @ =================== CACHE ====================
 global.cache = {
@@ -638,11 +639,11 @@ async function getFileContents(fileID, channelID) {
 
 async function setContentsByFilenameAndParent(msg, filename, parentFolderID, contents) {
   // prep for disk ops
-  var auth = global.auth;
-  const drive = google.drive({version: 'v3', auth});
   var channelID = msg.channel.id;
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
+  var auth = global.auth;
+  const drive = google.drive({version: 'v3', auth});
   // Create/Update the file; does the file already exist
   drive.files.list({q:`"${parentFolderID}" in parents and name="${filename}"`,
     fields: 'files(id, name, parents)'},
@@ -768,8 +769,6 @@ function initInitiative(auth) {
   // frag it
   global.auth = auth;
   // diagnostic / testing junk
-  /* if (global.config.deleteAllFilesOnStartup === true)
-    { deleteAllFiles(); return; } */
   if (global.config.listAllFilesOnStartup === true) listAllFiles();
   if (global.config.skipInitInitiative === true) return;
   // init disk locking for system
@@ -796,10 +795,7 @@ async function callbackInitInitiative(err, res) {
     // SETUP =======================================================
     var folderName = 'UserData';
     findAndSetFolderID(files, folderName);
-    if (global.config.deleteUserDataIfFoundOnStartup == true) {
-      // testing/debugging: delete UserData folder (to test installer again)
-      deleteFileById(global.folderID[folderName],(err,res)=>{if(err)console.error(err);});
-    }
+
   } else {
     // INSTALL =====================================================
     var folderName = 'UserData';
@@ -1720,7 +1716,7 @@ async function handleSetGMCommand(msg, cmd, args, user) {
   var targetID = "";
   if (args.length) {
     if (args[0].substring(0,2) !== '<@') {
-      msg.reply('This command requires you to "@" people correctly.')
+      msg.reply('this command requires you to "@" people correctly.')
       return;
     }
     targetID = args[0].substring(2, args[0].length-1);
@@ -1730,13 +1726,27 @@ async function handleSetGMCommand(msg, cmd, args, user) {
   else targetID = user.id;
   msg.react('⏳');
   // ensure folder/subfolder chain: (root)/(UserData)/ServerID/ChannelID/UserID
+  if (global.config.logspam)
+    console.log(`handleSetGMCommand entering ensureFolderTriplet`);
   await ensureFolderTriplet(msg);
+  if (global.config.logspam)
+    console.log(`handleSetGMCommand finished ensureFolderTriplet`);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   // now get the folderID of the user folder in this channel
+  if (global.config.logspam)
+    console.log(`handleSetGMCommand entering findUserFolderFromMsg`);
   var userFolderID = await findUserFolderFromMsg(msg);
+  if (global.config.logspam)
+    console.log(`handleSetGMCommand finished findUserFolderFromMsg`);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  if (global.config.logspam)
+    console.log(`handleSetGMCommand entering setContentsByFilenameAndParent`);
   await setContentsByFilenameAndParent(msg, 'gmWhoIsGM', userFolderID, targetID);
+  if (global.config.logspam)
+    console.log(`handleSetGMCommand finished setContentsByFilenameAndParent`);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  if (global.config.logspam)
+    console.log(`handleSetGMCommand moving along`);
   // remove reaction
   removeHourglass(msg);
   if (targetID == msg.author.id) msg.reply(' you are now a GM in this channel.');
@@ -1768,7 +1778,7 @@ async function handleSetPlayersCommand(msg, cmd, args, user) {
 async function handleAddPlayersCommand(msg, cmd, args, user) {
   if (args.length) {
     if (args[0].substring(0,2) !== '<@') {
-      msg.reply('This command requires you to "@" people correctly.')
+      msg.reply('this command requires you to "@" people correctly.')
       return;
     }
   }
