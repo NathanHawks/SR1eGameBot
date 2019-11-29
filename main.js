@@ -232,6 +232,9 @@ function getAccessToken(oAuth2Client, callback) {
 }
 //==================================================================
 // @ ================== DX FUNCS ================
+async function logSpam(msg) {
+  if (global.config.logspam) console.log(msg);
+}
 async function openFile(msg, args) {
   var output = await getFileContents(args[0], 'system');
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -363,56 +366,86 @@ async function ensureFolderTriplet(msg) {
     serverFolderID = getFromCache(q, 'server').googleID;
   } else {
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-    await ensureFolderByName(serverDiscordID, userDataFolderID, msg.channel.id);
-    serverFolderID = await findFolderByName(serverDiscordID, userDataFolderID,
-      (err, res) => {
-        if (err) return console.error(err);
-        lockDiskForChannel(msg.channel.id);
-        if (res.data.files.length === 1) {
-          addToCache(res.data.files[0], 'server');
-        } else {
-          console.error(`> BAD: ${msg.channel.guild.id} in UserData.`);
-        }
-        unlockDiskForChannel(msg.channel.id);
-    }, msg.channel.id);
+    try {
+      logSpam('ensureFolderTriplet entering ensureFolderByName (server folder)');
+      await ensureFolderByName(serverDiscordID, userDataFolderID, msg.channel.id);
+    } catch (e) { console.log(e); }
+    try {
+      logSpam('ensureFolderTriplet entering findFolderByName (server folder)');
+      serverFolderID = await findFolderByName(serverDiscordID, userDataFolderID,
+        (err, res) => {
+          logSpam('ensureFolderTriplet in callback for findFolderByName (server folder)');
+          if (err) return console.error(err);
+          lockDiskForChannel(msg.channel.id);
+          if (res.data.files.length === 1) {
+            addToCache(res.data.files[0], 'server');
+          } else {
+            console.error(`> BAD: server ${msg.channel.guild.id} is in UserData `
+              + `(${res.data.files.length}) times.`);
+          }
+          unlockDiskForChannel(msg.channel.id);
+      }, msg.channel.id);
+    } catch (e) { console.log(e); }
+    logSpam('ensureFolderTriplet exited callback for findFolderByName (server folder)');
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    logSpam('ensureFolderTriplet clear of callback for findFolderByName (server folder)');
   }
   // channel folder
   q = {name: msg.channel.id, parents: [serverFolderID]};
   if (cacheHas(q, 'channel')) {
     channelFolderID = getFromCache(q, 'channel').googleID;
   } else {
-    await ensureFolderByName(msg.channel.id, serverFolderID, msg.channel.id);
-    channelFolderID = await findFolderByName(msg.channel.id, serverFolderID,
-      (err, res) => {
-        if (err) return console.error(err);
-        lockDiskForChannel(msg.channel.id);
-        if (res.data.files.length === 1) {
-          addToCache(res.data.files[0], 'channel');
-        } else {
-          console.error(`> BAD: ${msg.channel.id} in ${serverFolderID}.`);
-        }
-        unlockDiskForChannel(msg.channel.id);
-      }, msg.channel.id);
-      while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    try {
+      logSpam('ensureFolderTriplet entering ensureFolderByName (channel folder)');
+      await ensureFolderByName(msg.channel.id, serverFolderID, msg.channel.id);
+    } catch (e) { console.log(e); }
+    try {
+      logSpam('ensureFolderTriplet entering findFolderByName (channel folder)');
+      channelFolderID = await findFolderByName(msg.channel.id, serverFolderID,
+        (err, res) => {
+          logSpam('ensureFolderTriplet in callback for findFolderByName (channel folder)');
+          if (err) return console.error(err);
+          lockDiskForChannel(msg.channel.id);
+          if (res.data.files.length === 1) {
+            addToCache(res.data.files[0], 'channel');
+          } else {
+            console.error(`> BAD: channel ${msg.channel.id} is in `
+              + `${serverFolderID} (${res.data.files.length}) times.`);
+          }
+          unlockDiskForChannel(msg.channel.id);
+        }, msg.channel.id);
+    } catch (e) { console.log(e); }
+    logSpam('ensureFolderTriplet exited callback for findFolderByName (channel folder)');
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    logSpam('ensureFolderTriplet clear of callback for findFolderByName (channel folder)');
   }
   // user folder
   q = {name: msg.author.id, parents: [channelFolderID]};
   if (cacheHas(q, 'userInChannel')) {
-    // we're only here to ensure it exists; it does
+    // we're only here to ensure it exists; it does so we're done
   }
   else {
-    await ensureFolderByName(msg.author.id, channelFolderID, msg.channel.id);
-    await findFolderByName(msg.author.id, channelFolderID, (err, res) => {
-      if (err) return console.error(err);
-      lockDiskForChannel(msg.channel.id);
-      if (res.data.files.length === 1) {
-        addToCache(res.data.files[0], 'userInChannel');
-      }
-      else { console.error(`> BAD: ${msg.author.id} in ${channelFolderID}.`)}
-      unlockDiskForChannel(msg.channel.id);
-    }, msg.channel.id);
+    try {
+      logSpam('ensureFolderTriplet entering ensureFolderByName (user folder)');
+      await ensureFolderByName(msg.author.id, channelFolderID, msg.channel.id);
+    } catch (e) { console.log(e); }
+    try {
+      logSpam('ensureFolderTriplet entering findFolderByName (user folder)');
+      await findFolderByName(msg.author.id, channelFolderID, (err, res) => {
+        logSpam('ensureFolderTriplet in callback for findFolderByName (user folder)');
+        if (err) return console.error(err);
+        lockDiskForChannel(msg.channel.id);
+        if (res.data.files.length === 1) {
+          addToCache(res.data.files[0], 'userInChannel');
+        }
+        else { console.error(`> BAD: author ${msg.author.id} is in `
+          + `${channelFolderID} (${res.data.files.length}) times.`)}
+        unlockDiskForChannel(msg.channel.id);
+      }, msg.channel.id);
+    } catch (e) { console.log(e); }
+    logSpam('ensureFolderTriplet exited callback for findFolderByName (user folder)');
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    logSpam('ensureFolderTriplet clear of callback for findFolderByName (user folder)');
   }
 }
 
@@ -1410,7 +1443,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       + ":thinking: :bulb: See **!inithelp** or ask your GM how to get set up!";
     }
   } else {
-    output += "\n*[Roll]* Player or NPC (Mod)\n===============================\n";
+    output += "\n*[Roll]* Player or NPC (Mod)\n========================\n";
   }
   // if we have a valid setup, roll init
   if (!initWillFail) {
@@ -1702,7 +1735,7 @@ async function handleInitCommand(msg, cmd, args, user) {
     break;
   }
   if ((gmNPCArr.length > 0 || gmPlayersArr.length > 0) && !initWillFail) {
-    output += "===============================\n";
+    output += "========================\n";
   }
   // report
   msg.reply(output);
@@ -1726,27 +1759,20 @@ async function handleSetGMCommand(msg, cmd, args, user) {
   else targetID = user.id;
   msg.react('⏳');
   // ensure folder/subfolder chain: (root)/(UserData)/ServerID/ChannelID/UserID
-  if (global.config.logspam)
-    console.log(`handleSetGMCommand entering ensureFolderTriplet`);
+    logSpam('handleSetGMCommand entering ensureFolderTriplet');
   await ensureFolderTriplet(msg);
-  if (global.config.logspam)
-    console.log(`handleSetGMCommand finished ensureFolderTriplet`);
-  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    logSpam('handleSetGMCommand finished ensureFolderTriplet');
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   // now get the folderID of the user folder in this channel
-  if (global.config.logspam)
-    console.log(`handleSetGMCommand entering findUserFolderFromMsg`);
+    logSpam('handleSetGMCommand entering findUserFolderFromMsg');
   var userFolderID = await findUserFolderFromMsg(msg);
-  if (global.config.logspam)
-    console.log(`handleSetGMCommand finished findUserFolderFromMsg`);
-  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  if (global.config.logspam)
-    console.log(`handleSetGMCommand entering setContentsByFilenameAndParent`);
+    logSpam('handleSetGMCommand finished findUserFolderFromMsg');
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    logSpam('handleSetGMCommand entering setContentsByFilenameAndParent');
   await setContentsByFilenameAndParent(msg, 'gmWhoIsGM', userFolderID, targetID);
-  if (global.config.logspam)
-    console.log(`handleSetGMCommand finished setContentsByFilenameAndParent`);
-  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  if (global.config.logspam)
-    console.log(`handleSetGMCommand moving along`);
+    logSpam('handleSetGMCommand finished setContentsByFilenameAndParent');
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    logSpam('handleSetGMCommand moving along');
   // remove reaction
   removeHourglass(msg);
   if (targetID == msg.author.id) msg.reply(' you are now a GM in this channel.');
@@ -2059,27 +2085,20 @@ async function handleSetInitCommand(msg, cmd, args, user) {
   msg.react('⏳');
   // serverID.channelID.userID.playerInit STRING
   var content = args.join(" ");
-  if (global.config.logspam)
-    console.log(`handleSetInitCommand entering ensureFolderTriplet`);
+    logSpam('handleSetInitCommand entering ensureFolderTriplet');
   await ensureFolderTriplet(msg);
-  if (global.config.logspam)
-    console.log(`handleSetInitCommand finished ensureFolderTriplet`);
-  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    logSpam('handleSetInitCommand finished ensureFolderTriplet');
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   // now get the folderID of the user folder in this channel
-  if (global.config.logspam)
-    console.log(`handleSetInitCommand entering findUserFolderFromMsg`);
+    logSpam('handleSetInitCommand entering findUserFolderFromMsg');
   var userFolderID = await findUserFolderFromMsg(msg);
-  if (global.config.logspam)
-    console.log(`handleSetInitCommand finished findUserFolderFromMsg`);
-  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  if (global.config.logspam)
-    console.log(`handleSetInitCommand entering setContentsByFilenameAndParent`);
+    logSpam('handleSetInitCommand finished findUserFolderFromMsg');
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    logSpam('handleSetInitCommand entering setContentsByFilenameAndParent');
   await setContentsByFilenameAndParent(msg, 'playerInit', userFolderID, content);
-  if (global.config.logspam)
-    console.log(`handleSetInitCommand finished setContentsByFilenameAndParent`);
-  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  if (global.config.logspam)
-    console.log(`handleSetInitCommand moving along home`);
+    logSpam('handleSetInitCommand finished setContentsByFilenameAndParent');
+    while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+    logSpam('handleSetInitCommand moving along home');
   // reformat for output (better user feedback)
   tmpArr = content.split(" ");
   var output = `${tmpArr[0]}d6 +${tmpArr[1]}`;
