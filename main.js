@@ -37,7 +37,7 @@ global.lock = { };
 // config (debugging flags, etc)
 global.config = {
   // debugging options
-  logspam:                            true,
+  logspam:                            false,
   // disables initial google drive setup
   skipInitInitiative:                 false,
   // this gets spammy and you can !list in chat now
@@ -932,6 +932,33 @@ function sortInitPass(a, b) {
   } else bReaction = 0;
   return bReaction - aReaction;
 }
+function sort1ETiebreaker(tmpArr, tbArr) {
+  let didSort = false;
+  if (tmpArr.length === 1) return [tmpArr, tbArr];
+  for (let y = 0; y < tmpArr.length; y++) {
+    let thisCharacter = tmpArr[y].split(" ")[1];
+    let nextCharacter = null;
+    if (tmpArr.length >= y+2) nextCharacter = tmpArr[y+1].split(" ")[1];
+    let thisIndex = -1;
+    let nextIndex = -1;
+    for (let z = 0; z < tbArr.length; z++) {
+      if (tbArr[z].name === thisCharacter) { thisIndex = z; }
+      if (nextCharacter && tbArr[z].name === nextCharacter) { nextIndex = z; }
+    }
+    if (nextIndex > -1
+      && tbArr[thisIndex].phases > tbArr[nextIndex].phases
+    ) {
+      // swap the array elements
+      let tmp = tmpArr[y];
+      tmpArr[y] = tmpArr[y+1];
+      tmpArr[y+1] = tmp;
+      didSort = true;
+    }
+  }
+  if (didSort) console.log(tmpArr);
+  if (didSort) [tmpArr,tbArr] = sort1ETiebreaker(tmpArr, tbArr);
+  return [tmpArr,tbArr];
+}
 function getOpposedSetupArr(args) {
   var isOpposedBool = false;
   var opponentDiceInt = -1;
@@ -1561,7 +1588,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       // if the player is supposed to go on this phase (init passes aside)
       if (playerPhases[y].indexOf(x) !== -1) {
         var formattedEntry = `*[${x}]* <@${gmPlayersArr[y]}> (${playerInitContent[y].split(" ")[1]})`;
-        if (cmd !== 'init2' && cmd !== 'init2flip' && cmd !== 'initcp') {
+        if (cmd !== 'init' && cmd !== 'initflip' && cmd !== 'init2' && cmd !== 'init2flip' && cmd !== 'initcp') {
           // it's not 2nd edition: enforce the init passes rule
           if (playerWentArr.indexOf(y) === -1) {
             // the player hasn't gone yet this pass
@@ -1595,7 +1622,7 @@ async function handleInitCommand(msg, cmd, args, user) {
           }
         } else {
           // don't enforce init passes for 2nd edition
-          if (ordArr[x]) ordArr[x] += "\n";
+          if (ordArr[x]) ordArr[x] += ",";
           ordArr[x] += formattedEntry;
         }
       }
@@ -1605,7 +1632,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       // if the npc is supposed to go this phase (init passes aside)
       if (npcPhases[y].indexOf(x) !== -1) {
         var formattedEntry = `*[${x}]* ${gmNPCArr[y].split(" ")[2]} (${gmNPCArr[y].split(" ")[1]})`;
-        if (cmd !== 'init2' && cmd !== 'init2flip' && cmd !== 'initcp') {
+        if (cmd !== 'init' && cmd !== 'initflip' && cmd !== 'init2' && cmd !== 'init2flip' && cmd !== 'initcp') {
           // enforce the init passes rule
           if (npcWentArr.indexOf(y) === -1) {
             // the npc hasn't gone yet this pass
@@ -1637,12 +1664,12 @@ async function handleInitCommand(msg, cmd, args, user) {
           }
         } else {
           // don't enforce init passes for 2nd edition
-          if (ordArr[x]) ordArr[x] += "\n";
+          if (ordArr[x]) ordArr[x] += ",";
           ordArr[x] += formattedEntry;
         }
       }
     }
-    if (cmd !== 'init2' && cmd !== 'init2flip' && cmd !== 'initcp') {
+    if (cmd !== 'init' && cmd !== 'initflip' && cmd !== 'init2' && cmd !== 'init2flip' && cmd !== 'initcp') {
       // has everyone gone yet this pass?
       if (playerWentArr.length == gmPlayersArr.length
         && npcWentArr.length == gmNPCArr.length
@@ -1707,13 +1734,50 @@ async function handleInitCommand(msg, cmd, args, user) {
       }
     }
   }
-  // re-sort each phase for Reaction and split lines
+  // prep for possible 1e tiebreaker rule
+  var tbArr = [];
+  // prep for sorting
+  var tmpArr = [];
+  // re-sort each phase for Reaction and 1e tiebreaker rule, and then split lines
+  // loop per-phase array
   for (var x = 0; x < ordArr.length; x++) {
-    var tmpArr = ordArr[x].split(",");
-    if (tmpArr.length > 1) {
-      tmpArr = tmpArr.sort(sortReaction);
-      ordArr[x] = tmpArr.join("\n")
+    // at this point each phase is a comma-separated list of formattedEntry's
+    tmpArr = ordArr[x].split(",");
+    // sortReaction is a nice tidy affair
+    tmpArr = tmpArr.sort(sortReaction);
+    // 1e tiebreaker rule: a player on 2nd phase comes after a player on 1st phase, etc
+    if (cmd === 'init' || cmd === 'initflip') {
+      // loop characters acting this phase
+      for (let y = 0; y < tmpArr.length; y++) {
+        // build an array (tbArr) noting how many phases each character has had so far including this one
+        try {
+          // get the character name (or discord id, mention-formatted)
+          let character = tmpArr[y].split(" ")[1];
+          // abundance of caution
+          if (character !== undefined) {
+            let index = -1;
+            // get the index of that character in the tbArr (tiebreaker array)
+            for (let z = 0; z < tbArr.length; z++) {
+              if (tbArr[z].name === character) { index = z; }
+            }
+            // if the character isn't in the tbArr yet, put them there
+            if (index === -1) {
+              index = tbArr.length;
+              tbArr[index] = {name: character, phases: 0};
+            }
+            // increment how many phases this character has had so far
+            if (index > -1) {
+              tbArr[index].phases++;
+            }
+          }
+        } catch (e) { console.log(e); }
+      }
+      // recursively loop, bumping array elements down if they are on higher pass than the next one
+      try { [tmpArr,tbArr] = sort1ETiebreaker(tmpArr, tbArr); }
+      catch (e) { console.log(e); }
     }
+
+    ordArr[x] = tmpArr.join("\n")
   }
   switch (cmd) {
     case 'init':
