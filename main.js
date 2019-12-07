@@ -935,6 +935,7 @@ function sortInitPass(a, b) {
 function sort1ETiebreaker(tmpArr, tbArr) {
   let didSort = false;
   if (tmpArr.length === 1) return [tmpArr, tbArr];
+  logSpam('checking sort of ' + tmpArr.length);
   for (let y = 0; y < tmpArr.length; y++) {
     let thisCharacter = tmpArr[y].split(" ")[1];
     let nextCharacter = null;
@@ -945,6 +946,10 @@ function sort1ETiebreaker(tmpArr, tbArr) {
       if (tbArr[z].name === thisCharacter) { thisIndex = z; }
       if (nextCharacter && tbArr[z].name === nextCharacter) { nextIndex = z; }
     }
+    if (nextIndex > -1) {
+      logSpam(`${thisCharacter}: ${tbArr[thisIndex].phases}`);
+      logSpam(`${nextCharacter}: ${tbArr[nextIndex].phases}`);
+    }
     if (nextIndex > -1
       && tbArr[thisIndex].phases > tbArr[nextIndex].phases
     ) {
@@ -953,9 +958,10 @@ function sort1ETiebreaker(tmpArr, tbArr) {
       tmpArr[y] = tmpArr[y+1];
       tmpArr[y+1] = tmp;
       didSort = true;
+      logSpam('>>>>>>>>>>>>>>>>>>>>>> did sort');
     }
   }
-  if (didSort) console.log(tmpArr);
+  if (didSort) logSpam(tmpArr);
   if (didSort) [tmpArr,tbArr] = sort1ETiebreaker(tmpArr, tbArr);
   return [tmpArr,tbArr];
 }
@@ -1735,19 +1741,19 @@ async function handleInitCommand(msg, cmd, args, user) {
     }
   }
   // prep for possible 1e tiebreaker rule
-  var tbArr = [];
+  var tbArr = [{name: '', phases: 0}];
   // prep for sorting
   var tmpArr = [];
   // re-sort each phase for Reaction and 1e tiebreaker rule, and then split lines
   // loop per-phase array
-  for (var x = 0; x < ordArr.length; x++) {
+  for (var x = ordArr.length - 1; x > -1 ; x--) {
     // at this point each phase is a comma-separated list of formattedEntry's
     tmpArr = ordArr[x].split(",");
     // sortReaction is a nice tidy affair
     tmpArr = tmpArr.sort(sortReaction);
     // 1e tiebreaker rule: a player on 2nd phase comes after a player on 1st phase, etc
     if (cmd === 'init' || cmd === 'initflip') {
-      // loop characters acting this phase
+      // backwards loop of characters acting this phase
       for (let y = 0; y < tmpArr.length; y++) {
         // build an array (tbArr) noting how many phases each character has had so far including this one
         try {
@@ -1768,6 +1774,7 @@ async function handleInitCommand(msg, cmd, args, user) {
             // increment how many phases this character has had so far
             if (index > -1) {
               tbArr[index].phases++;
+              logSpam('incrementing ' + character);
             }
           }
         } catch (e) { console.log(e); }
@@ -1775,6 +1782,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       // recursively loop, bumping array elements down if they are on higher pass than the next one
       try { [tmpArr,tbArr] = sort1ETiebreaker(tmpArr, tbArr); }
       catch (e) { console.log(e); }
+      if (tmpArr[0] !== '') logSpam('__________________next_________\n');
     }
 
     ordArr[x] = tmpArr.join("\n")
