@@ -1745,7 +1745,7 @@ async function handleInitCommand(msg, cmd, args, user) {
   // prep for sorting
   var tmpArr = [];
   // re-sort each phase for Reaction and 1e tiebreaker rule, and then split lines
-  // loop per-phase array
+  // backwards loop of element-per-phase array
   for (var x = ordArr.length - 1; x > -1 ; x--) {
     // at this point each phase is a comma-separated list of formattedEntry's
     tmpArr = ordArr[x].split(",");
@@ -1753,7 +1753,7 @@ async function handleInitCommand(msg, cmd, args, user) {
     tmpArr = tmpArr.sort(sortReaction);
     // 1e tiebreaker rule: a player on 2nd phase comes after a player on 1st phase, etc
     if (cmd === 'init' || cmd === 'initflip') {
-      // backwards loop of characters acting this phase
+      // loop of characters acting this phase
       for (let y = 0; y < tmpArr.length; y++) {
         // build an array (tbArr) noting how many phases each character has had so far including this one
         try {
@@ -1779,7 +1779,7 @@ async function handleInitCommand(msg, cmd, args, user) {
           }
         } catch (e) { console.log(e); }
       }
-      // recursively loop, bumping array elements down if they are on higher pass than the next one
+      // recursively loop, bumping array elements down if they've acted more times than the next one
       try { [tmpArr,tbArr] = sort1ETiebreaker(tmpArr, tbArr); }
       catch (e) { console.log(e); }
       if (tmpArr[0] !== '') logSpam('__________________next_________\n');
