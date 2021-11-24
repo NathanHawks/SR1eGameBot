@@ -16,7 +16,7 @@ Instructions on using the bot are below, after the self-hosting instructions.
 2. Get your Discord auth token via the *New Application* button at http://discordapp.com/developers/applications/me and put the auth token in a ***discordauth.json*** file, in the same directory as main.js. The format:
 ```
 {
-"token": "your auth token string from the New Application button at http://discordapp.com/developers/applications/me",
+"token": "your auth token string from the New Application button at http://discordapp.com/developers/applications/me"
 }
 ```
 3. Run GameBot locally by going to its directory and running `node .` (with the period). Follow the instructions to authorize the bot as a Google app. *By the time you're done you'll have authorized the bot to use its own private slice of your Google Drive (for storing settings like initiative and macros).* When you paste the authorization code into the bot's console input, it will create and populate the files ***googlecredentials.json*** and ***googletoken.json,*** in the same directory as main.js.
