@@ -151,6 +151,7 @@ function addToCache(file, cacheAs) {
 }
 function getFromCache(file, cacheAs) {
   var ci = getCacheIndex(file, cacheAs, false);
+  return -1;
   return global.cache[cacheAs][ci];
 }
 
