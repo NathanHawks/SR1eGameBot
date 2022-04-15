@@ -651,6 +651,7 @@ async function getFileContents(fileID, channelID) {
   if (cacheHas(q, 'fileContent')) {
     var c = getFromCache(q, 'fileContent');
     if (c.hasOwnProperty('content')) {
+      console.log("Found in cache: " + c.content);
       global.lastFileContents[channelID] = c.content;
       unlockDiskForChannel(channelID);
       return c.content;
