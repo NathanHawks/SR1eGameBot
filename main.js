@@ -8,15 +8,18 @@
  */
 function doNothing (err=null, res=null) {} // for defaulting if's & callbacks
 // set true to activate warning messages
-var isMaintenanceModeBool = false;
+var isMaintenanceModeBool = true;
 // set status message to send as warning when isMaintenanceModeBool is true
 var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
 /*
 + 'The bot\'s in maintenance mode.** If it forgets rerolls faster than normal, '
-+ 'it means I rebooted the bot.'
++ 'it means I rebooted the bot.';
 */
+/*
 + ' Testing a major upgrade! Please DM me if the bot goes offline!'
 + ' Pzzhht! -<@360086569778020352>';
+*/
++ 'Chasing bugs in the initiative and macro systems. Normal rolls should be fine.';
 // conditionally add warning message
 function addMaintenanceStatusMessage(output) {
   var r = "";
