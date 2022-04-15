@@ -455,11 +455,11 @@ async function findUserFolderFromMsg(msg) {
   // first try to get it from cache
   var q = {name: msg.channel.guild.id}
   if (cacheHas(q, 'server')) {
-    var id = getFromCache(q, 'server').googleID;
-    q = {name: msg.channel.id, parents: [id]};
+    var s = getFromCache(q, 'server').googleID;
+    q = {name: msg.channel.id, parents: [s]};
     if (cacheHas(q, 'channel')) {
-      var o = getFromCache(q, 'channel').googleID;
-      q = {name: msg.author.id, parents: [o]};
+      var c = getFromCache(q, 'channel').googleID;
+      q = {name: msg.author.id, parents: [c]};
       if (cacheHas(q, 'userInChannel')) {
         r = getFromCache(q, 'userInChannel').googleID;
         return r;
