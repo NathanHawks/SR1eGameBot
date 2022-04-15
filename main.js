@@ -472,9 +472,11 @@ async function findUserFolderFromMsg(msg) {
     global.folderID.UserData, doNothing, msg.channel.id);
   var channelFolderID = await findFolderByName(msg.channel.id,
     serverFolderID, doNothing, msg.channel.id);
+  console.log ("GDrive seek cID: " + channelFolderID);
   // return the file ID
   r = await findFolderByName(msg.author.id,
     channelFolderID, doNothing, msg.channel.id);
+  console.log ("Gdrive seek uID: " + r);
   return r;
 }
 
