@@ -86,6 +86,7 @@ function _cache_serverNameMatch(obj, file) {
   // if (obj.discordID === file.name) return true; else return false;
 }
 function cacheHas(file, cacheAs) {
+  if (cacheAs === 'channel') return false;
   var i = getCacheIndex(file, cacheAs, false);
   if (i > -1) return true;
   else return false;
@@ -154,7 +155,6 @@ function addToCache(file, cacheAs) {
 }
 function getFromCache(file, cacheAs) {
   var ci = getCacheIndex(file, cacheAs, false);
-  return -1; //temporary fix because suddenly the cache is matching user folders in the wrong channel folder
   return global.cache[cacheAs][ci];
 }
 
