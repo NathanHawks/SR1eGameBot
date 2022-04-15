@@ -646,7 +646,7 @@ async function getFileContents(fileID, channelID) {
   global.lastFileContents[channelID] = '';
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
-/*
+  console.log("File ID: " + fileID);
   var q = {id: fileID};
   if (cacheHas(q, 'fileContent')) {
     var c = getFromCache(q, 'fileContent');
@@ -657,7 +657,7 @@ async function getFileContents(fileID, channelID) {
       return c.content;
     }
   }
-*/
+
   var auth = global.auth;
   const drive = google.drive({version: 'v3', auth});
   drive.files.get({fileId: fileID, alt: "media"}, (err, res) => {
