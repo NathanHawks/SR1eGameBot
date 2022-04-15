@@ -462,6 +462,7 @@ async function findUserFolderFromMsg(msg) {
       q = {name: msg.author.id, parents: [c]};
       if (cacheHas(q, 'userInChannel')) {
         r = getFromCache(q, 'userInChannel').googleID;
+        console.log("Found user folder at " + msg.channel.guild.id + "/" + msg.channel.id + "/" + msg.author.id)
         return r;
       }
     }
