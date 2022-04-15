@@ -13,13 +13,16 @@ var isMaintenanceModeBool = true;
 var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
 /*
 + 'The bot\'s in maintenance mode.** If it forgets rerolls faster than normal, '
-+ 'it means I rebooted the bot.';
++ 'it means I rebooted the bot.'
 */
 /*
 + ' Testing a major upgrade! Please DM me if the bot goes offline!'
-+ ' Pzzhht! -<@360086569778020352>';
++ ' Pzzhht! -<@360086569778020352>'
 */
-+ 'Chasing bugs in the initiative and macro systems. Normal rolls should be fine.';
+/*
++ 'Chasing bugs in the initiative and macro systems. Normal rolls should be fine.'
+*/
+;
 // conditionally add warning message
 function addMaintenanceStatusMessage(output) {
   var r = "";
@@ -151,7 +154,7 @@ function addToCache(file, cacheAs) {
 }
 function getFromCache(file, cacheAs) {
   var ci = getCacheIndex(file, cacheAs, false);
-  return -1;
+  return -1; //temporary fix because suddenly the cache is matching user folders in the wrong channel folder
   return global.cache[cacheAs][ci];
 }
 
