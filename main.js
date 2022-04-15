@@ -456,7 +456,7 @@ async function findUserFolderFromMsg(msg) {
   var q = {name: msg.channel.guild.id}
   if (cacheHas(q, 'server')) {
     var s = getFromCache(q, 'server').googleID;
-    q = {name: msg.channel.id, parents: [s]};
+    q = {name: msg.channel.id, parents: [o]}; // lolwut
     if (cacheHas(q, 'channel')) {
       var c = getFromCache(q, 'channel').googleID;
       q = {name: msg.author.id, parents: [c]};
