@@ -530,10 +530,10 @@ async function findUserFolderFromUserID(msg, userID) {
 function ensureFolderByName(name, parentID=null, channelID="system") {
   findFolderByName(name, parentID, (err, res) => {
     if (err) return console.error(err);
-    console.log(`Ensuring folder ${name} exists`);
+    logSpam(`Ensuring folder ${name} exists`);
     const files = res.data.files;
     if (files.length === 0) {
-      console.log('It doesn\'t exist; creating it');
+      logSpam('It doesn\'t exist; creating it');
       createFolder(name, parentID, (err, file) => {
         if (err) return console.error(err);
       }, channelID);
@@ -2538,7 +2538,7 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
         args = roll;
         //console.log(`cmd: ${cmd} & args: ${args}`);
         var newContent = `${cmd} ${args.join(" ")}`;
-        console.log(newContent);
+        logSpam(newContent);
         handleRollCommand(msg, cmd, args, user, newContent);
         removeHourglass(msg);
       }
