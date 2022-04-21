@@ -104,7 +104,10 @@ function getCacheIndex(file, cacheAs, create=true) {
       i++;
     });
     r = idIndex.indexOf(id);
-    if (r > -1) return r;
+    if (r > -1) {
+      logSpam('Found cache index ' + r);
+      return r;
+    }
   }
   r = -1;
   global.cache[cacheAs].map((obj) => {
@@ -148,8 +151,14 @@ function addToCache(file, cacheAs) {
       if (file.parents) global.cache.file[ci].parentID = file.parents[0];
     break;
     case 'fileContent':
-      if (file.id)      global.cache.fileContent[ci].googleID = file.id;
-      if (file.content) global.cache.fileContent[ci].content = file.content;
+      if (file.content) {
+        if (file.id)      global.cache.fileContent[ci].googleID = file.id;
+        if (file.content) global.cache.fileContent[ci].content = file.content;
+      }
+      else {
+        // no content; remove the element from the cache
+        global.cache.fileContent.splice(ci, 1);
+      }
     break;
   }
 }
@@ -314,6 +323,7 @@ function showCache(msg) {
     var id = `fcon${x}`.padEnd(10, " ");
     var spa = " ".padEnd(18, " ");
     var gid = c.googleID;
+    if (c.content === undefined) c.content = "";
     var con = c.content.substring(0, 33);
     output += `${id} ${spa} ${gid} ${con}\n`;
     x++;
@@ -479,11 +489,11 @@ async function findUserFolderFromMsg(msg) {
     global.folderID.UserData, doNothing, msg.channel.id);
   var channelFolderID = await findFolderByName(msg.channel.id,
     serverFolderID, doNothing, msg.channel.id);
-  console.log ("GDrive seek cID: " + channelFolderID);
+  logSpam ("GDrive seek cID: " + channelFolderID);
   // return the file ID
   r = await findFolderByName(msg.author.id,
     channelFolderID, doNothing, msg.channel.id);
-  console.log ("Gdrive seek uID: " + r);
+  logSpam ("Gdrive seek uID: " + r);
   return r;
 }
 
@@ -636,14 +646,16 @@ async function findFileByName(filename, parentID, channelID) {
     {q: `"${parentID}" in parents and name="${filename}"`,
     fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
-      if (err) console.error(err);
-      if (res && res.data.files.length === 1) {
+      if (err) {
+        global.lastFoundFileID[channelID] = -1;
+        // console.error(err);
+      }
+      else if (res && res.data.files.length === 1) {
         res.data.files.map((file) => {
           global.lastFoundFileID[channelID] = file.id;
           addToCache(file, 'file');
         });
       }
-      else { global.lastFoundFileID[channelID] = -1; }
       unlockDiskForChannel(channelID);
     }
   );
@@ -655,12 +667,12 @@ async function getFileContents(fileID, channelID) {
   global.lastFileContents[channelID] = '';
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
-  console.log("File ID: " + fileID);
+  logSpam("File ID: " + fileID);
   var q = {id: fileID};
   if (cacheHas(q, 'fileContent')) {
     var c = getFromCache(q, 'fileContent');
     if (c.hasOwnProperty('content')) {
-      console.log("Found in cache: " + c.content);
+      logSpam("Found in cache: " + c.content);
       global.lastFileContents[channelID] = c.content;
       unlockDiskForChannel(channelID);
       return c.content;
@@ -716,6 +728,7 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
                 if (err) return console.error(err);
                 else return;
             });
+            // update cache
             var q = {id: file.id, content: contents};
             addToCache(q, 'fileContent');
         });
@@ -2447,7 +2460,7 @@ async function handleSaveMacroCommand(msg, cmd, args, user) {
   parentFolderID = await findUserFolderFromMsg(msg);
   savedRollsFileID = await findFileByName(filename, parentFolderID, msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  if (savedRollsFileID) {
+  if (savedRollsFileID !== -1) {
     // get existing file content
     savedRollsStr = await getFileContents(savedRollsFileID, msg.channel.id);
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -2475,7 +2488,7 @@ async function handleSaveMacroCommand(msg, cmd, args, user) {
     await setContentsByFilenameAndParent(msg, filename, parentFolderID, savedRollsStr);
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   }
-  if (!savedRollsFileID) {
+  else {
     // savedRolls file didn't exist; initialize it with this roll macro
     savedRollsArr = [formattedEntry];
     savedRollsStr = savedRollsArr.join("\n");
@@ -2502,7 +2515,7 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
   parentFolderID = await findUserFolderFromMsg(msg);
   savedRollsFileID = await findFileByName(filename, parentFolderID, msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  if (savedRollsFileID) {
+  if (savedRollsFileID !== -1) {
     // get existing file content
     savedRollsStr = await getFileContents(savedRollsFileID, msg.channel.id);
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -2531,10 +2544,11 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
       }
     }
   }
-  if (!savedRollsFileID) {
+  else {
     // savedRolls file didn't exist
     msg.reply(" you don't have any saved macros in this channel yet.")
   }
+  removeHourglass(msg);
 }
 async function handleRemoveMacroCommand(msg, cmd, args, user) {
   if (args.length < 1) return msg.reply(':no_entry_sign: You didn\'t specify which macro I should remove.')
@@ -2553,7 +2567,7 @@ async function handleRemoveMacroCommand(msg, cmd, args, user) {
   parentFolderID = await findUserFolderFromMsg(msg);
   savedRollsFileID = await findFileByName(filename, parentFolderID, msg.channel.id);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  if (savedRollsFileID) {
+  if (savedRollsFileID !== -1) {
     // get existing file content
     savedRollsStr = await getFileContents(savedRollsFileID, msg.channel.id);
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -2576,12 +2590,16 @@ async function handleRemoveMacroCommand(msg, cmd, args, user) {
         removeHourglass(msg);
       } else msg.reply('That name didn\'t match any of your saved macros in this channel.')
     }
+    else {
+      // file exists but is empty
+      msg.reply(" you don't have any saved macros in this channel yet.");
+    }
   }
-  if (!savedRollsFileID) {
+  else {
     // savedRolls file didn't exist
     msg.reply(" you don't have any saved macros in this channel yet.")
   }
-
+  removeHourglass(msg);
 }
 async function handleListMacrosCommand(msg, cmd, args, user) {
   msg.react('⏳');
@@ -2598,8 +2616,9 @@ async function handleListMacrosCommand(msg, cmd, args, user) {
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   parentFolderID = await findUserFolderFromMsg(msg);
   savedRollsFileID = await findFileByName(filename, parentFolderID, msg.channel.id);
+  logSpam('Found file ID: ' + savedRollsFileID);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  if (savedRollsFileID) {
+  if (savedRollsFileID !== -1) {
     // get existing file content
     savedRollsStr = await getFileContents(savedRollsFileID, msg.channel.id);
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -2616,7 +2635,12 @@ async function handleListMacrosCommand(msg, cmd, args, user) {
       });
       msg.reply(` you have the following macros in this channel:\n${output}`);
     }
-  } else {
+    else {
+      // file exists but is empty
+      msg.reply(" you don't have any saved macros in this channel yet.");
+    }
+  }
+  else {
     // savedRolls file didn't exist
     msg.reply(" you don't have any saved macros in this channel yet.")
   }
