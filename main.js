@@ -57,7 +57,9 @@ function resetCache() {
     channel: [], // arr of obj: googleID, discordID, parentID,
     userInChannel: [], // arr of obj: googleID, discordID, parentID
     file: [], // arr of obj: googleID, name, parentID
-    fileContent: [] // arr of obj: googleID, content
+    fileContent: [], // arr of obj: googleID, content
+    playChannel: [], // arr of obj: server, channel, user, playChannel
+    folderTriplet: [] // arr of obj: server, channel, user, googleID
   };
 }
 resetCache();
@@ -87,7 +89,6 @@ function _cache_serverNameMatch(obj, file) {
     if (r > -1) return true;
     else return false;
   }
-  // if (obj.discordID === file.name) return true; else return false;
 }
 function cacheHas(file, cacheAs) {
   if (cacheAs === 'channel') return false;
@@ -100,6 +101,18 @@ function getCacheIndex(file, cacheAs, create=true) {
   var r = -1;
   var i = 0;
   var id = file.id;
+  if (cacheAs === 'playChannel' || cacheAs === 'folderTriplet') {
+    // fast-track playChannel seek
+    for (i = 0; i < global.cache[cacheAs].length; i++) {
+      var obj = global.cache[cacheAs][i];
+      if (obj.server === file.server
+        && obj.channel === file.channel
+        && obj.user === file.user)
+      {
+        return i;
+      }
+    }
+  }
   if (id) {
     // fast track id => index seeking
     var idIndex = [];
@@ -117,7 +130,7 @@ function getCacheIndex(file, cacheAs, create=true) {
   global.cache[cacheAs].map((obj) => {
     // valid matches: id match; or parent & discordID (filename) match together
     // if (_cache_googleIDMatch(obj, file)) r = i;
-    if (_cache_nameAndParentMatch(obj, file)) r = i;
+    if (cacheAs != 'playChannel' && _cache_nameAndParentMatch(obj, file)) r = i;
       // servers don't need a parent, just the filename
     if (cacheAs === 'server' && _cache_serverNameMatch(obj, file)) r = i;
     if (r && cacheAs === 'file') {
@@ -138,6 +151,19 @@ function getCacheIndex(file, cacheAs, create=true) {
 function addToCache(file, cacheAs) {
   var ci = getCacheIndex(file, cacheAs);
   switch(cacheAs) {
+    case 'folderTriplet':
+      global.cache.folderTriplet[ci] = {
+        server: file.server, channel: file.channel, user: file.user,
+        googleID: file.id
+      };
+    break;
+    case 'playChannel':
+      // no parent; special cache
+      global.cache.playChannel[ci] = {
+        server: file.server, channel: file.channel, user: file.user,
+        playChannel: file.playChannel
+      };
+    break;
     case 'server':
       // no parent
       global.cache.server[ci].googleID = file.id;
@@ -164,6 +190,12 @@ function addToCache(file, cacheAs) {
         global.cache.fileContent.splice(ci, 1);
       }
     break;
+  }
+}
+function delFromCache(gID, cacheAs) {
+  var ci = getCacheIndex({id: gID}, cacheAs, false);
+  if (ci != -1) {
+    global.cache[cacheAs].splice(ci, 1);
   }
 }
 function getFromCache(file, cacheAs) {
@@ -304,12 +336,14 @@ function deleteFile(msg, args) {
   }
 }
 function showCache(msg) {
-  var output = '[CacheID]  - name/discordID - ------------ googleID ----------- ----------- parentID ------------\n';
+  var output = '\nGeneral\n[CacheID]  - name/discordID - ------------ googleID ----------- ----------- parentID ------------\n';
   var finalout = '';
   var cxArr = ['server', 'channel', 'userInChannel', 'file'];
+  var foundCache = false;
   cxArr.map((cx) => {
     for (var x = 0; x < global.cache[cx].length; x++) {
       if (!global.cache[cx][x]) continue;
+      foundCache = true;
       var id = `${cx.substring(0,4)}${x}`;
       id = id.padEnd(10, " ");
       var did = (global.cache[cx][x].hasOwnProperty('discordID'))
@@ -321,8 +355,9 @@ function showCache(msg) {
       output += `${id} ${did} ${gid} ${par}\n`
     }
   });
+  if (foundCache === false) output += " Cache empty\n";
   var x = 0;
-  output += '[CacheID] ------------------- ------------ googleID ----------- ------------ content ------------\n';
+  output += '\nFile Contents\n[CacheID] ------------------- ------------ googleID ----------- ------------ content ------------\n';
   global.cache.fileContent.map((c) => {
     var id = `fcon${x}`.padEnd(10, " ");
     var spa = " ".padEnd(18, " ");
@@ -333,12 +368,37 @@ function showCache(msg) {
     output += `${id} ${spa} ${gid} ${con}\n`;
     x++;
   });
+  if (x === 0) output += " Cache empty\n";
+  var pcx = 0;
+  output += '\nPlay Channels\n[CacheID]  ----- server ----- ----- channel ---- ------ user ------ ----- playChannel -----\n';
+  global.cache.playChannel.map((pc) => {
+    var id = `play${pcx}`.padEnd(10, " ");
+    var s = pc.server;
+    var c = pc.channel;
+    var u = pc.user;
+    var p = pc.playChannel;
+    output += `${id} ${s} ${c} ${u} ${p}\n`;
+    pcx++;
+  });
+  if (pcx === 0) output += " Cache empty\n";
+  var ftx = 0;
+  output += '\nFolder Triplets\n[CacheID]  ----- server ----- ----- channel ---- ------ user ------ ----- googleID -----\n';
+  global.cache.folderTriplet.map((ft) => {
+    var id = `trip${ftx}`.padEnd(10, " ");
+    var s = ft.server;
+    var c = ft.channel;
+    var u = ft.user;
+    var t = ft.googleID;
+    output += `${id} ${s} ${c} ${u} ${t}\n`;
+    ftx++;
+  });
+  if (ftx === 0) output += " Cache empty\n";
   // 2000 or fewer characters please
   var outArr = output.split("\n");
   output = '';
   for (var i = 0; i < outArr.length; i++) {
     output += outArr[i] + "\n";
-    if (i%15===0) {
+    if (i%15===0 && i != 0) {
       msg.channel.send('```' + output + '```');
       output = '';
     } else if (outArr.length - i < 15) {
@@ -387,15 +447,25 @@ function deleteAllFiles() {
 //==================================================================
 // @ =========== INITIATIVE LIBRARY FUNCS ============
 // ensure folder/subfolder chain: (root)/(UserData)/ServerID/ChannelID/UserID
-async function ensureFolderTriplet(msg, recurse=true) {
+async function ensureFolderTriplet(msg) {
   var serverFolderID = null;
   var channelFolderID = null;
   var userDataFolderID = global.folderID.UserData;
   var serverDiscordID = msg.channel.guild.id;
+  var gmPlayChannelID = await getPlayChannel(msg);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  // Try asking the cache for the whole triplet endpoint
+  var q = {server: msg.channel.guild.id, channel: gmPlayChannelID, user: msg.author.id};
+  if (cacheHas(q, 'folderTriplet')) {
+    logSpam('ensureFolderTriplet found triplet in cache');
+    logSpam(' [ ==================== exiting ensureFolderTriplet ============ ]')
+    return;
+  }
   // Get the server folder's googleID
   var q = {name: serverDiscordID};
   if (cacheHas(q, 'server')) {
     serverFolderID = getFromCache(q, 'server').googleID;
+    logSpam('Found server folder in cache');
   } else {
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
     try {
@@ -423,11 +493,10 @@ async function ensureFolderTriplet(msg, recurse=true) {
     logSpam('ensureFolderTriplet clear of callback for findFolderByName (server folder)');
   }
   // channel folder
-  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  var gmPlayChannelID = await getPlayChannel(msg);
   q = {name: gmPlayChannelID, parents: [serverFolderID]};
   if (cacheHas(q, 'channel')) {
     channelFolderID = getFromCache(q, 'channel').googleID;
+    logSpam('Found channel folder in cache');
   } else {
     try {
       logSpam('ensureFolderTriplet entering ensureFolderByName (channel folder)');
@@ -456,6 +525,7 @@ async function ensureFolderTriplet(msg, recurse=true) {
   // user folder
   q = {name: msg.author.id, parents: [channelFolderID]};
   if (cacheHas(q, 'userInChannel')) {
+    logSpam('Found user folder in cache');
     // we're only here to ensure it exists; it does so we're done
   }
   else {
@@ -471,6 +541,13 @@ async function ensureFolderTriplet(msg, recurse=true) {
         lockDiskForChannel(gmPlayChannelID);
         if (res.data.files.length === 1) {
           addToCache(res.data.files[0], 'userInChannel');
+          // we have the whole triplet now; cache it as such
+          addToCache({
+            server: msg.channel.guild.id,
+            channel: gmPlayChannelID,
+            user: msg.author.id,
+            id: res.data.files[0].id
+          }, 'folderTriplet');
         }
         else { console.error(`> BAD: author ${msg.author.id} is in `
           + `${channelFolderID} (${res.data.files.length}) times.`)}
@@ -505,6 +582,7 @@ async function findUserFolderFromMsg(msg, usePlayChannel=false) {
       }
     }
   }
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   // the cache didn't return -- do it the slow way
   var serverFolderID = await findFolderByName(msg.channel.guild.id,
     global.folderID.UserData, doNothing, discordChannelID);
@@ -600,7 +678,7 @@ async function findFolderByName(
       + `folderName was ${folderName}, channel was ${channelID}`);
     return -1;
   }
-  global.lastFoundFileID[channelID] = -1;
+  var lastFoundFileID = -1;
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
   var auth = global.auth;
@@ -619,15 +697,15 @@ async function findFolderByName(
     if (res.data.files.length === 1) {
       // prep to return the file id
       res.data.files.map((file)=>{
-        global.lastFoundFileID[channelID] = file.id;
+        lastFoundFileID = file.id;
       });
-    } else { global.lastFoundFileID[channelID] = -1; }
+    } else { lastFoundFileID = -1; }
     // hope this either is brief or manages locks well
     unlockDiskForChannel(channelID);
     callback(err, res);
   });
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
-  return global.lastFoundFileID[channelID];
+  return lastFoundFileID;
 }
 
 // @ function createFolder(folderName, parentID=null, callback, channelID="system")
@@ -660,20 +738,20 @@ async function createFolder(
 }
 
 async function findFileByName(filename, parentID, channelID) {
+  var lastFoundFileID = -1;
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
 
   var q = {name: filename, parents: [parentID]};
   if (cacheHas(q, 'file')) {
     lockDiskForChannel(channelID);
     var c = getFromCache(q, 'file');
-    global.lastFoundFileID[channelID] = c.googleID;
+    lastFoundFileID = c.googleID;
     unlockDiskForChannel(channelID);
-    return c.googleID;
+    return lastFoundFileID;
   }
 
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
   lockDiskForChannel(channelID);
-  global.lastFoundFileID[channelID] = -1;
   var auth = global.auth;
   var drive = google.drive({version: 'v3', auth});
   drive.files.list(
@@ -681,12 +759,12 @@ async function findFileByName(filename, parentID, channelID) {
     fields: 'nextPageToken, files(id, name, parents)'},
     (err, res) => {
       if (err) {
-        global.lastFoundFileID[channelID] = -1;
+        lastFoundFileID = -1;
         // console.error(err);
       }
       else if (res && res.data.files.length === 1) {
         res.data.files.map((file) => {
-          global.lastFoundFileID[channelID] = file.id;
+          lastFoundFileID = file.id;
           addToCache(file, 'file');
         });
       }
@@ -694,7 +772,8 @@ async function findFileByName(filename, parentID, channelID) {
     }
   );
   while (isDiskLockedForChannel(channelID)) { await sleep(15); }
-  return global.lastFoundFileID[channelID];
+  global.lastFoundFileID[channelID] = lastFoundFileID;
+  return lastFoundFileID;
 }
 
 async function getFileContents(fileID, channelID) {
@@ -2812,6 +2891,14 @@ async function handleListMacrosCommand(msg, cmd, args, user) {
 // if the curent folder has a file named gmPlayChannel it returns the content of that file
 // returns the current discord channel ID otherwise
 async function getPlayChannel(msg) {
+  // check cache first
+  var file = {
+    server: msg.channel.guild.id, channel: msg.channel.id, user: msg.author.id
+  };
+  if (cacheHas(file, 'playChannel')) {
+    var r = getFromCache(file, 'playChannel');
+    return r.playChannel;
+  }
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   logSpam(`getPlayChannel begins: Determining user folder of CURRENT channel`);
   var userFolderID = await findUserFolderFromMsg(msg);
@@ -2826,10 +2913,22 @@ async function getPlayChannel(msg) {
       var gmPlayChannelID = await getFileContents(gmPlayChannelGoogleID);
       while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
       logSpam(`getPlayChannel returning ${gmPlayChannelID}`);
+      addToCache({
+        server: msg.channel.guild.id,
+        channel: msg.channel.id,
+        user: msg.author.id,
+        playChannel: gmPlayChannelID
+      }, 'playChannel');
       return gmPlayChannelID;
     }
     else {
       logSpam('getPlayChannel returning CURRENT channel');
+      addToCache({
+        server: msg.channel.guild.id,
+        channel: msg.channel.id,
+        user: msg.author.id,
+        playChannel: msg.channel.id
+      }, 'playChannel');
       return msg.channel.id;
     }
   }
@@ -2862,6 +2961,12 @@ async function handleSetChannelCommand(msg, cmd, args, user) {
       while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
       await setContentsByFilenameAndParent(msg, filename, gmSecretFolderID, gmPlayChannelID);
       while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+      addToCache({
+        server: msg.channel.guild.id,
+        channel: msg.channel.id,
+        user: msg.author.id,
+        playChannel: gmPlayChannelID
+      }, 'playChannel');
       msg.reply(` play channel is now set to <#${gmPlayChannelID}>`);
     }
     else {
@@ -2919,23 +3024,35 @@ async function handleDelSceneCommand(msg, cmd, args, user) {
   var userFolderID = await findUserFolderFromMsg(msg, true);
   while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
   if (args.length > 0) {
+    var waitForAsync = true;
     args.map(async (arg) => {
       var filename = `gmScene_${arg}`;
       var gID = await findFileByName(filename, userFolderID, gmPlayChannelID);
       while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
-      await deleteFileById(gID, (err, res) => {}, gmPlayChannelID);
-      while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
-      await deleteSceneFromList(msg, arg);
-      while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
-      var file = {content: '', id: gID};
-      addToCache(file, 'fileContent');
+      if (gID != -1) {
+        await deleteFileById(gID, (err, res) => {}, gmPlayChannelID);
+        while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
+        delFromCache(gID, 'file');
+        await deleteSceneFromList(msg, arg);
+        while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
+        var file = {content: '', id: gID};
+        addToCache(file, 'fileContent');
+      }
+      else {
+        msg.reply(`The scene named ${arg} wasn't found.`);
+      }
+      waitForAsync = false;
     });
+    while (waitForAsync) { await sleep(15); }
+    var sceneList = await getSceneList(msg);
+    while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
+    logSpam(`handleDelSceneCommand got sceneList ${sceneList}`);
+    var count = sceneList.length;
+    msg.reply(` you now have ${count} scenes in channel <#${gmPlayChannelID}>.`);
   }
-  var sceneList = await getSceneList(msg);
-  while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
-  logSpam(`handleDelSceneCommand got sceneList ${sceneList}`);
-  var count = sceneList.length;
-  msg.reply(` you now have ${count} scenes in channel <#${gmPlayChannelID}>.`);
+  else {
+    msg.reply(' this command requires one or more names of scenes.');
+  }
   logSpam('==================================================================');
   removeHourglass(msg);
 }
@@ -2974,6 +3091,9 @@ async function handleGetSceneCommand(msg, cmd, args, user) {
 }
 async function handleListScenesCommand(msg, cmd, args, user) {
   msg.react('⏳');
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  await ensureFolderTriplet(msg);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   var gmPlayChannelID = await getPlayChannel(msg);
   logSpam(`Parent folder: ${gmPlayChannelID}`);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
