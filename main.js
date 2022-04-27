@@ -588,9 +588,6 @@ async function findUserFolderFromMsg(msg, usePlayChannel=false) {
   serverFolderID = await findFolderByName(msg.channel.guild.id,
     global.folderID.UserData, doNothing, discordChannelID);
   while (isDiskLockedForChannel(discordChannelID)) { await sleep(15); }
-  if (serverFolderID === -1) {
-    msg.reply(':man_facepalming: **Something went wrong**; try your command again. :man_facepalming:');
-  }
   logSpam ("GDrive seek sID: " + serverFolderID);
   var channelFolderID = await findFolderByName(discordChannelID,
     serverFolderID, doNothing, discordChannelID);
