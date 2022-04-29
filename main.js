@@ -281,7 +281,7 @@ async function logSpam(msg) {
 async function openFile(msg, args) {
   var output = await getFileContents(args[0], 'system');
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  msg.channel.send("```\n" + output + "```");
+  msg.channel.send("```\n" + output + "```").catch((e) => {console.log(e);});
 }
 function listAllFiles(msg) {
   var output = '';
@@ -302,20 +302,23 @@ function listAllFiles(msg) {
       output += 'No files found.';
     }
     if (msg !== undefined && output.length < 1994)
-      msg.channel.send(`\`\`\`${output}\`\`\``);
+      msg.channel.send(`\`\`\`${output}\`\`\``)
+      .catch((e) => {console.log(e);});
     else if (msg !== undefined) {
       var outArr = output.split("\n");
       output = '';
       for (var x = 0; x < outArr.length; x++) {
         output += outArr[x] + "\n";
         if (x%20 === 0) {
-          msg.channel.send('```' + output + '```');
+          msg.channel.send('```' + output + '```')
+          .catch((e) => {console.log(e);});
           output = '';
         } else if (outArr.length - x < 20) {
           finalout = output;
         }
       }
-      msg.channel.send('```' + finalout + '```');
+      msg.channel.send('```' + finalout + '```')
+      .catch((e) => {console.log(e);});
     } else console.log(output);
   });
 }
@@ -323,6 +326,7 @@ function deleteFile(msg, args) {
   if (args && args[0]) {
     deleteFileById(args[0], (err, res) => {
       msg.channel.send("```" + args[0] + ' deleted.```')
+      .catch((e) => {console.log(e);});
     });
   }
 }
@@ -390,13 +394,15 @@ function showCache(msg) {
   for (var i = 0; i < outArr.length; i++) {
     output += outArr[i] + "\n";
     if (i%15===0 && i != 0) {
-      msg.channel.send('```' + output + '```');
+      msg.channel.send('```' + output + '```')
+      .catch((e) => {console.log(e);});
       output = '';
     } else if (outArr.length - i < 15) {
       finalout = output;
     }
   }
-  if (finalout) msg.channel.send('```' + finalout + '```');
+  if (finalout) msg.channel.send('```' + finalout + '```')
+  .catch((e) => {console.log(e);});
 }
 function clearCache(msg) {
   resetCache();
@@ -469,6 +475,7 @@ async function ensureFolderTriplet(msg) {
       serverFolderID = await findFolderByName(serverDiscordID, userDataFolderID,
         (err, res) => {
           logSpam('ensureFolderTriplet in callback for findFolderByName (server folder)');
+          while (isDiskLockedForChannel(msg.channel.id)) { sleep(15); }
           if (err) return console.error(err);
           lockDiskForChannel(msg.channel.id);
           if (res.data.files.length === 1) {
@@ -500,6 +507,7 @@ async function ensureFolderTriplet(msg) {
       channelFolderID = await findFolderByName(gmPlayChannelID, serverFolderID,
         (err, res) => {
           logSpam('ensureFolderTriplet in callback for findFolderByName (channel folder)');
+          while (isDiskLockedForChannel(msg.channel.id)) { sleep(15); }
           if (err) return console.error(err);
           lockDiskForChannel(gmPlayChannelID);
           if (res.data.files.length === 1) {
@@ -531,6 +539,7 @@ async function ensureFolderTriplet(msg) {
       logSpam('ensureFolderTriplet entering findFolderByName (user folder)');
       await findFolderByName(msg.author.id, channelFolderID, (err, res) => {
         logSpam('ensureFolderTriplet in callback for findFolderByName (user folder)');
+        while (isDiskLockedForChannel(gmPlayChannelID)) { sleep(15); }
         if (err) return console.error(err);
         lockDiskForChannel(gmPlayChannelID);
         if (res.data.files.length === 1) {
@@ -589,6 +598,10 @@ async function findUserFolderFromMsg(msg, usePlayChannel=false) {
     global.folderID.UserData, doNothing, discordChannelID);
   while (isDiskLockedForChannel(discordChannelID)) { await sleep(15); }
   logSpam ("GDrive seek sID: " + serverFolderID);
+  if (serverFolderID === -1) {
+    msg.reply(' :man_facepalming: something went wrong. Please try your command again. :man_facepalming:')
+    .catch((e) => {console.log(e);});
+  }
   var channelFolderID = await findFolderByName(discordChannelID,
     serverFolderID, doNothing, discordChannelID);
   while (isDiskLockedForChannel(discordChannelID)) { await sleep(15); }
@@ -697,11 +710,12 @@ async function findFolderByName(
     // optimistically, there will usually be a unique result
     if (res.data.files.length === 1) {
       // prep to return the file id
-      res.data.files.map((file)=>{
-        lastFoundFileID = file.id;
-      });
-    } else { lastFoundFileID = -1; }
-    // hope this either is brief or manages locks well
+      lastFoundFileID = res.data.files[0].id;
+    }
+    else {
+      lastFoundFileID = -1;
+      console.error(`findFolderByName got ${res.data.files.length} results from GDrive for ${folderName} in ${parentID}`);
+    }
     unlockDiskForChannel(channelID);
     callback(err, res);
   });
@@ -861,7 +875,13 @@ async function deleteFileById(fileId, callback=(err,res)=>{}, channelID="system"
 }
 function removeHourglass(msg) {
   msg.reactions.map((reaction) => {
-    if (reaction.emoji.name == '⏳') { reaction.remove(); }
+    if (reaction.emoji.name == '⏳') {
+      reaction.remove().catch((e) => {
+        console.log(e);
+        logSpam('Seems I don\'t have permission to do reactions in this channel.');
+        msg.channel.send('Seems I don\'t have permission to do reactions in this channel.');
+      });
+    }
   });
 }
 function modifyNPCInput(args) {
@@ -927,7 +947,8 @@ function validateNPCInput(msg, args) {
   }
   // abort if any errors
   if (errOutput !== '') {
-    msg.reply(addMaintenanceStatusMessage(`there was a problem.\n${errOutput}`));
+    msg.reply(addMaintenanceStatusMessage(`there was a problem.\n${errOutput}`))
+    .catch((e) => {console.log(e);});
     return false;
   } else return true;
 }
@@ -1311,7 +1332,20 @@ logger.level = 'debug';
 
 // Connect to Discord
 var bot = new Discord.Client();
-bot.login(token);
+try {
+  bot.login(token);
+}
+catch (e) {
+  console.error(e);
+  console.log('Trying to connect again in 15 seconds...');
+  sleep(15000);
+  try {
+    bot.login(token);
+  }
+  catch (e) {
+    console.log('Couldn\'t connect.');
+  }
+}
 
 bot.on('ready', () => {
     logger.info('Connected; Logged in as: ['+ bot.user.tag + ']');
@@ -1373,7 +1407,8 @@ function handleRollCommand(msg, cmd, args, user, override=null) {
     var isOpposedTestBool = retarr[3];
     if (isOpposedTestBool === true && opponentTNInt === -1) {
       msg.reply(addMaintenanceStatusMessage(":no_entry_sign: you ordered an opposed test without an "
-      + "opponent TN (the **otn** option).\nExample: **!6! tn4 vs5! *otn4***"));
+      + "opponent TN (the **otn** option).\nExample: **!6! tn4 vs5! *otn4***"))
+      .catch((e) => {console.log(e);});
       return;
     }
 
@@ -1418,11 +1453,11 @@ function handleRollCommand(msg, cmd, args, user, override=null) {
     // modify output for maintenance mode status
     output = addMaintenanceStatusMessage(output);
     // post results
-    msg.channel.send(output);
+    msg.channel.send(output).catch((e) => {console.log(e);});
     // log activity
     console.log('🎲');
     // provide reroll ui (dice reaction)
-    msg.react('🎲');
+    msg.react('🎲').catch((e) => {console.log(e);});
     // no return
   }
 
@@ -1646,34 +1681,35 @@ function handleHelpCommand(msg, cmd, args, user) {
   switch (whatToShow) {
     case 'index':
       index1 = addMaintenanceStatusMessage(index1);
-      msg.reply(index1);
+      msg.reply(index1).catch((e) => {console.log(e);});
     break;
     case 'main':
       main2 = addMaintenanceStatusMessage(main2);
-      msg.reply(main1);
-      msg.reply(main2, {embed: null});
+      msg.reply(main1).catch((e) => {console.log(e);});
+      msg.reply(main2, {embed: null}).catch((e) => {console.log(e);});
     break;
     case 'init':
       init2 = addMaintenanceStatusMessage(init2);
-      msg.reply(init1);
-      msg.reply(init2, {embed: null});
+      msg.reply(init1).catch((e) => {console.log(e);});
+      msg.reply(init2, {embed: null}).catch((e) => {console.log(e);});
     break;
     case 'scene':
       scene1 = addMaintenanceStatusMessage(scene1);
-      msg.reply(scene1, {embed: null});
+      msg.reply(scene1, {embed: null}).catch((e) => {console.log(e);});
     break;
     case 'macros':
       macros1 = addMaintenanceStatusMessage(macros1);
-      msg.reply(macros1, {embed: null});
+      msg.reply(macros1, {embed: null}).catch((e) => {console.log(e);});
     break;
     case 'gmscreen':
       gmscreen1 = addMaintenanceStatusMessage(gmscreen1);
-      msg.reply(gmscreen1, {embed: null});
+      msg.reply(gmscreen1, {embed: null}).catch((e) => {console.log(e);});
     break;
   }
 }
 async function handleInitCommand(msg, cmd, args, user) {
-  await msg.react('⏳');
+  await msg.react('⏳').catch((e) => {console.log(e);});
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleInitCommand ======================= ]');
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   var lastFoundFileID = null;
@@ -2159,7 +2195,7 @@ async function handleInitCommand(msg, cmd, args, user) {
     output += "========================\n";
   }
   // report
-  msg.reply(addMaintenanceStatusMessage(output));
+  msg.reply(addMaintenanceStatusMessage(output)).catch((e) => {console.log(e);});
   unlockDiskForChannel(gmPlayChannelID);
   console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
@@ -2167,12 +2203,14 @@ async function handleInitCommand(msg, cmd, args, user) {
 async function handleSetGMCommand(msg, cmd, args, user) {
   // serverID.channelID.userID.gmWhoIsGM STRING
   // without flag: set self as GM
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleSetGMCommand ====================== ]');
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   var targetID = "";
   if (args.length) {
     if (args[0].substring(0,2) !== '<@') {
-      msg.reply(addMaintenanceStatusMessage('this command requires you to "@" people correctly.'));
+      msg.reply(addMaintenanceStatusMessage('this command requires you to "@" people correctly.'))
+      .catch((e) => {console.log(e);});
       return;
     }
     targetID = args[0].substring(2, args[0].length-1);
@@ -2180,7 +2218,7 @@ async function handleSetGMCommand(msg, cmd, args, user) {
       targetID = args[0].substring(3, args[0].length-1);
   }
   else targetID = user.id;
-  await msg.react('⏳');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   // ensure folder/subfolder chain: (root)/(UserData)/ServerID/ChannelID/UserID
     logSpam('handleSetGMCommand entering ensureFolderTriplet');
   await ensureFolderTriplet(msg);
@@ -2198,13 +2236,14 @@ async function handleSetGMCommand(msg, cmd, args, user) {
     logSpam('handleSetGMCommand moving along');
   // remove reaction
   removeHourglass(msg);
-  if (targetID == msg.author.id) msg.reply(addMaintenanceStatusMessage(` you are now a GM in channel <#${gmPlayChannelID}>.`));
-  else msg.reply(addMaintenanceStatusMessage(` your GM is now <@${targetID}> in this channel.`));
+  if (targetID == msg.author.id) msg.reply(addMaintenanceStatusMessage(` you are now a GM in channel <#${gmPlayChannelID}>.`)).catch((e) => {console.log(e);});
+  else msg.reply(addMaintenanceStatusMessage(` your GM is now <@${targetID}> in this channel.`)).catch((e) => {console.log(e);});
   // listAllFiles();
   console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleSetPlayersCommand(msg, cmd, args, user) {
-  await msg.react('⏳');
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleSetPlayersCommand ================= ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await ensureFolderTriplet(msg);
@@ -2222,18 +2261,19 @@ async function handleSetPlayersCommand(msg, cmd, args, user) {
   while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
   // remove reaction
   removeHourglass(msg);
-  msg.reply(addMaintenanceStatusMessage(` your group in channel <#${gmPlayChannelID}> is now ${args.length} players.`));
+  msg.reply(addMaintenanceStatusMessage(` your group in channel <#${gmPlayChannelID}> is now ${args.length} players.`)).catch((e) => {console.log(e);});
   // listAllFiles();
   console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleAddPlayersCommand(msg, cmd, args, user) {
   if (args.length) {
     if (args[0].substring(0,2) !== '<@') {
-      msg.reply(addMaintenanceStatusMessage('this command requires you to "@" people correctly.'));
+      msg.reply(addMaintenanceStatusMessage('this command requires you to "@" people correctly.')).catch((e) => {console.log(e);});
       return;
     }
   }
-  await msg.react('⏳');
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleAddPlayersCommand ================= ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await ensureFolderTriplet(msg);
@@ -2274,7 +2314,7 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
       while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
       msg.reply(addMaintenanceStatusMessage(` you added ${args.length} players `
       + ` to your group in channel <#${gmPlayChannelID}>;`
-      + ` now there are ${newPlayersCount}.`));
+      + ` now there are ${newPlayersCount}.`)).catch((e) => {console.log(e);});
       removeHourglass(msg);
     } else {
       // if there is no file we fail forward to the !set version of the command
@@ -2286,7 +2326,8 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
   console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleListPlayersCommand(msg, cmd, args, user) {
-  await msg.react('⏳');
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleListPlayersCommand ================ ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await ensureFolderTriplet(msg);
@@ -2305,7 +2346,7 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
       // the file doesn't exist for this channel/user pairing
       if (res.data.files.length == 0) {
         // no group; report so, and prep to abort
-        msg.reply(addMaintenanceStatusMessage(` you currently have no group in channel <#${gmPlayChannelID}>.`))
+        msg.reply(addMaintenanceStatusMessage(` you currently have no group in channel <#${gmPlayChannelID}>.`)).catch((e) => {console.log(e);});
         unlockDiskForChannel(gmPlayChannelID);
       } else {
         // be sure it's the right file
@@ -2343,17 +2384,18 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
     }
   });
   if (playersArr.length == 0)
-    msg.reply(addMaintenanceStatusMessage(` you don\'t have a group in channel <#${gmPlayChannelID}> yet.`));
+    msg.reply(addMaintenanceStatusMessage(` you don\'t have a group in channel <#${gmPlayChannelID}> yet.`)).catch((e) => {console.log(e);});
   else
     msg.reply(addMaintenanceStatusMessage(` your group for this channel is ${playersArr.length} players `
-    + `strong: ${output}`));
+    + `strong: ${output}`)).catch((e) => {console.log(e);});
   // listAllFiles();
   console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   // remove reaction
   removeHourglass(msg);
 }
 async function handleRemovePlayersCommand(msg, cmd, args, user) {
-  await msg.react('⏳');
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleRemovePlayersCommand ============== ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
   var lastFoundFileID = -1;
@@ -2433,11 +2475,13 @@ async function handleRemovePlayersCommand(msg, cmd, args, user) {
   setContentsByFilenameAndParent(msg, filename, userFolderID, newContentString);
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(` you removed ${removedIndex.length} players. `
-  + `You now have ${newContentArray.length} players in channel <#${gmPlayChannelID}>.`));
+  + `You now have ${newContentArray.length} players in channel <#${gmPlayChannelID}>.`))
+  .catch((e) => {console.log(e);});
   console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleClearPlayersCommand(msg, cmd, args, user) {
-  await msg.react('⏳');
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleClearPlayersCommand =============== ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
   await ensureFolderTriplet(msg);
@@ -2470,7 +2514,8 @@ async function handleClearPlayersCommand(msg, cmd, args, user) {
   while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
   // remove reaction
   removeHourglass(msg);
-  msg.reply(addMaintenanceStatusMessage(` your group for channel <#${gmPlayChannelID}> was reset to 0 players.`));
+  msg.reply(addMaintenanceStatusMessage(` your group for channel <#${gmPlayChannelID}> was reset to 0 players.`))
+  .catch((e) => {console.log(e);});
   // listAllFiles();
   console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
@@ -2514,11 +2559,13 @@ async function handleSetInitCommand(msg, cmd, args, user) {
 
   // abort if any errors
   if (errOutput !== '') {
-    msg.reply(addMaintenanceStatusMessage(`There was a problem.\n${errOutput}`));
+    msg.reply(addMaintenanceStatusMessage(`There was a problem.\n${errOutput}`))
+    .catch((e) => {console.log(e);});
     return;
   }
   // and on to the show
-  await msg.react('⏳');
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleSetInitCommand ==================== ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   // serverID.channelID.userID.playerInit STRING
   var content = args.join(" ");
     logSpam('handleSetInitCommand entering ensureFolderTriplet');
@@ -2550,7 +2597,8 @@ async function handleSetNPCInitCommand(msg, cmd, args, user) {
     return;
   }
   // and on to the show
-  await msg.react('⏳');
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleSetNPCInitCommand ================= ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await ensureFolderTriplet(msg);
@@ -2568,7 +2616,7 @@ async function handleSetNPCInitCommand(msg, cmd, args, user) {
   // remove reaction
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(` your NPC's for this channel were reset, `
-  + `and you added ${contentArray.length} NPC's.`));
+  + `and you added ${contentArray.length} NPC's.`)).catch((e) => {console.log(e);});
   // listAllFiles();
   console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
@@ -2577,7 +2625,8 @@ async function handleAddNPCInitCommand(msg, cmd, args, user) {
   if (!validateNPCInput(msg, args)) {
     return;
   }
-  await msg.react('⏳');
+  await msg.react('⏳').catch((e) => {console.log(e);});
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleAddNPCInitCommand ================= ]');
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await ensureFolderTriplet(msg);
@@ -2619,11 +2668,13 @@ async function handleAddNPCInitCommand(msg, cmd, args, user) {
   setContentsByFilenameAndParent(msg, filename, userFolderID, newContentString);
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(` you now have ${contentArray.length} NPC's in channel <#${gmPlayChannelID}>.`))
+  .catch((e) => {console.log(e);});
   console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleRemoveNPCInitCommand ============== ]');
   var lastFoundFileID = -1;
-  await msg.react('⏳');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await ensureFolderTriplet(msg);
@@ -2706,11 +2757,13 @@ async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
   setContentsByFilenameAndParent(msg, filename, userFolderID, newContentString);
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(` you removed ${removedIndex.length} NPC's. `
-  + `You now have ${newContentArray.length} NPC's in channel <#${gmPlayChannelID}>.`));
+  + `You now have ${newContentArray.length} NPC's in channel <#${gmPlayChannelID}>.`))
+  .catch((e) => {console.log(e);});
   console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleListNPCInitCommand(msg, cmd, args, user) {
-  await msg.react('⏳');
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleListNPCInitCommand ================ ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannel = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await ensureFolderTriplet(msg);
@@ -2748,12 +2801,13 @@ async function handleListNPCInitCommand(msg, cmd, args, user) {
       var output = " you have no NPC's in this channel yet.";
     }
   }
-  msg.reply(addMaintenanceStatusMessage(output));
+  msg.reply(addMaintenanceStatusMessage(output)).catch((e) => {console.log(e);});
   console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannel})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleClearNPCInitCommand(msg, cmd, args, user) {
-  await msg.react('⏳');
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleClearNPCInitCommand =============== ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await ensureFolderTriplet(msg);
@@ -2783,13 +2837,17 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
   while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
   // remove reaction
   removeHourglass(msg);
-  msg.reply(addMaintenanceStatusMessage(' you cleared your NPC initiative formulas for this channel.'));
+  msg.reply(addMaintenanceStatusMessage(' you cleared your NPC initiative formulas for this channel.'))
+  .catch((e) => {console.log(e);});
   // listAllFiles();
   console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleSaveMacroCommand(msg, cmd, args, user) {
-  if (args.length < 2) return msg.reply(addMaintenanceStatusMessage(':no_entry_sign: Not enough options. Needs a name followed by any valid dice roll command.'));
-  await msg.react('⏳');
+  if (args.length < 2)
+    return msg.reply(addMaintenanceStatusMessage(':no_entry_sign: Not enough options. Needs a name followed by any valid dice roll command.'))
+    .catch((e) => {console.log(e);});
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleSaveMacroCommand ================== ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   await ensureFolderTriplet(msg);
   var auth = global.auth;
   var drive = google.drive({version: 'v3', auth});
@@ -2844,12 +2902,16 @@ async function handleSaveMacroCommand(msg, cmd, args, user) {
     await setContentsByFilenameAndParent(msg, filename, parentFolderID, savedRollsStr);
     while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   }
-  msg.reply(addMaintenanceStatusMessage(` you now have ${savedRollsArr.length} roll macros saved.`));
+  msg.reply(addMaintenanceStatusMessage(` you now have ${savedRollsArr.length} roll macros saved.`))
+  .catch((e) => {console.log(e);});
   removeHourglass(msg);
 }
 async function handleRollMacroCommand(msg, cmd, args, user) {
-  if (args.length < 1) return msg.reply(addMaintenanceStatusMessage(':no_entry_sign: You didn\'t specify which macro I should roll.'));
-  await msg.react('⏳');
+  if (args.length < 1)
+    return msg.reply(addMaintenanceStatusMessage(':no_entry_sign: You didn\'t specify which macro I should roll.'))
+    .catch((e) => {console.log(e);});
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleRollMacroCommand ================== ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   await ensureFolderTriplet(msg);
   var auth = global.auth;
   var drive = google.drive({version: 'v3', auth});
@@ -2895,13 +2957,17 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
   }
   else {
     // savedRolls file didn't exist
-    msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."));
+    msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."))
+    .catch((e) => {console.log(e);});
   }
   removeHourglass(msg);
 }
 async function handleRemoveMacroCommand(msg, cmd, args, user) {
-  if (args.length < 1) return msg.reply(addMaintenanceStatusMessage(':no_entry_sign: You didn\'t specify which macro I should remove.'));
-  await msg.react('⏳');
+  if (args.length < 1)
+    return msg.reply(addMaintenanceStatusMessage(':no_entry_sign: You didn\'t specify which macro I should remove.'))
+    .catch((e) => {console.log(e);});
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleRemoveMacroCommand ================ ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   await ensureFolderTriplet(msg);
   var auth = global.auth;
   var drive = google.drive({version: 'v3', auth});
@@ -2935,23 +3001,29 @@ async function handleRemoveMacroCommand(msg, cmd, args, user) {
         await setContentsByFilenameAndParent(msg, filename, parentFolderID, savedRollsStr);
         while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
         msg.reply(addMaintenanceStatusMessage(`Removed the macro; `
-          + `you now have ${savedRollsArr.length} macros saved in this channel.`));
+          + `you now have ${savedRollsArr.length} macros saved in this channel.`))
+          .catch((e) => {console.log(e);});
         removeHourglass(msg);
-      } else msg.reply(addMaintenanceStatusMessage('That name didn\'t match any of your saved macros in this channel.'));
+      } else
+        msg.reply(addMaintenanceStatusMessage('That name didn\'t match any of your saved macros in this channel.'))
+        .catch((e) => {console.log(e);});
     }
     else {
       // file exists but is empty
-      msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."));
+      msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."))
+      .catch((e) => {console.log(e);});
     }
   }
   else {
     // savedRolls file didn't exist
-    msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."));
+    msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."))
+    .catch((e) => {console.log(e);});
   }
   removeHourglass(msg);
 }
 async function handleListMacrosCommand(msg, cmd, args, user) {
-  await msg.react('⏳');
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleListMacrosCommand ================= ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   await ensureFolderTriplet(msg);
   var auth = global.auth;
   var drive = google.drive({version: 'v3', auth});
@@ -2982,16 +3054,19 @@ async function handleListMacrosCommand(msg, cmd, args, user) {
         var macro = tmpStr;
         output += `***${name}*** :arrow_right: ${macro}\n`;
       });
-      msg.reply(addMaintenanceStatusMessage(` you have the following macros in this channel:\n${output}`));
+      msg.reply(addMaintenanceStatusMessage(` you have the following macros in this channel:\n${output}`))
+      .catch((e) => {console.log(e);});
     }
     else {
       // file exists but is empty
-      msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."));
+      msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."))
+      .catch((e) => {console.log(e);});
     }
   }
   else {
     // savedRolls file didn't exist
-    msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."));
+    msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."))
+    .catch((e) => {console.log(e);});
   }
   removeHourglass(msg);
 }
@@ -3047,20 +3122,23 @@ async function getPlayChannel(msg) {
 }
 // checks the current play channel and replies with a channel link
 async function handleCheckChannelCommand(msg, cmd, args, user) {
-  await msg.react('⏳');
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleCheckChannelCommand =============== ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await ensureFolderTriplet(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
-  msg.reply(addMaintenanceStatusMessage(` your current play channel is set to <#${gmPlayChannelID}>.`));
+  msg.reply(addMaintenanceStatusMessage(` your current play channel is set to <#${gmPlayChannelID}>.`))
+  .catch((e) => {console.log(e);});
   console.log(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 // set the play channel so that commands can be entered in a secret channel
 // useful for NPC inits and scene content
 async function handleSetChannelCommand(msg, cmd, args, user) {
-  await msg.react('⏳');
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleSetChannelCommand ================= ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   if (args.length === 1) {
     if (args[0].substring(0,2) === '<#') {
       var gmPlayChannelID = args[0].substring(2, args[0].length-1);
@@ -3079,20 +3157,24 @@ async function handleSetChannelCommand(msg, cmd, args, user) {
       }, 'playChannel');
       msg.reply(addMaintenanceStatusMessage(` play channel is now set to `
         + `<#${gmPlayChannelID}>. You can now issue commands for initiative and `
-        + `scenes in this channel, and they will be saved to <#${gmPlayChannelID}>.`));
+        + `scenes in this channel, and they will be saved to <#${gmPlayChannelID}>.`))
+        .catch((e) => {console.log(e);});
     }
     else {
-      msg.reply(addMaintenanceStatusMessage(' error: make sure this command is followed only by a link to a channel.'));
+      msg.reply(addMaintenanceStatusMessage(' error: make sure this command is followed only by a link to a channel.'))
+      .catch((e) => {console.log(e);});
     }
   }
   else {
-    msg.reply(addMaintenanceStatusMessage(' this command requires one (and only one) argument, a channel link.'));
+    msg.reply(addMaintenanceStatusMessage(' this command requires one (and only one) argument, a channel link.'))
+    .catch((e) => {console.log(e);});
   }
   console.log(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleSetSceneCommand(msg, cmd, args, user) {
-  await msg.react('⏳');
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleSetSceneCommand =================== ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await ensureFolderTriplet(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -3121,13 +3203,15 @@ async function handleSetSceneCommand(msg, cmd, args, user) {
   newScene.googleID = await findFileByName(filename, userFolderID, gmPlayChannelID);
   while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
   var countOfScenes = await updateSceneList(msg, newScene);
-  msg.reply(addMaintenanceStatusMessage(` you now have ${countOfScenes} scenes in channel <#${gmPlayChannelID}>.`));
+  msg.reply(addMaintenanceStatusMessage(` you now have ${countOfScenes} scenes in channel <#${gmPlayChannelID}>.`))
+  .catch((e) => {console.log(e);});
   console.log(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   logSpam('==================================================================');
   removeHourglass(msg);
 }
 async function handleDelSceneCommand(msg, cmd, args, user) {
-  await msg.react('⏳');
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleDelSceneCommand =================== ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await ensureFolderTriplet(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -3151,7 +3235,7 @@ async function handleDelSceneCommand(msg, cmd, args, user) {
         addToCache(file, 'fileContent');
       }
       else {
-        msg.reply(addMaintenanceStatusMessage(`The scene named ${arg} wasn't found.`));
+        msg.reply(addMaintenanceStatusMessage(`The scene named ${arg} wasn't found.`)).catch((e) => {console.log(e);});
       }
       waitForAsync = false;
     });
@@ -3160,17 +3244,20 @@ async function handleDelSceneCommand(msg, cmd, args, user) {
     while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
     logSpam(`handleDelSceneCommand got sceneList ${sceneList}`);
     var count = sceneList.length;
-    msg.reply(addMaintenanceStatusMessage(` you now have ${count} scenes in channel <#${gmPlayChannelID}>.`));
+    msg.reply(addMaintenanceStatusMessage(` you now have ${count} scenes in channel <#${gmPlayChannelID}>.`))
+    .catch((e) => {console.log(e);});
   }
   else {
-    msg.reply(addMaintenanceStatusMessage(' this command requires one or more names of scenes.'));
+    msg.reply(addMaintenanceStatusMessage(' this command requires one or more names of scenes.'))
+    .catch((e) => {console.log(e);});
   }
   console.log(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   logSpam('==================================================================');
   removeHourglass(msg);
 }
 async function handleGetSceneCommand(msg, cmd, args, user) {
-  await msg.react('⏳');
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleGetSceneCommand =================== ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   if (args.length === 1) {
@@ -3192,19 +3279,21 @@ async function handleGetSceneCommand(msg, cmd, args, user) {
       musicText = `\n\nSoundtrack:\n${scene.music}`;
     }
     playChannel.send(`${scene.text}${musicText}`);
-    msg.reply(addMaintenanceStatusMessage(` scene "${scene.name}" was just deployed in channel <#${gmPlayChannelID}>.`));
+    msg.reply(addMaintenanceStatusMessage(` scene "${scene.name}" was just deployed in channel <#${gmPlayChannelID}>.`))
+    .catch((e) => {console.log(e);});
   }
   else {
     msg.reply(addMaintenanceStatusMessage(' error: this command requires a single argument, '
       + 'the name of the scene. Try !listscenes for a list of your scenes in ')
-      + `channel ${gmPlayChannelID}.`);
+      + `channel ${gmPlayChannelID}.`).catch((e) => {console.log(e);});
   }
   console.log(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   logSpam('==================================================================');
   removeHourglass(msg);
 }
 async function handleListScenesCommand(msg, cmd, args, user) {
-  await msg.react('⏳');
+  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleListScenesCommand ================= ]');
+  await msg.react('⏳').catch((e) => {console.log(e);});
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await ensureFolderTriplet(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -3219,10 +3308,11 @@ async function handleListScenesCommand(msg, cmd, args, user) {
       output += `${scene.name}\n`;
     });
     msg.reply(addMaintenanceStatusMessage(" your scene names in channel <#" + gmPlayChannelID +
-      "> are: ```\n" + output + "\n```"));
+      "> are: ```\n" + output + "\n```")).catch((e) => {console.log(e);});
   }
   else {
-    msg.reply(addMaintenanceStatusMessage(` you have no scenes yet in channel <#${gmPlayChannelID}>.`));
+    msg.reply(addMaintenanceStatusMessage(` you have no scenes yet in channel <#${gmPlayChannelID}>.`))
+    .catch((e) => {console.log(e);});
   }
   console.log(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   logSpam('==================================================================');
@@ -3383,4 +3473,10 @@ function handleMessage(msg, user=msg.author) {
 }
 
 // Hook the handler
-bot.on('message', (msg) => {    handleMessage(msg);   });
+try {
+  bot.on('message', (msg) => {    handleMessage(msg);   });
+}
+catch (e) {
+  console.error(e);
+
+}
