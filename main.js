@@ -622,29 +622,52 @@ async function findUserFolderFromUserID(msg, userID, usePlayChannel=false) {
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   var r = null;
   // try to get it from cache first
-  // var q = {name: msg.channel.guild.id};
-  // if (cacheHas(q, 'server')) {
-  //   var serverID = getFromCache(q, 'server').googleID;
-  //   q = {name: msg.channel.id, parents: [serverID]};
-  //   if (cacheHas(q, 'channel')) {
-  //     var channelID = getFromCache(q, 'channel').googleID;
-  //     q = {name: userID, parents: [channelID]};
-  //     if (cacheHas(q, 'userInChannel')) {
-  //       r = getFromCache(q, 'userInChannel').googleID;
-  //       unlockDiskForChannel(msg.channel.id);
-  //       return r;
-  //     }
-  //   }
-  // }
+  var q = {name: msg.channel.guild.id};
+  if (cacheHas(q, 'server')) {
+    var serverID = getFromCache(q, 'server').googleID;
+    q = {name: gmPlayChannelID, parents: [serverID]};
+    if (cacheHas(q, 'channel')) {
+      var channelID = getFromCache(q, 'channel').googleID;
+      q = {name: userID, parents: [channelID]};
+      if (cacheHas(q, 'userInChannel')) {
+        r = getFromCache(q, 'userInChannel').googleID;
+        unlockDiskForChannel(msg.channel.id);
+        return r;
+      }
+    }
+  }
   // cache didn't return -- do it the slow way
   var serverFolderID = await findFolderByName(msg.channel.guild.id,
     global.folderID.UserData, doNothing, msg.channel.id);
-  var channelFolderID = await findFolderByName(gmPlayChannelID, serverFolderID,
-    doNothing, gmPlayChannelID);
-  r = await findFolderByName(userID, channelFolderID, doNothing, gmPlayChannelID);
-  // return the file ID
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  if (serverFolderID !== -1) {
+    addToCache({
+      name:msg.channel.guild.id, id:serverFolderID
+    }, 'server');
+    var channelFolderID = await findFolderByName(gmPlayChannelID, serverFolderID,
+      doNothing, gmPlayChannelID);
+    while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
+    if (channelFolderID !== -1) {
+      addToCache({
+        name:gmPlayChannelID, parents:[msg.channel.guild.id], id:channelFolderID
+      }, 'channel');
+      r = await findFolderByName(userID, channelFolderID, doNothing, gmPlayChannelID);
+      while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
+      if (r !== -1) {
+        addToCache({
+          name:userID, parents:[channelFolderID], id:r
+        }, 'userInChannel');
+        addToCache({
+          server:msg.channel.guild.id, channel:gmPlayChannelID, user:userID, id:r
+        }, 'folderTriplet');
+      }
+      // return the file ID
+      unlockDiskForChannel(gmPlayChannelID);
+      return r;
+    }
+  }
   unlockDiskForChannel(gmPlayChannelID);
-  return r;
+  return -1;
 }
 
 // @ function ensureFolderByName(name, parentID=null, channelID="system")
@@ -1564,6 +1587,7 @@ function handleHelpCommand(msg, cmd, args, user) {
       + ':arrow_right: **!init2flip** - Shadowrun 2e initiative, reversed\n'
       + ':arrow_right: **!init3** - Shadowrun 3e initiative\n'
       + ':arrow_right: **!init3flip** - Shadowrun 3e initiative, reversed\n'
+      + ':arrow_right: **!initcp** - Cyberpunk 2020 initiative\n'
       + '\n'
       + 'The bot remembers stuff; you won\'t need to redo setup, just update whatever '
         + 'changes. **However:**\n'
