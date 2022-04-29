@@ -23,6 +23,7 @@ var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
 + 'Chasing bugs in the initiative and macro systems. Normal rolls should be fine.'
 */
 + ' Working on new features! I hope none of your dice rolls are dropped during restarts!'
++ ' Please notify me of any suspected bugs ASAP with a screenshot and timezone: <@360086569778020352>'
 //+ ' If initiative bugs out, just type the command again and it will probably work on the 2nd try.'
 ;
 // conditionally add warning message
