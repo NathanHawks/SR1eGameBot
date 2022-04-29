@@ -6,7 +6,10 @@
  * Released as-is with no warranty or claim of usability for any purpose.
  * The file cache doesn't work, don't enable it.
  */
-function doNothing (err=null, res=null) {} // for defaulting if's & callbacks
+// require express for log date/time
+var express = require('express');
+// for defaulting if's & callbacks
+function doNothing (err=null, res=null) {}
 // set true to activate warning messages
 var isMaintenanceModeBool = true;
 // set status message to send as warning when isMaintenanceModeBool is true
@@ -277,6 +280,8 @@ function getAccessToken(oAuth2Client, callback) {
 //==================================================================
 // @ ================== DX FUNCS ================
 async function logSpam(msg) {
+  var d = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
+  msg = `${d} ${msg}`;
   if (global.config.logspam) console.log(msg);
 }
 async function openFile(msg, args) {
@@ -587,7 +592,7 @@ async function findUserFolderFromMsg(msg, usePlayChannel=false) {
       q = {name: msg.author.id, parents: [c]};
       if (cacheHas(q, 'userInChannel')) {
         r = getFromCache(q, 'userInChannel').googleID;
-        console.log("Found user folder at " + s + "/" + c + "/" + r)
+        logSpam("Found user folder at " + s + "/" + c + "/" + r);
         return r;
       }
     }
