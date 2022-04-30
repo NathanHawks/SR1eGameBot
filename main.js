@@ -38,6 +38,8 @@ function addMaintenanceStatusMessage(output) {
 }
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 // internal setup
+// for listAllFiles
+global.filesFound = [];
 // system folder(s)
 global.folderID = {UserData : null};
 // google drive API lock per channel id, to avoid race conditions
@@ -297,47 +299,117 @@ async function openFile(msg, args) {
   msg.channel.send("```\n" + output + "```").catch((e) => {console.log(e);});
 }
 function listAllFiles(msg) {
-  var output = '';
+  var nextPageToken = undefined;
+  var output = '--- [filename] ---------   ------------ googleID ------------- ------------ parentID -------------\n';
   var finalout = '';
-  var auth = global.auth;
-  const drive = google.drive({version: 'v3', auth});
-  drive.files.list({
-    fields: 'nextPageToken, files(id, name, parents)',
-  }, (err, res) => {
-    if (err) return console.error(err);
-    const files = res.data.files;
-    if (files.length) {
-      output += '--- [filename] ---------   ------------ googleID ------------- ------------ parentID -------------\n';
-      files.map((file) => {
-        output += `${file.name.padEnd(26)} (${file.id}) [${file.parents}]\n`;
-      });
-    } else {
-      output += 'No files found.';
-    }
-    if (msg !== undefined && output.length < 1994)
-      msg.channel.send(`\`\`\`${output}\`\`\``)
-      .catch((e) => {console.log(e);});
-    else if (msg !== undefined) {
-      var outArr = output.split("\n");
-      output = '';
-      for (var x = 0; x < outArr.length; x++) {
-        output += outArr[x] + "\n";
-        if (output !== '\n') {
-          if (x%20 === 0) {
-            msg.channel.send('```\n' + output + '```')
+  var iteratePage = function (nextPageToken, level=0) {
+    var q = { fields: 'nextPageToken, files(id, name, parents)' };
+    var filesFound = [];
+    q.pageToken = nextPageToken;
+    logSpam('Querying GDrive for a list');
+    lockDiskForChannel('system');
+    drive.files.list(q, (err, res) => {
+      lockDiskForChannel('system');
+      if (res.data.files) {
+        logSpam(`res.data.files got ${res.data.files.length}`);
+      }
+      else {
+        logSpam('res.data.files got nothing');
+      }
+      if (err) return console.error(err);
+      logSpam('No error returned');
+      var files = res.data.files;
+      if (files.length) {
+        logSpam(res.data.nextPageToken);
+        var x = 0;
+        for (x = 0; x < files.length; x++) {
+          global.filesFound[global.filesFound.length] = files[x];
+        }
+        nextPageToken = res.data.nextPageToken;
+        logSpam('nextPageToken = ' + nextPageToken);
+      } else if (res.data.nextPageToken === 'undefined' || res.data.nextPageToken === undefined) {
+        nextPageToken = undefined;
+      } else {
+        nextPageToken = undefined;
+        output += 'No files found.';
+      }
+      logSpam(`Finishing callback with ${global.filesFound.length} files found on level ${level}`);
+      if (nextPageToken !== undefined) {
+        iteratePage(nextPageToken, level+1);
+      }
+      else {
+        var x;
+        for (x = 0; x < global.filesFound.length; x++) {
+          // temporary / fallback (old version)
+          var file = global.filesFound[x];
+          output += `${file.name.padEnd(26)} (${file.id}) [${file.parents}]\n`;
+        }
+        if (msg !== undefined && output.length < 1994)
+          msg.channel.send(`\`\`\`${output}\`\`\``)
+          .catch((e) => {console.log(e);});
+        else if (msg !== undefined) {
+          var outArr = output.split("\n");
+          output = '';
+          for (var x = 0; x < outArr.length; x++) {
+            output += outArr[x] + "\n";
+            if (output !== '\n') {
+              if (x%20 === 0) {
+                msg.channel.send('```\n' + output + '```')
+                .catch((e) => {console.log(e);});
+                output = '';
+              } else if (outArr.length - x < 20) {
+                finalout = output;
+              }
+            }
+          }
+          if (finalout !== '\n') {
+            msg.channel.send('```\n' + finalout + '```')
             .catch((e) => {console.log(e);});
-            output = '';
-          } else if (outArr.length - x < 20) {
-            finalout = output;
           }
         }
+        else console.log(output);
+        global.filesFound = [];
       }
-      if (finalout !== '\n') {
-        msg.channel.send('```\n' + finalout + '```')
-        .catch((e) => {console.log(e);});
+    });
+  }
+  var auth = global.auth;
+  const drive = google.drive({version: 'v3', auth});
+  var q = {};
+  q = { fields: 'nextPageToken, files(id, name, parents)' };
+  if (nextPageToken !== undefined) q.pageToken = nextPageToken;
+  logSpam('Querying GDrive for a list');
+  lockDiskForChannel('system');
+  drive.files.list(q, (err, res) => {
+    lockDiskForChannel('system');
+    if (res.data.files) {
+      logSpam(`res.data.files got ${res.data.files.length}`);
+    }
+    else {
+      logSpam('res.data.files got nothing');
+    }
+    if (err) return console.error(err);
+    logSpam('No error returned');
+    var files = res.data.files;
+    if (files.length) {
+      logSpam(res.data.nextPageToken);
+      var x = 0;
+      for (x = 0; x < files.length; x++) {
+        global.filesFound[filesFound.length] = files[x];
       }
-    } else console.log(output);
+      nextPageToken = res.data.nextPageToken;
+      logSpam('nextPageToken = ' + nextPageToken);
+    } else if (res.data.nextPageToken === 'undefined' || res.data.nextPageToken === undefined) {
+      nextPageToken = undefined;
+    } else {
+      nextPageToken = undefined;
+      output += 'No files found.';
+    }
+    if (nextPageToken) iteratePage(nextPageToken);
+    logSpam('Finishing callback');
   });
+  unlockDiskForChannel('system');
+  while(isDiskLockedForChannel('system')) { sleep(15); }
+  logSpam('Disk unlocked');
 }
 function deleteFile(msg, args) {
   if (args && args[0]) {
@@ -2557,7 +2629,6 @@ async function handleClearPlayersCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(` your group for channel <#${gmPlayChannelID}> was reset to 0 players.`))
   .catch((e) => {console.log(e);});
-  // listAllFiles();
   console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleSetInitCommand(msg, cmd, args, user) {
@@ -2629,7 +2700,6 @@ async function handleSetInitCommand(msg, cmd, args, user) {
   // remove reaction
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(` your initiative formula (in this channel) is now ${output}.`));
-  // listAllFiles();
   console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleSetNPCInitCommand(msg, cmd, args, user) {
@@ -2658,7 +2728,6 @@ async function handleSetNPCInitCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(` your NPC's for this channel were reset, `
   + `and you added ${contentArray.length} NPC's.`)).catch((e) => {console.log(e);});
-  // listAllFiles();
   console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleAddNPCInitCommand(msg, cmd, args, user) {
@@ -2880,7 +2949,6 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(' you cleared your NPC initiative formulas for this channel.'))
   .catch((e) => {console.log(e);});
-  // listAllFiles();
   console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleSaveMacroCommand(msg, cmd, args, user) {
