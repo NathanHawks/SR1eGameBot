@@ -307,9 +307,9 @@ function listAllFiles(msg) {
     if (err) return console.error(err);
     const files = res.data.files;
     if (files.length) {
-      output += '--- [filename] ---   ------------ googleID ------------- ------------ parentID -------------\n';
+      output += '--- [filename] ---------   ------------ googleID ------------- ------------ parentID -------------\n';
       files.map((file) => {
-        output += `${file.name.padEnd(20)} (${file.id}) [${file.parents}]\n`;
+        output += `${file.name.padEnd(26)} (${file.id}) [${file.parents}]\n`;
       });
     } else {
       output += 'No files found.';
@@ -322,16 +322,20 @@ function listAllFiles(msg) {
       output = '';
       for (var x = 0; x < outArr.length; x++) {
         output += outArr[x] + "\n";
-        if (x%20 === 0) {
-          msg.channel.send('```' + output + '```')
-          .catch((e) => {console.log(e);});
-          output = '';
-        } else if (outArr.length - x < 20) {
-          finalout = output;
+        if (output !== '\n') {
+          if (x%20 === 0) {
+            msg.channel.send('```\n' + output + '```')
+            .catch((e) => {console.log(e);});
+            output = '';
+          } else if (outArr.length - x < 20) {
+            finalout = output;
+          }
         }
       }
-      msg.channel.send('```' + finalout + '```')
-      .catch((e) => {console.log(e);});
+      if (finalout !== '\n') {
+        msg.channel.send('```\n' + finalout + '```')
+        .catch((e) => {console.log(e);});
+      }
     } else console.log(output);
   });
 }
