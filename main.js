@@ -279,10 +279,17 @@ function getAccessToken(oAuth2Client, callback) {
 }
 //==================================================================
 // @ ================== DX FUNCS ================
-async function logSpam(msg) {
+function getDate() {
   var d = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
-  msg = `${d} ${msg}`;
-  if (global.config.logspam) console.log(msg);
+  return d;
+}
+function getColorDate() {
+  var d = getDate();
+  return `\x1b[36m${d}\x1b[0m`;
+}
+async function logSpam(msg) {
+  var d = getColorDate();
+  if (global.config.logspam) console.log(`${d} ${msg}`);
 }
 async function openFile(msg, args) {
   var output = await getFileContents(args[0], 'system');
@@ -461,7 +468,7 @@ async function ensureFolderTriplet(msg) {
   var q = {server: msg.channel.guild.id, channel: gmPlayChannelID, user: msg.author.id};
   if (cacheHas(q, 'folderTriplet')) {
     logSpam('ensureFolderTriplet found triplet in cache');
-    logSpam(' [ ==================== exiting ensureFolderTriplet ============ ]')
+    logSpam(' [ ==================== exiting ensureFolderTriplet ============ ]');
     return;
   }
   // Get the server folder's googleID
@@ -834,7 +841,7 @@ async function getFileContents(fileID, channelID) {
       return c.content;
     }
   }
-
+  logSpam('Seeking file in GDrive');
   var auth = global.auth;
   const drive = google.drive({version: 'v3', auth});
   drive.files.get({fileId: fileID, alt: "media"}, (err, res) => {
@@ -1484,7 +1491,7 @@ function handleRollCommand(msg, cmd, args, user, override=null) {
     // post results
     msg.channel.send(output).catch((e) => {console.log(e);});
     // log activity
-    console.log('🎲');
+    console.log(getColorDate() + ' 🎲');
     // provide reroll ui (dice reaction)
     msg.react('🎲').catch((e) => {console.log(e);});
     // no return
@@ -2227,7 +2234,7 @@ async function handleInitCommand(msg, cmd, args, user) {
   // report
   msg.reply(addMaintenanceStatusMessage(output)).catch((e) => {console.log(e);});
   unlockDiskForChannel(gmPlayChannelID);
-  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleSetGMCommand(msg, cmd, args, user) {
@@ -2269,7 +2276,7 @@ async function handleSetGMCommand(msg, cmd, args, user) {
   if (targetID == msg.author.id) msg.reply(addMaintenanceStatusMessage(` you are now a GM in channel <#${gmPlayChannelID}>.`)).catch((e) => {console.log(e);});
   else msg.reply(addMaintenanceStatusMessage(` your GM is now <@${targetID}> in this channel.`)).catch((e) => {console.log(e);});
   // listAllFiles();
-  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleSetPlayersCommand(msg, cmd, args, user) {
   console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleSetPlayersCommand ================= ]');
@@ -2293,7 +2300,7 @@ async function handleSetPlayersCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(` your group in channel <#${gmPlayChannelID}> is now ${args.length} players.`)).catch((e) => {console.log(e);});
   // listAllFiles();
-  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleAddPlayersCommand(msg, cmd, args, user) {
   if (args.length) {
@@ -2353,7 +2360,7 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
   } catch (e) {
     return console.error(e);
   }
-  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleListPlayersCommand(msg, cmd, args, user) {
   console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleListPlayersCommand ================ ]');
@@ -2419,7 +2426,7 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
     msg.reply(addMaintenanceStatusMessage(` your group for this channel is ${playersArr.length} players `
     + `strong: ${output}`)).catch((e) => {console.log(e);});
   // listAllFiles();
-  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   // remove reaction
   removeHourglass(msg);
 }
@@ -2507,7 +2514,7 @@ async function handleRemovePlayersCommand(msg, cmd, args, user) {
   msg.reply(addMaintenanceStatusMessage(` you removed ${removedIndex.length} players. `
   + `You now have ${newContentArray.length} players in channel <#${gmPlayChannelID}>.`))
   .catch((e) => {console.log(e);});
-  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleClearPlayersCommand(msg, cmd, args, user) {
   console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleClearPlayersCommand =============== ]');
@@ -2547,7 +2554,7 @@ async function handleClearPlayersCommand(msg, cmd, args, user) {
   msg.reply(addMaintenanceStatusMessage(` your group for channel <#${gmPlayChannelID}> was reset to 0 players.`))
   .catch((e) => {console.log(e);});
   // listAllFiles();
-  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleSetInitCommand(msg, cmd, args, user) {
   if (args) {
@@ -2619,7 +2626,7 @@ async function handleSetInitCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(` your initiative formula (in this channel) is now ${output}.`));
   // listAllFiles();
-  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleSetNPCInitCommand(msg, cmd, args, user) {
   args = modifyNPCInput(args);
@@ -2648,7 +2655,7 @@ async function handleSetNPCInitCommand(msg, cmd, args, user) {
   msg.reply(addMaintenanceStatusMessage(` your NPC's for this channel were reset, `
   + `and you added ${contentArray.length} NPC's.`)).catch((e) => {console.log(e);});
   // listAllFiles();
-  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleAddNPCInitCommand(msg, cmd, args, user) {
   args = modifyNPCInput(args);
@@ -2699,7 +2706,7 @@ async function handleAddNPCInitCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(` you now have ${contentArray.length} NPC's in channel <#${gmPlayChannelID}>.`))
   .catch((e) => {console.log(e);});
-  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
   console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleRemoveNPCInitCommand ============== ]');
@@ -2789,7 +2796,7 @@ async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
   msg.reply(addMaintenanceStatusMessage(` you removed ${removedIndex.length} NPC's. `
   + `You now have ${newContentArray.length} NPC's in channel <#${gmPlayChannelID}>.`))
   .catch((e) => {console.log(e);});
-  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleListNPCInitCommand(msg, cmd, args, user) {
   console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleListNPCInitCommand ================ ]');
@@ -2832,7 +2839,7 @@ async function handleListNPCInitCommand(msg, cmd, args, user) {
     }
   }
   msg.reply(addMaintenanceStatusMessage(output)).catch((e) => {console.log(e);});
-  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannel})/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannel})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleClearNPCInitCommand(msg, cmd, args, user) {
@@ -2870,7 +2877,7 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
   msg.reply(addMaintenanceStatusMessage(' you cleared your NPC initiative formulas for this channel.'))
   .catch((e) => {console.log(e);});
   // listAllFiles();
-  console.log(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleSaveMacroCommand(msg, cmd, args, user) {
   if (args.length < 2)
@@ -2934,6 +2941,7 @@ async function handleSaveMacroCommand(msg, cmd, args, user) {
   }
   msg.reply(addMaintenanceStatusMessage(` you now have ${savedRollsArr.length} roll macros saved.`))
   .catch((e) => {console.log(e);});
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleRollMacroCommand(msg, cmd, args, user) {
@@ -2990,6 +2998,7 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
     msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."))
     .catch((e) => {console.log(e);});
   }
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleRemoveMacroCommand(msg, cmd, args, user) {
@@ -3049,6 +3058,7 @@ async function handleRemoveMacroCommand(msg, cmd, args, user) {
     msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."))
     .catch((e) => {console.log(e);});
   }
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleListMacrosCommand(msg, cmd, args, user) {
@@ -3098,6 +3108,7 @@ async function handleListMacrosCommand(msg, cmd, args, user) {
     msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."))
     .catch((e) => {console.log(e);});
   }
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 // returns a discord channel ID
@@ -3161,7 +3172,7 @@ async function handleCheckChannelCommand(msg, cmd, args, user) {
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   msg.reply(addMaintenanceStatusMessage(` your current play channel is set to <#${gmPlayChannelID}>.`))
   .catch((e) => {console.log(e);});
-  console.log(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 // set the play channel so that commands can be entered in a secret channel
@@ -3199,7 +3210,7 @@ async function handleSetChannelCommand(msg, cmd, args, user) {
     msg.reply(addMaintenanceStatusMessage(' this command requires one (and only one) argument, a channel link.'))
     .catch((e) => {console.log(e);});
   }
-  console.log(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleSetSceneCommand(msg, cmd, args, user) {
@@ -3235,8 +3246,7 @@ async function handleSetSceneCommand(msg, cmd, args, user) {
   var countOfScenes = await updateSceneList(msg, newScene);
   msg.reply(addMaintenanceStatusMessage(` you now have ${countOfScenes} scenes in channel <#${gmPlayChannelID}>.`))
   .catch((e) => {console.log(e);});
-  console.log(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
-  logSpam('==================================================================');
+  console.log(getColorDate() + ` 🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleDelSceneCommand(msg, cmd, args, user) {
@@ -3281,8 +3291,7 @@ async function handleDelSceneCommand(msg, cmd, args, user) {
     msg.reply(addMaintenanceStatusMessage(' this command requires one or more names of scenes.'))
     .catch((e) => {console.log(e);});
   }
-  console.log(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
-  logSpam('==================================================================');
+  console.log(getColorDate() + ` 🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleGetSceneCommand(msg, cmd, args, user) {
@@ -3317,8 +3326,7 @@ async function handleGetSceneCommand(msg, cmd, args, user) {
       + 'the name of the scene. Try !listscenes for a list of your scenes in ')
       + `channel ${gmPlayChannelID}.`).catch((e) => {console.log(e);});
   }
-  console.log(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
-  logSpam('==================================================================');
+  console.log(getColorDate() + ` 🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleListScenesCommand(msg, cmd, args, user) {
@@ -3344,8 +3352,7 @@ async function handleListScenesCommand(msg, cmd, args, user) {
     msg.reply(addMaintenanceStatusMessage(` you have no scenes yet in channel <#${gmPlayChannelID}>.`))
     .catch((e) => {console.log(e);});
   }
-  console.log(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
-  logSpam('==================================================================');
+  console.log(getColorDate() + ` 🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 // @ =========== HANDLEMESSAGE FUNCTION ============
