@@ -8,6 +8,8 @@
  */
 // require express for log date/time
 var express = require('express');
+// require crypto for reminders (random strings)
+var crypto = require('crypto');
 // for defaulting if's & callbacks
 function doNothing (err=null, res=null) {}
 // set true to activate warning messages
@@ -38,10 +40,13 @@ function addMaintenanceStatusMessage(output) {
 }
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 // internal setup
+// for reminders
+global.reminders = [];
+global.lastRemindersTime = '';
 // for listAllFiles
 global.filesFound = [];
 // system folder(s)
-global.folderID = {UserData : null};
+global.folderID = {UserData: null, reminders: null};
 // google drive API lock per channel id, to avoid race conditions
 global.lock = { };
 // config (debugging flags, etc)
@@ -215,12 +220,12 @@ const G_TOKEN_PATH = 'googletoken.json';
 
 // Load client secrets from env or local file.
 if (process.env.hasOwnProperty('GOOGLE_CREDENTIALS')) {
-  authorize(JSON.parse(process.env.GOOGLE_CREDENTIALS), initInitiative);
+  authorize(JSON.parse(process.env.GOOGLE_CREDENTIALS), initAll);
 } else {
   fs.readFile('googlecredentials.json', (err, content) => {
     if (err) return console.log('Error loading client secret file:', err);
     // Authorize a client with credentials, then call the Google Drive API.
-    authorize(JSON.parse(content), initInitiative);
+    authorize(JSON.parse(content), initAll);
   });
 }
 
@@ -826,7 +831,7 @@ async function findFolderByName(
     }
     else {
       lastFoundFileID = -1;
-      console.error(`findFolderByName got ${res.data.files.length} results from GDrive for ${folderName} in ${parentID}`);
+      logSpam(`findFolderByName got ${res.data.files.length} results from GDrive for ${folderName} in ${parentID}`);
     }
     unlockDiskForChannel(channelID);
     callback(err, res);
@@ -951,6 +956,7 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
           media: { 'mimeType': 'text/plain', 'body': `${contents}/2` },
           fields: 'id'
         }, (err, file) => {
+          logSpam(`Creating file ${filename}`);
           unlockDiskForChannel(channelID);
           if (err) return console.error(err);
           // don't add to cache -- let it happen on next load
@@ -962,6 +968,7 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
             drive.files.update({
               fileId: file.id, media: {body: `${contents}/2`}},
               (err, res) => {
+                logSpam(`Updating file ${filename}`);
                 unlockDiskForChannel(channelID);
                 if (err) return console.error(err);
                 else return;
@@ -1065,18 +1072,21 @@ function validateNPCInput(msg, args) {
   } else return true;
 }
 
-// @ ================= INIT INITIATIVE ================
-// Init the Initiative system. See also callbackInitInitiative, immediately below
-function initInitiative(auth) {
-  // frag it
+// @ ================= INIT INITIATIVE ETC ================
+async function initAll(auth) {
   global.auth = auth;
   // diagnostic / testing junk
   if (global.config.listAllFilesOnStartup === true) listAllFiles();
   if (global.config.skipInitInitiative === true) return;
   // init disk locking for system
   unlockDiskForChannel("system");
+  initInitiative(auth);
+  await initReminders();
+}
+// Init the Initiative system. See also callbackInitInitiative, immediately below
+function initInitiative(auth) {
   // initial startup payload depends on whether UserData folder exists
-  findFolderByName('UserData', null, (err, res) => {
+  findFolderByName('UserData', 'root', (err, res) => {
     callbackInitInitiative(err, res);
   });
 }
@@ -1115,6 +1125,16 @@ async function callbackInitInitiative(err, res) {
       }
     );
   }
+}
+// Init reminders
+async function initReminders() {
+  var userDataFolderID = await findFolderByName('UserData', 'root');
+  while (isDiskLockedForChannel('system')) { await sleep(15); }
+  await ensureFolderByName('reminders', userDataFolderID);
+  while (isDiskLockedForChannel('system')) { await sleep(15); }
+  var reminderFolderID = await findFolderByName('reminders', userDataFolderID);
+  while (isDiskLockedForChannel('system')) { await sleep(15); }
+  global.folderID.reminders = reminderFolderID;
 }
 // =============== SCENE LIBRARY FUNCS ================
 async function getSceneList(msg) {
@@ -1603,7 +1623,7 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '`init    ` - Initiative for Shadowrun 1e-3e\n'
     + '`scene   ` - Prepare text and music for deploying later\n'
     + '`macros  ` - Saving and re-using named dice rolls\n'
-    + '`gmscreen` - Doing initiative and scene prep in a hidden channel\n'
+    + '`gmscreen` - Doing initiative and/or scene prep in a hidden channel\n'
     + '\n'
     + 'Example: type **!help main** for the main help.\n'
   ;
@@ -3013,7 +3033,7 @@ async function handleSaveMacroCommand(msg, cmd, args, user) {
   }
   msg.reply(addMaintenanceStatusMessage(` you now have ${savedRollsArr.length} roll macros saved.`))
   .catch((e) => {console.log(e);});
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleRollMacroCommand(msg, cmd, args, user) {
@@ -3070,7 +3090,7 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
     msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."))
     .catch((e) => {console.log(e);});
   }
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleRemoveMacroCommand(msg, cmd, args, user) {
@@ -3130,7 +3150,7 @@ async function handleRemoveMacroCommand(msg, cmd, args, user) {
     msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."))
     .catch((e) => {console.log(e);});
   }
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleListMacrosCommand(msg, cmd, args, user) {
@@ -3180,7 +3200,7 @@ async function handleListMacrosCommand(msg, cmd, args, user) {
     msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."))
     .catch((e) => {console.log(e);});
   }
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
   removeHourglass(msg);
 }
 // returns a discord channel ID
@@ -3427,6 +3447,201 @@ async function handleListScenesCommand(msg, cmd, args, user) {
   console.log(getColorDate() + ` 🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
+async function addReminder(msg, reminder) {
+  reminder.id = crypto.randomBytes(32).toString('hex');
+  // save to GM's play folder
+  var filename = 'gmReminders';
+  // get play folder
+  var playChannelID = await getPlayChannel(msg);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  // user folder
+  var userFolderID = await findUserFolderFromMsg(msg, true);
+  while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
+  var saveString = `${reminder.id},${reminder.sessionTimeDateF},${reminder.dateTime},`
+    + `${reminder.timeStamp},${reminder.gmID},${reminder.playersString}`;
+  var gmRemindersID = await findFileByName(filename, userFolderID, playChannelID);
+  while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
+  var gmContent = '';
+  if (gmRemindersID !== -1) {
+    gmContent = await getFileContents(gmRemindersID, playChannelID);
+    while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
+    gmContent = (gmContent !== '') ? `${gmContent}\n${saveString}`: saveString;
+  }
+  else {
+    gmContent = saveString;
+  }
+  await setContentsByFilenameAndParent(msg, filename, userFolderID, gmContent);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  // save to /(root)/UserData/reminders/activeReminders
+  var reminderFolderID = global.folderID.reminders;
+  filename = 'activeReminders';
+  var sysFileID = await findFileByName(filename, reminderFolderID, 'system');
+  while (isDiskLockedForChannel('system')) { await sleep(15); }
+  var sysContent = '';
+  if (sysFileID !== -1) {
+      sysContent = await getFileContents(sysFileID, 'system');
+      while (isDiskLockedForChannel('system')) { await sleep(15); }
+      sysContent = (sysContent !== '') ? `${sysContent}\n${saveString}` : saveString;
+  }
+  else {
+    sysContent = saveString;
+  }
+  await setContentsByFilenameAndParent(msg, filename, reminderFolderID, sysContent);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  // activate reminders
+  var users = reminder.playersString.split(',');
+  var x = 0;
+  for (x = 0; x < users.length; x++) {
+    var userID = users[x];
+    var timeoutID = setTimeout(async (reminderID, userFolderID) => {
+      logSpam(`Reminder ID: ${reminderID}`);
+      var d = new Date(reminder.sessionTimeDateF);
+      bot.users.get(userID).send(`This is a reminder of your upcoming game`
+        + ` at ${d} with GM <@${reminder.gmID}>.`)
+      .catch((err) => { console.error(err); });
+      // upkeep system
+      global.lastRemindersTime = Date.now();
+      for (var y = 0; y < global.reminders.length; y++) {
+        if (global.reminders[y].id === reminderID) {
+          var r = global.reminders[y];
+          while(isDiskLockedForChannel('system')) { await sleep(15); }
+          // delete the element from gm's userfolder which was passed as an arg
+          var gmFileID = await findFileByName('gmReminders', userFolderID, 'system');
+          while(isDiskLockedForChannel('system')) { await sleep(15); }
+          var gmFileContent = await getFileContents(gmFileID, 'system');
+          while(isDiskLockedForChannel('system')) { await sleep(15); }
+          var gmFileArr = gmFileContent.split('\n');
+          for (var z = 0; z < gmFileArr.length; z++) {
+            gmEntryArr = gmFileArr[z].split(',');
+            if (gmEntryArr[0] === reminderID) {
+              gmFileArr.splice(z, 1);
+              z--;
+            }
+          }
+          // write after the loop
+          await setContentsByFilenameAndParent(
+            {channel: { id: 'system'}}, // fake msg object
+            'gmReminders',
+            userFolderID,
+            gmFileArr.join('\n')
+          );
+          while(isDiskLockedForChannel('system')) { await sleep(15); }
+          // delete the element from the activeReminders file
+          var sysFileID = await findFileByName('activeReminders',
+            global.folderID.reminders, 'system');
+          while(isDiskLockedForChannel('system')) { await sleep(15); }
+          var sysFileContent = await getFileContents(sysFileID, 'system');
+          while(isDiskLockedForChannel('system')) { await sleep(15); }
+          var sysFileArr = sysFileContent.split('\n');
+          for (var z = 0; z < sysFileArr.length; z++) {
+            sysEntryArr = sysFileArr[z].split(',');
+            if (sysEntryArr[0] === reminderID) {
+              sysFileArr.splice(z, 1);
+              z--;
+            }
+          }
+          // write after the loop
+          await setContentsByFilenameAndParent(
+            {channel: { id: 'system'}}, // fake msg object
+            'activeReminders',
+            global.folderID.reminders,
+            sysFileArr.join('\n')
+          );
+          while(isDiskLockedForChannel('system')) { await sleep(15); }
+          // remove the element from global.reminders
+          global.reminders.splice(y, 1);
+          y--; // must inspect the new current element
+        }
+      }
+      logSpam(`System reminders var has ${global.reminders.length} entries`);
+    }, reminder.MilliSecondsFromNow, reminder.id, userFolderID);
+    reminder.timeoutID = timeoutID;
+    global.reminders[global.reminders.length] = reminder;
+  }
+  logSpam(`reminder = {id: ${reminder.id}, dateTime: ${reminder.dateTime},`
+    + ` sessionTimeDateF: ${reminder.sessionTimeDateF},`
+    + ` timeStamp: ${reminder.timeStamp}, playersString: ${reminder.playersString}},`
+    + ` MilliSecondsFromNow: ${reminder.MilliSecondsFromNow}, gmID: ${reminder.gmID}`);
+}
+async function handleAddReminderCommand(msg, cmd, args, user) {
+  var sessionTimeDateF = args[0];
+  var sessionTimestamp = undefined;
+  args.splice(0, 1);
+  var reminders = []; // list of reminder objects (below)
+  var reminder = {}; // .sessionTimeDateF, .dateTime, .timeStamp, .playersString, .MilliSecondsFromNow, gmID
+  var timings = [...args]; // post-splice contains only list of timing strings
+  var timing = ''; // a time string e.g. 15m, 1d, etc
+  // parse sessionTimeDateF string
+  sessionTimestamp = new Date(sessionTimeDateF);
+  logSpam(`Timestamp compare: ${Date.now()} is now, ${sessionTimestamp.valueOf()} is target`);
+  logSpam(`sessionTimestamp ${sessionTimestamp}`);
+  if (isNaN(Date.parse(sessionTimestamp))) {
+    msg.reply(` the session date & time you entered was invalid. Check it carefully and try again.`)
+    .catch((err)=>{console.error(err);});
+    return;
+  }
+  // get play folder
+  var playChannelID = await getPlayChannel(msg);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  // get player list
+  var userFolderID = await findUserFolderFromMsg(msg, true);
+  while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
+  var filename = 'gmPlayers';
+  playersFileID = await findFileByName(filename, userFolderID, playChannelID);
+  while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
+  var playersString = await getFileContents(playersFileID, playChannelID);
+  while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
+  if (playersString.length === 0) {
+    await msg.reply(` you have no players in channel <#${playChannelID}> yet to send reminders to.`)
+    .catch((err) => {console.error(err)});
+    return;
+  }
+  // parse list of timings
+  var x;
+  for (x = 0; x < timings.length; x++) {
+    timing = timings[x];
+    var timingUnit = timing.substring(timing.length-1);
+    var timingNumber = timing.substring(0, timing.length-1);
+    var asSeconds = timingNumber*1000;
+    logSpam(`unit ${timingUnit}, number ${timingNumber}`);
+    var timestampMinus = 0;
+    switch (timingUnit.toLowerCase()) {
+      case "d":
+        logSpam(`${timingNumber} days reminder`);
+        var asMinutes = asSeconds*60;
+        var asHours = asMinutes*60;
+        var asDays = asHours*24;
+        timestampMinus = asDays;
+      break;
+      case "h":
+        logSpam(`${timingNumber} hours reminder`);
+        var asMinutes = asSeconds*60;
+        var asHours = asMinutes*60;
+        timestampMinus = asHours;
+      break;
+      case "m":
+        logSpam(`${timingNumber} minutes reminder`);
+        var asMinutes = asSeconds*60;
+        timestampMinus = asMinutes;
+      break;
+      default:
+        logSpam('Timing not parsed');
+      break;
+    }
+    logSpam(`timestampMinus ${timestampMinus}`);
+    var targetTimestamp = sessionTimestamp.valueOf() - timestampMinus;
+    // start reminder object
+    reminder = {
+      dateTime: new Date(targetTimestamp),
+      sessionTimeDateF: sessionTimeDateF,
+      timeStamp: targetTimestamp,
+      playersString: playersString,
+      MilliSecondsFromNow: targetTimestamp - Date.now(),
+      gmID: msg.author.id
+    };
+    await addReminder(msg, reminder);
+  }
+}
 // @ =========== HANDLEMESSAGE FUNCTION ============
 function handleMessage(msg, user=msg.author) {
   // stop confusing people during development!!
@@ -3572,6 +3787,9 @@ function handleMessage(msg, user=msg.author) {
           break;
           case 'listscenes':
             handleListScenesCommand(msg, cmd, args, user);
+          break;
+          case 'addreminder':
+            handleAddReminderCommand(msg, cmd, args, user);
           break;
           default:
             handleRollCommand(msg, cmd, args, user);
