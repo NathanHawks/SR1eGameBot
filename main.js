@@ -1141,7 +1141,8 @@ async function initReminders() {
       global.reminders[x].MilliSecondsFromNow =
         new Date(global.reminders[x].dateTime).valueOf() - Date.now();
       var reminder = global.reminders[x];
-      if (reminder.playersString !== '') {
+      if (reminder.playersString !== undefined) {
+        logSpam(`Players String: ${reminder.playersString}`);
         global.reminders[x].timeoutID = setTimeout(
           async (reminder
         ) => {
@@ -3484,13 +3485,15 @@ async function getUserReminders(userFolderID, playChannelID) {
   if (gmRemindersID !== -1) {
     gmContent = await getFileContents(gmRemindersID, playChannelID);
     while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
-    var gmFileArr = gmContent.split('\n');
-    for (var x = 0; x < gmFileArr.length; x++) {
-      var r = gmFileArr[x].split(',');
-      reminders[reminders.length] = {
-        smallID: r[0], id: r[1], sessionTimeDateF: r[2], dateTime: r[3], timeStamp: r[4],
-        gmID: r[5], userFolderID: r[6], playChannelID: r[7], playersString: r[8]
-      };
+    if (gmContent !== '') {
+      var gmFileArr = gmContent.split('\n');
+      for (var x = 0; x < gmFileArr.length; x++) {
+        var r = gmFileArr[x].split(',');
+        reminders[reminders.length] = {
+          smallID: r[0], id: r[1], sessionTimeDateF: r[2], dateTime: r[3], timeStamp: r[4],
+          gmID: r[5], userFolderID: r[6], playChannelID: r[7], playersString: r[8]
+        };
+      }
     }
     return reminders;
   }
@@ -3511,8 +3514,8 @@ async function getActiveReminders() {
     for (var x = 0; x < sysFileArr.length; x++) {
       var r = sysFileArr[x].split(',');
       reminders[reminders.length] = {
-        id: r[0], sessionTimeDateF: r[1], dateTime: r[2], timeStamp: r[3],
-        gmID: r[4], userFolderID: r[5], playChannelID: r[6], playersString: r[7]
+        shortID: r[0], id: r[1], sessionTimeDateF: r[2], dateTime: r[3], timeStamp: r[4],
+        gmID: r[5], userFolderID: r[6], playChannelID: r[7], playersString: r[8]
       };
     }
     return reminders;
@@ -3555,7 +3558,7 @@ async function _deleteReminder(reminderID, userFolderID) {
       var sysFileArr = sysFileContent.split('\n');
       for (var z = 0; z < sysFileArr.length; z++) {
         sysEntryArr = sysFileArr[z].split(',');
-        if (sysEntryArr[0] === reminderID) {
+        if (sysEntryArr[1] === reminderID) {
           sysFileArr.splice(z, 1);
           z--;
         }
@@ -3575,7 +3578,7 @@ async function _deleteReminder(reminderID, userFolderID) {
   }
 }
 function _makeSaveString(reminder) {
-  return `${reminder.id},${reminder.sessionTimeDateF},${reminder.dateTime},`
+  return `${reminder.shortID},${reminder.id},${reminder.sessionTimeDateF},${reminder.dateTime},`
     + `${reminder.timeStamp},${reminder.gmID},${reminder.userFolderID},`
     + `${reminder.playChannelID},${reminder.playersString}`;
 }
@@ -3589,11 +3592,11 @@ async function _saveGMReminder(userFolderID, playChannelID, reminder) {
     gmContent = await getFileContents(gmRemindersID, playChannelID);
     while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
     gmContent = (gmContent !== '')
-      ? `${gmContent}\n${reminder.shortID},${saveString}`
-      : `${reminder.shortID},${saveString}`;
+      ? `${gmContent}\n${saveString}`
+      : `${saveString}`;
   }
   else {
-    gmContent = `${reminder.shortID},${saveString}`;
+    gmContent = `${saveString}`;
   }
   await setContentsByFilenameAndParent({channel: {id: playChannelID}}, filename, userFolderID, gmContent);
   while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
@@ -3650,8 +3653,8 @@ async function addReminder(msg, reminder) {
     reminder.timeoutID = timeoutID;
     global.reminders[global.reminders.length] = reminder;
   }
-  logSpam(`reminder = {id: ${reminder.id}, dateTime: ${reminder.dateTime},`
-    + ` sessionTimeDateF: ${reminder.sessionTimeDateF},`
+  logSpam(`reminder = {shortID: ${reminder.shortID}, id: ${reminder.id},`
+    + ` dateTime: ${reminder.dateTime}, sessionTimeDateF: ${reminder.sessionTimeDateF},`
     + ` timeStamp: ${reminder.timeStamp}, playersString: ${reminder.playersString}},`
     + ` MilliSecondsFromNow: ${reminder.MilliSecondsFromNow}, gmID: ${reminder.gmID}`);
 }
@@ -3673,16 +3676,25 @@ async function handleListRemindersCommand(msg, cmd, args, user) {
         + `**Players to Remind:** `;
         var players = reminders[x].playersString.split(',');
         for (var y = 0; y < players.length; y++) {
+          if (y > 0) output += ', '
           output += `<@${players[y]}>`;
-          if (y > 0) output += ' '
         }
       }
     }
     if (output === '\n') output = ` you have no reminders set in channel <#${playChannelID}>.`;
-    msg.reply(output).catch((err)=>{console.error(err);});
+    else {
+      if (output.length < 1900) msg.reply(output).catch((err)=>{console.error(err);});
+      else {
+        var items = output.split('\n\n');
+        for (var x = 0; x < items.length; x++) {
+          msg.reply(`\n${items[x]}\n\n`).catch((err)=>{console.error(err);});
+        }
+      }
+    }
   }
   else {
-    msg.reply(` you have no reminders set in channel <#${playChannelID}>.`);
+    msg.reply(` you have no reminders set in channel <#${playChannelID}>.`)
+    .catch((err)=>{console.error(err);});
   }
 }
 async function handleAddReminderCommand(msg, cmd, args, user) {
@@ -3771,6 +3783,7 @@ async function handleAddReminderCommand(msg, cmd, args, user) {
 async function handleCancelReminderCommand(msg, cmd, args, user) {
   // parse args
   var shortIDs = [...args];
+  logSpam(shortIDs);
   if (shortIDs.length === 0) {
     msg.reply(` this command needs one or more ID's. You'll find the ID's by using \`!listreminders\`.`)
     .catch((err)=>{console.error(err);});
@@ -3802,13 +3815,17 @@ async function handleCancelReminderCommand(msg, cmd, args, user) {
   while (isDiskLockedForChannel('system')) { await sleep(15); }
   // user folder last
   saveString = '';
-  for (var x = 0; x < global.reminders.length; x++) {
-    if (saveString !== '') saveString += '\n';
-    saveString += `${global.reminders[x].shortID},${_makeSaveString(global.reminders[x])}`;
-  }
-  filename = 'gmReminders';
   var playChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  for (var x = 0; x < global.reminders.length; x++) {
+    if (saveString !== '') saveString += '\n';
+    if (global.reminders[x].gmID === msg.author.id
+      && global.reminders[x].playChannelID == playChannelID)
+    {
+      saveString += `${_makeSaveString(global.reminders[x])}`;
+    }
+  }
+  filename = 'gmReminders';
   var userFolderID = await findUserFolderFromMsg(msg, true);
   while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
   await setContentsByFilenameAndParent({channel: {id: playChannelID}}, filename, userFolderID, saveString);
