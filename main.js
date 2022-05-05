@@ -27,7 +27,7 @@ var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
 /*
 + 'Chasing bugs in the initiative and macro systems. Normal rolls should be fine.'
 */
-+ ' Working on new features! I hope none of your dice rolls are dropped during restarts!'
++ ' NEW FEATURES ARE AFOOT! See **!help** to learn about **scenes** and **reminders!**'
 + ' Please notify me of any suspected bugs ASAP with a screenshot and timezone: <@360086569778020352>'
 //+ ' If initiative bugs out, just type the command again and it will probably work on the 2nd try.'
 ;
@@ -294,9 +294,41 @@ function getColorDate() {
   var d = getDate();
   return `\x1b[36m${d}\x1b[0m`;
 }
-async function logSpam(msg) {
+async function logWrite(msg) {
+  // prep for file & line number printing thanks to
+  // https://gist.github.com/mikesmullin/008721d4753d3e0d9a95cda617874736
+  const orig = Error.prepareStackTrace;
+  Error.prepareStackTrace = (_, stack) => stack;
+  const err = new Error();
+  Error.captureStackTrace(err, arguments.callee);
+  const callee = err.stack[0];
+  Error.prepareStackTrace = orig;
+  //process.stdout.write(`${path.relative(process.cwd(), callee.getFileName())}:${callee.getLineNumber()}: ${s}\n`);
+
   var d = getColorDate();
-  if (global.config.logspam) console.log(`${d} ${msg}`);
+  var line = callee.getLineNumber();
+  line = new String(line);
+  line = line.padEnd(6);
+
+  console.log(`${d} Line ${line} ${msg}`);
+}
+async function logSpam(msg) {
+  // prep for file & line number printing thanks to
+  // https://gist.github.com/mikesmullin/008721d4753d3e0d9a95cda617874736
+  const orig = Error.prepareStackTrace;
+  Error.prepareStackTrace = (_, stack) => stack;
+  const err = new Error();
+  Error.captureStackTrace(err, arguments.callee);
+  const callee = err.stack[0];
+  Error.prepareStackTrace = orig;
+  //process.stdout.write(`${path.relative(process.cwd(), callee.getFileName())}:${callee.getLineNumber()}: ${s}\n`);
+
+  var d = getColorDate();
+  var line = callee.getLineNumber();
+  line = new String(line);
+  line = line.padEnd(6);
+
+  if (global.config.logspam) console.log(`${d} Line ${line} ${msg}`);
 }
 async function openFile(msg, args) {
   var output = await getFileContents(args[0], 'system');
@@ -805,7 +837,7 @@ async function findFolderByName(
   channelID="system"
 ) {
   if (parentID === -1) {
-    console.log(`findFolderByName: parentID was -1, `
+    logWrite(`findFolderByName: parentID was -1, `
       + `folderName was ${folderName}, channel was ${channelID}`);
     return -1;
   }
@@ -1509,7 +1541,7 @@ catch (e) {
 }
 
 bot.on('ready', () => {
-    logger.info('Connected; Logged in as: ['+ bot.user.tag + ']');
+    logWrite('Connected; Logged in as: ['+ bot.user.tag + ']');
     bot.user.setPresence({game:{name:'!help for help'}});
 });
 
@@ -1637,6 +1669,8 @@ function handleHelpCommand(msg, cmd, args, user) {
       case 'scene':
       case 'macros':
       case 'gmscreen':
+      case 'reminders':
+      case 'troubleshoot':
         whatToShow = args[0];
       break;
       default:
@@ -1648,11 +1682,13 @@ function handleHelpCommand(msg, cmd, args, user) {
     whatToShow = 'index';
   }
   var index1 = '\nHelp Topics:\n'
-    + '`main    ` - Dice rolls, Rule of 6, Target Numbers, Opposed Tests\n'
-    + '`init    ` - Initiative for Shadowrun 1e-3e\n'
-    + '`scene   ` - Prepare text and music for deploying later\n'
-    + '`macros  ` - Saving and re-using named dice rolls\n'
-    + '`gmscreen` - Doing initiative and/or scene prep in a hidden channel\n'
+    + '`main        ` - Dice rolls, Rule of 6, Target Numbers, Opposed Tests\n'
+    + '`init        ` - Initiative for Shadowrun 1e-3e\n'
+    + '`scene       ` - Prepare text and music for deploying later\n'
+    + '`macros      ` - Saving and re-using named dice rolls\n'
+    + '`gmscreen    ` - Doing initiative and/or scene prep in a hidden channel\n'
+    + '`reminders   ` - Automatically DM your players on timers of your choosing\n'
+    + '`troubleshoot` - Command stuck? Bot not responding in a channel? Try this\n'
     + '\n'
     + 'Example: type **!help main** for the main help.\n'
   ;
@@ -1818,7 +1854,7 @@ function handleHelpCommand(msg, cmd, args, user) {
     + 'Patreon: <https://patreon.com/nathanhawks> | <@360086569778020352>'
   ;
   var gmscreen1 = '\n:ninja: **Virtual GM Screen** :ninja:\n\n'
-    + 'Using this feature, **initiative** and **scene** commands can be done in a hidden channel.\n'
+    + 'Using this feature, **reminders**, **initiative** and **scene** commands can be done in a hidden channel.\n'
     + '\n'
     + 'Players still need to **!setgm** and **!setinit** in the play channel.\n'
     + '\n'
@@ -1839,6 +1875,44 @@ function handleHelpCommand(msg, cmd, args, user) {
     + ':arrow_forward: You can now run !init in secret, or you can prep your NPC\'s in the secret channel and then do the !init command in the play channel.\n'
     + '\n'
     + 'Patreon: <https://patreon.com/nathanhawks> | <@360086569778020352>'
+  ;
+  var reminders1 = '\n:alarm_clock: **Reminders** :alarm_clock:\n\n'
+    + 'The bot can DM reminders of your upcoming game sessions to your players.\n\n'
+    + '**!addreminder** session_date&time timer1 timer2 etc\n'
+    + '*session_date&time* needs the format **YYYY-MM-DD*T*HH:MM** *(note the "T" separating date from time)*\n'
+    + 'Note the hour of the session must be in 24-hour format; e.g. for 6pm, you enter 18:00\n'
+    + 'Each *timer* needs a format of minutes, hours, or days, such as **10m**, **3h**, **7d** etc\n'
+    + '**Example:** !addreminder 2022-05-04T18:00 30m 6h 1d 3d 7d\n'
+    + 'Sets a game session at 6pm on May 4, and five reminders (30 minutes before the session, etc)\n'
+    + 'The reminders will go to everyone you\'ve got in your players list at the time when you added the reminder.\n'
+    + 'To manage your players list, see the `!setplayers`, `!addplayers`, etc commands under `!help init`\n'
+    + '\n'
+    + '**!listreminders**\n'
+    + 'Shows a list of your upcoming reminders, and the ID\'s you\'d use to cancel them if necessary, plus who they\'re going to.\n'
+    + 'Due to Discord message size-limits this command can be slow if you have more than a few reminders.\n'
+    + '\n'
+    + '**!cancelreminder** id#1 id#2 etc\n'
+    + 'Cancels one or more reminders. See `!listreminders` to get the ID\'s.\n'
+    + '\n'
+    + 'Patreon: <https://patreon.com/nathanhawks> | <@360086569778020352>'
+  ;
+  var troubleshoot1 = '\n:fire_extinguisher: **Troubleshooting** :fire_extinguisher:\n\n'
+    + 'GameBot has a few bugs, plus Google Drive API can occasionally drop a request.\n\n'
+    + 'If you get no response from a command and the hourglass doesn\'t go away, you can '
+    + 'often fix it yourself by typing `!unlock`.\n'
+    + '\n'
+    + 'If you\'re using a virtual GM Screen (see `!help gmscreen`) you may need to go into '
+    + 'the play channel before typing `!unlock` or it won\'t have any effect.\n'
+    + '\n'
+    + 'Give each command at least 15 seconds to complete before you use `!unlock` or **weird, '
+    + 'bad things might happen to your data.** Reminders-related commands are even slower; give '
+    + 'them up to 2 minutes if they seem stuck. Also make sure you\'re issuing each command '
+    + '**one at a time.**\n'
+    + '\n'
+    + 'Notify me of any suspected bugs with a screenshot showing the time of the command, '
+    + 'and your timezone: <@360086569778020352>\n'
+    + '\n'
+    + 'If we don\'t share a server, you can find me on Classic Shadowrun: https://discord.gg/HBDPU6k'
   ;
   switch (whatToShow) {
     case 'index':
@@ -1867,11 +1941,19 @@ function handleHelpCommand(msg, cmd, args, user) {
       gmscreen1 = addMaintenanceStatusMessage(gmscreen1);
       msg.reply(gmscreen1, {embed: null}).catch((e) => {console.log(e);});
     break;
+    case 'reminders':
+      reminders1 = addMaintenanceStatusMessage(reminders1);
+      msg.reply(reminders1).catch((e) => {console.error(e);});
+    break;
+    case 'troubleshoot':
+      troubleshoot1 = addMaintenanceStatusMessage(troubleshoot1);
+      msg.reply(troubleshoot1).catch((e) => {console.error(e);});
+    break;
   }
 }
 async function handleInitCommand(msg, cmd, args, user) {
   await msg.react('⏳').catch((e) => {console.log(e);});
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleInitCommand ======================= ]');
+  logWrite('\x1b[32m [ ==================== handleInitCommand ======================= ]\x1b[0m');
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   var lastFoundFileID = null;
@@ -2359,13 +2441,13 @@ async function handleInitCommand(msg, cmd, args, user) {
   // report
   msg.reply(addMaintenanceStatusMessage(output)).catch((e) => {console.log(e);});
   unlockDiskForChannel(gmPlayChannelID);
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleSetGMCommand(msg, cmd, args, user) {
   // serverID.channelID.userID.gmWhoIsGM STRING
   // without flag: set self as GM
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleSetGMCommand ====================== ]');
+  logWrite('\x1b[32m [ ==================== handleSetGMCommand ====================== ]\x1b[0m');
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   var targetID = "";
@@ -2401,10 +2483,10 @@ async function handleSetGMCommand(msg, cmd, args, user) {
   if (targetID == msg.author.id) msg.reply(addMaintenanceStatusMessage(` you are now a GM in channel <#${gmPlayChannelID}>.`)).catch((e) => {console.log(e);});
   else msg.reply(addMaintenanceStatusMessage(` your GM is now <@${targetID}> in this channel.`)).catch((e) => {console.log(e);});
   // listAllFiles();
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleSetPlayersCommand(msg, cmd, args, user) {
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleSetPlayersCommand ================= ]');
+  logWrite('\x1b[32m [ ==================== handleSetPlayersCommand ================= ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -2425,7 +2507,7 @@ async function handleSetPlayersCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(` your group in channel <#${gmPlayChannelID}> is now ${args.length} players.`)).catch((e) => {console.log(e);});
   // listAllFiles();
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleAddPlayersCommand(msg, cmd, args, user) {
   if (args.length) {
@@ -2434,7 +2516,7 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
       return;
     }
   }
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleAddPlayersCommand ================= ]');
+  logWrite('\x1b[32m [ ==================== handleAddPlayersCommand ================= ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -2485,10 +2567,10 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
   } catch (e) {
     return console.error(e);
   }
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleListPlayersCommand(msg, cmd, args, user) {
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleListPlayersCommand ================ ]');
+  logWrite('\x1b[32m [ ==================== handleListPlayersCommand ================ ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -2527,8 +2609,8 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
   }
   // get contents, parse, and count
   var gmPlayersFileID = lastFoundFileID;
-  console.log(`userFolderID ${userFolderID}`);
-  console.log('gmPlayersFileID ' + gmPlayersFileID);
+  logSpam(`userFolderID ${userFolderID}`);
+  logSpam('gmPlayersFileID ' + gmPlayersFileID);
   var playersString = await getFileContents(gmPlayersFileID);
   while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
   var playersArr = playersString.split(',');
@@ -2550,13 +2632,12 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
   else
     msg.reply(addMaintenanceStatusMessage(` your group for this channel is ${playersArr.length} players `
     + `strong: ${output}`)).catch((e) => {console.log(e);});
-  // listAllFiles();
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   // remove reaction
   removeHourglass(msg);
 }
 async function handleRemovePlayersCommand(msg, cmd, args, user) {
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleRemovePlayersCommand ============== ]');
+  logWrite('\x1b[32m [ ==================== handleRemovePlayersCommand ============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
@@ -2639,10 +2720,10 @@ async function handleRemovePlayersCommand(msg, cmd, args, user) {
   msg.reply(addMaintenanceStatusMessage(` you removed ${removedIndex.length} players. `
   + `You now have ${newContentArray.length} players in channel <#${gmPlayChannelID}>.`))
   .catch((e) => {console.log(e);});
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleClearPlayersCommand(msg, cmd, args, user) {
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleClearPlayersCommand =============== ]');
+  logWrite('\x1b[32m [ ==================== handleClearPlayersCommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
@@ -2678,7 +2759,7 @@ async function handleClearPlayersCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(` your group for channel <#${gmPlayChannelID}> was reset to 0 players.`))
   .catch((e) => {console.log(e);});
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleSetInitCommand(msg, cmd, args, user) {
   if (args) {
@@ -2725,7 +2806,7 @@ async function handleSetInitCommand(msg, cmd, args, user) {
     return;
   }
   // and on to the show
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleSetInitCommand ==================== ]');
+  logWrite('\x1b[32m [ ==================== handleSetInitCommand ==================== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   // serverID.channelID.userID.playerInit STRING
   var content = args.join(" ");
@@ -2749,7 +2830,7 @@ async function handleSetInitCommand(msg, cmd, args, user) {
   // remove reaction
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(` your initiative formula (in this channel) is now ${output}.`));
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
+  logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleSetNPCInitCommand(msg, cmd, args, user) {
   args = modifyNPCInput(args);
@@ -2757,7 +2838,7 @@ async function handleSetNPCInitCommand(msg, cmd, args, user) {
     return;
   }
   // and on to the show
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleSetNPCInitCommand ================= ]');
+  logWrite('\x1b[32m [ ==================== handleSetNPCInitCommand ================= ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -2777,7 +2858,7 @@ async function handleSetNPCInitCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(` your NPC's for this channel were reset, `
   + `and you added ${contentArray.length} NPC's.`)).catch((e) => {console.log(e);});
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
+  logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleAddNPCInitCommand(msg, cmd, args, user) {
   args = modifyNPCInput(args);
@@ -2785,7 +2866,7 @@ async function handleAddNPCInitCommand(msg, cmd, args, user) {
     return;
   }
   await msg.react('⏳').catch((e) => {console.log(e);});
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleAddNPCInitCommand ================= ]');
+  logWrite('\x1b[32m [ ==================== handleAddNPCInitCommand ================= ]\x1b[0m');
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await ensureFolderTriplet(msg);
@@ -2828,10 +2909,10 @@ async function handleAddNPCInitCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(` you now have ${contentArray.length} NPC's in channel <#${gmPlayChannelID}>.`))
   .catch((e) => {console.log(e);});
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleRemoveNPCInitCommand ============== ]');
+  logWrite('\x1b[32m [ ==================== handleRemoveNPCInitCommand ============== ]\x1b[0m');
   var lastFoundFileID = -1;
   await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
@@ -2918,10 +2999,10 @@ async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
   msg.reply(addMaintenanceStatusMessage(` you removed ${removedIndex.length} NPC's. `
   + `You now have ${newContentArray.length} NPC's in channel <#${gmPlayChannelID}>.`))
   .catch((e) => {console.log(e);});
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleListNPCInitCommand(msg, cmd, args, user) {
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleListNPCInitCommand ================ ]');
+  logWrite('\x1b[32m [ ==================== handleListNPCInitCommand ================ ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannel = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -2961,11 +3042,11 @@ async function handleListNPCInitCommand(msg, cmd, args, user) {
     }
   }
   msg.reply(addMaintenanceStatusMessage(output)).catch((e) => {console.log(e);});
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannel})/${msg.author.id}`);
+  logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannel})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleClearNPCInitCommand(msg, cmd, args, user) {
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleClearNPCInitCommand =============== ]');
+  logWrite('\x1b[32m [ ==================== handleClearNPCInitCommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -2998,13 +3079,13 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(' you cleared your NPC initiative formulas for this channel.'))
   .catch((e) => {console.log(e);});
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleSaveMacroCommand(msg, cmd, args, user) {
   if (args.length < 2)
     return msg.reply(addMaintenanceStatusMessage(':no_entry_sign: Not enough options. Needs a name followed by any valid dice roll command.'))
     .catch((e) => {console.log(e);});
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleSaveMacroCommand ================== ]');
+  logWrite('\x1b[32m [ ==================== handleSaveMacroCommand ================== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   await ensureFolderTriplet(msg);
   var auth = global.auth;
@@ -3062,14 +3143,14 @@ async function handleSaveMacroCommand(msg, cmd, args, user) {
   }
   msg.reply(addMaintenanceStatusMessage(` you now have ${savedRollsArr.length} roll macros saved.`))
   .catch((e) => {console.log(e);});
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
+  logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleRollMacroCommand(msg, cmd, args, user) {
   if (args.length < 1)
     return msg.reply(addMaintenanceStatusMessage(':no_entry_sign: You didn\'t specify which macro I should roll.'))
     .catch((e) => {console.log(e);});
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleRollMacroCommand ================== ]');
+  logWrite('\x1b[32m [ ==================== handleRollMacroCommand ================== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   await ensureFolderTriplet(msg);
   var auth = global.auth;
@@ -3119,14 +3200,14 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
     msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."))
     .catch((e) => {console.log(e);});
   }
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
+  logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleRemoveMacroCommand(msg, cmd, args, user) {
   if (args.length < 1)
     return msg.reply(addMaintenanceStatusMessage(':no_entry_sign: You didn\'t specify which macro I should remove.'))
     .catch((e) => {console.log(e);});
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleRemoveMacroCommand ================ ]');
+  logWrite('\x1b[32m [ ==================== handleRemoveMacroCommand ================ ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   await ensureFolderTriplet(msg);
   var auth = global.auth;
@@ -3179,11 +3260,11 @@ async function handleRemoveMacroCommand(msg, cmd, args, user) {
     msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."))
     .catch((e) => {console.log(e);});
   }
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
+  logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleListMacrosCommand(msg, cmd, args, user) {
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleListMacrosCommand ================= ]');
+  logWrite('\x1b[32m [ ==================== handleListMacrosCommand ================= ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   await ensureFolderTriplet(msg);
   var auth = global.auth;
@@ -3229,7 +3310,7 @@ async function handleListMacrosCommand(msg, cmd, args, user) {
     msg.reply(addMaintenanceStatusMessage(" you don't have any saved macros in this channel yet."))
     .catch((e) => {console.log(e);});
   }
-  console.log(getColorDate() + ` 🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
+  logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
   removeHourglass(msg);
 }
 // returns a discord channel ID
@@ -3284,7 +3365,7 @@ async function getPlayChannel(msg) {
 }
 // checks the current play channel and replies with a channel link
 async function handleCheckChannelCommand(msg, cmd, args, user) {
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleCheckChannelCommand =============== ]');
+  logWrite('\x1b[32m [ ==================== handleCheckChannelCommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await ensureFolderTriplet(msg);
@@ -3293,13 +3374,13 @@ async function handleCheckChannelCommand(msg, cmd, args, user) {
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   msg.reply(addMaintenanceStatusMessage(` your current play channel is set to <#${gmPlayChannelID}>.`))
   .catch((e) => {console.log(e);});
-  console.log(getColorDate() + ` 🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 // set the play channel so that commands can be entered in a secret channel
 // useful for NPC inits and scene content
 async function handleSetChannelCommand(msg, cmd, args, user) {
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleSetChannelCommand ================= ]');
+  logWrite('\x1b[32m [ ==================== handleSetChannelCommand ================= ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   if (args.length === 1) {
     if (args[0].substring(0,2) === '<#') {
@@ -3331,11 +3412,11 @@ async function handleSetChannelCommand(msg, cmd, args, user) {
     msg.reply(addMaintenanceStatusMessage(' this command requires one (and only one) argument, a channel link.'))
     .catch((e) => {console.log(e);});
   }
-  console.log(getColorDate() + ` 🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleSetSceneCommand(msg, cmd, args, user) {
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleSetSceneCommand =================== ]');
+  logWrite('\x1b[32m [ ==================== handleSetSceneCommand =================== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await ensureFolderTriplet(msg);
@@ -3367,11 +3448,11 @@ async function handleSetSceneCommand(msg, cmd, args, user) {
   var countOfScenes = await updateSceneList(msg, newScene);
   msg.reply(addMaintenanceStatusMessage(` you now have ${countOfScenes} scenes in channel <#${gmPlayChannelID}>.`))
   .catch((e) => {console.log(e);});
-  console.log(getColorDate() + ` 🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleDelSceneCommand(msg, cmd, args, user) {
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleDelSceneCommand =================== ]');
+  logWrite('\x1b[32m [ ==================== handleDelSceneCommand =================== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await ensureFolderTriplet(msg);
@@ -3412,11 +3493,11 @@ async function handleDelSceneCommand(msg, cmd, args, user) {
     msg.reply(addMaintenanceStatusMessage(' this command requires one or more names of scenes.'))
     .catch((e) => {console.log(e);});
   }
-  console.log(getColorDate() + ` 🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleGetSceneCommand(msg, cmd, args, user) {
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleGetSceneCommand =================== ]');
+  logWrite('\x1b[32m [ ==================== handleGetSceneCommand =================== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -3447,11 +3528,11 @@ async function handleGetSceneCommand(msg, cmd, args, user) {
       + 'the name of the scene. Try !listscenes for a list of your scenes in ')
       + `channel ${gmPlayChannelID}.`).catch((e) => {console.log(e);});
   }
-  console.log(getColorDate() + ` 🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function handleListScenesCommand(msg, cmd, args, user) {
-  console.log('\x1b[32m%s\x1b[0m', ' [ ==================== handleListScenesCommand ================= ]');
+  logWrite('\x1b[32m [ ==================== handleListScenesCommand ================= ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   await ensureFolderTriplet(msg);
@@ -3473,7 +3554,7 @@ async function handleListScenesCommand(msg, cmd, args, user) {
     msg.reply(addMaintenanceStatusMessage(` you have no scenes yet in channel <#${gmPlayChannelID}>.`))
     .catch((e) => {console.log(e);});
   }
-  console.log(getColorDate() + ` 🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
+  logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
 async function getUserReminders(userFolderID, playChannelID) {
@@ -3510,13 +3591,15 @@ async function getActiveReminders() {
   if (sysRemindersID !== -1) {
     sysContent = await getFileContents(sysRemindersID, 'system');
     while (isDiskLockedForChannel('system')) { await sleep(15); }
-    var sysFileArr = sysContent.split('\n');
-    for (var x = 0; x < sysFileArr.length; x++) {
-      var r = sysFileArr[x].split(',');
-      reminders[reminders.length] = {
-        shortID: r[0], id: r[1], sessionTimeDateF: r[2], dateTime: r[3], timeStamp: r[4],
-        gmID: r[5], userFolderID: r[6], playChannelID: r[7], playersString: r[8]
-      };
+    if (sysContent !== '') {
+      var sysFileArr = sysContent.split('\n');
+      for (var x = 0; x < sysFileArr.length; x++) {
+        var r = sysFileArr[x].split(',');
+        reminders[reminders.length] = {
+          shortID: r[0], id: r[1], sessionTimeDateF: r[2], dateTime: r[3], timeStamp: r[4],
+          gmID: r[5], userFolderID: r[6], playChannelID: r[7], playersString: r[8]
+        };
+      }
     }
     return reminders;
   }
@@ -3659,6 +3742,8 @@ async function addReminder(msg, reminder) {
     + ` MilliSecondsFromNow: ${reminder.MilliSecondsFromNow}, gmID: ${reminder.gmID}`);
 }
 async function handleListRemindersCommand(msg, cmd, args, user) {
+  await msg.react('⏳').catch((e) => {console.log(e);});
+  logWrite('\x1b[32m [ ==================== handleListRemindersCommand ======================= ]\x1b[0m');
   var playChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   var userFolderID = await findUserFolderFromMsg(msg, true);
@@ -3696,8 +3781,12 @@ async function handleListRemindersCommand(msg, cmd, args, user) {
     msg.reply(` you have no reminders set in channel <#${playChannelID}>.`)
     .catch((err)=>{console.error(err);});
   }
+  removeHourglass(msg);
+  logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleAddReminderCommand(msg, cmd, args, user) {
+  await msg.react('⏳').catch((e) => {console.log(e);});
+  logWrite('\x1b[32m [ ==================== handleAddReminderCommand ======================= ]\x1b[0m');
   var sessionTimeDateF = args[0];
   var sessionTimestamp = undefined;
   args.splice(0, 1);
@@ -3779,8 +3868,12 @@ async function handleAddReminderCommand(msg, cmd, args, user) {
   }
   msg.reply(` ${x} reminders added.`)
   .catch((err)=>{console.error(err);});
+  removeHourglass(msg);
+  logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleCancelReminderCommand(msg, cmd, args, user) {
+  await msg.react('⏳').catch((e) => {console.log(e);});
+  logWrite('\x1b[32m [ ==================== handleCancelReminderCommand ======================= ]\x1b[0m');
   // parse args
   var shortIDs = [...args];
   logSpam(shortIDs);
@@ -3822,7 +3915,7 @@ async function handleCancelReminderCommand(msg, cmd, args, user) {
     if (global.reminders[x].gmID === msg.author.id
       && global.reminders[x].playChannelID == playChannelID)
     {
-      saveString += `${_makeSaveString(global.reminders[x])}`;
+      saveString += _makeSaveString(global.reminders[x]);
     }
   }
   filename = 'gmReminders';
@@ -3833,6 +3926,8 @@ async function handleCancelReminderCommand(msg, cmd, args, user) {
   // user feedback
   msg.reply(`${shortIDs.length} reminder cancellations were requested.`)
   .catch((err) => {console.error(err);});
+  removeHourglass(msg);
+  logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 // @ =========== HANDLEMESSAGE FUNCTION ============
 function handleMessage(msg, user=msg.author) {
