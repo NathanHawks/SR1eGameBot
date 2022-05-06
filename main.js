@@ -1171,31 +1171,19 @@ async function initReminders() {
   while (isDiskLockedForChannel('system')) { await sleep(15); }
   global.folderID.reminders = reminderFolderID;
   global.reminders = await getActiveReminders();
+  while (isDiskLockedForChannel('system')) { await sleep(15); }
   if (global.reminders.length > 0) {
     for (var x = 0; x < global.reminders.length; x++) {
       global.reminders[x].MilliSecondsFromNow =
         new Date(global.reminders[x].dateTime).valueOf() - Date.now();
-      var reminder = global.reminders[x];
-      if (reminder.playersString !== undefined) {
-        logSpam(`Players String: ${reminder.playersString}`);
+      if (global.reminders[x].playersString !== undefined) {
+        logSpam(`Reminder shortID ${global.reminders[x].shortID} found:`
+          + ` playersString = ${global.reminders[x].playersString}`);
         global.reminders[x].timeoutID = setTimeout(
-          async (reminder
-        ) => {
-          logSpam(`Reminder ID: ${reminder.id}`);
-          var d = new Date(reminder.sessionTimeDateF);
-          var players = reminder.playersString.split(',');
-          for (var y = 0; y < players.length; y++) {
-            logSpam(`Attempting reminder to ${players[y]}`);
-            var user = await bot.fetchUser(players[y]);
-            user.send(`This is a reminder of your upcoming game`
-              + ` at ${d} with GM <@${reminder.gmID}>.`)
-              .catch((err) => { console.error(err); });
-          }
-          // upkeep system
-          global.lastRemindersTime = Date.now();
-          await _deleteReminder(reminder.id, reminder.userFolderID);
-          logSpam(`System reminders var has ${global.reminders.length} entries`);
-        }, global.reminders[x].MilliSecondsFromNow, global.reminders[x]);
+          _addRemindersSetTimeoutPayload,
+          global.reminders[x].MilliSecondsFromNow,
+          global.reminders[x]
+        );
       }
     }
   }
@@ -3707,7 +3695,26 @@ async function _saveSystemReminders(reminders) {
     reminderFolderID, sysContent);
   while (isDiskLockedForChannel('system')) { await sleep(15); }
 }
+async function _addRemindersSetTimeoutPayload(reminder) {
+  logWrite('\x1b[32m [ ==================== _addRemindersSetTimeoutPayload ======================= ]\x1b[0m');
+  var d = new Date(reminder.sessionTimeDateF);
+  var users = reminder.playersString.split(' ');
+  for (var x = 0; x < users.length; x++) {
+    logSpam(`Reminder ID: ${reminder.id} sending to ${users[x]}`);
+    var user = await bot.fetchUser(users[x]);
+    var gm = await bot.fetchUser(reminder.gmID);
+    var gmName = gm.tag.split("#")[0];
+    user.send(`This is a reminder of your upcoming game`
+      + ` at ${d} with GM **${gmName}**.`)
+    .catch((err) => { console.error(err); });
+  }
+  // upkeep system
+  global.lastRemindersTime = Date.now();
+  await _deleteReminder(reminder.id, reminder.userFolderID);
+  logSpam(`System reminders var has ${global.reminders.length} entries`);
+}
 async function addReminders(msg, reminders) {
+  // get play folder
   var playChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   // user folder
@@ -3718,37 +3725,26 @@ async function addReminders(msg, reminders) {
     // make id's
     reminders[i].id = crypto.randomBytes(32).toString('hex');
     reminders[i].shortID = crypto.randomBytes(3).toString('hex');
-    // save to GM's play folder
-    // get play folder
     // activate reminders
-    var users = reminders[i].playersString.split(',');
-    var x = 0;
-    for (x = 0; x < users.length; x++) {
-      var userID = users[x];
-      var timeoutID = setTimeout(async (reminder, userFolderID) => {
-        logSpam(`Reminder ID: ${reminder.id}`);
-        var d = new Date(reminder.sessionTimeDateF);
-        bot.users.get(userID).send(`This is a reminder of your upcoming game`
-          + ` at ${d} with GM <@${reminder.gmID}>.`)
-        .catch((err) => { console.error(err); });
-        // upkeep system
-        global.lastRemindersTime = Date.now();
-        await _deleteReminder(reminder.id, userFolderID);
-        logSpam(`System reminders var has ${global.reminders.length} entries`);
-      }, reminders[i].MilliSecondsFromNow, reminders[i], userFolderID);
-      reminders[i].timeoutID = timeoutID;
-      global.reminders[global.reminders.length] = reminders[i];
-      logSpam(`reminder = {shortID: ${reminders[i].shortID}, id: ${reminders[i].id},`
-        + ` dateTime: ${reminders[i].dateTime}, sessionTimeDateF: ${reminders[i].sessionTimeDateF},`
-        + ` timeStamp: ${reminders[i].timeStamp}, playersString: ${reminders[i].playersString}},`
-        + ` MilliSecondsFromNow: ${reminders[i].MilliSecondsFromNow}, gmID: ${reminders[i].gmID}`);
-    }
+    var timeoutID = setTimeout(
+      _addRemindersSetTimeoutPayload,
+      reminders[i].MilliSecondsFromNow,
+      reminders[i]
+    );
+    reminders[i].timeoutID = timeoutID;
+    global.reminders[global.reminders.length] = reminders[i];
+    logSpam(`reminder = {shortID: ${reminders[i].shortID}, id: ${reminders[i].id},`
+      + ` dateTime: ${reminders[i].dateTime}, sessionTimeDateF: ${reminders[i].sessionTimeDateF},`
+      + ` timeStamp: ${reminders[i].timeStamp}, playersString: ${reminders[i].playersString},`
+      + ` MilliSecondsFromNow: ${reminders[i].MilliSecondsFromNow}, gmID: ${reminders[i].gmID}}`);
   }
+  // save to GM's play folder
   await _saveGMReminders(userFolderID, playChannelID, reminders);
   while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
   // save to /(root)/UserData/reminders/activeReminders
   await _saveSystemReminders(reminders);
   while (isDiskLockedForChannel('system')) { await sleep(15); }
+  logSpam(`System reminders var has ${global.reminders.length} entries`);
 }
 async function handleListRemindersCommand(msg, cmd, args, user) {
   await msg.react('⏳').catch((e) => {console.log(e);});
@@ -3768,7 +3764,7 @@ async function handleListRemindersCommand(msg, cmd, args, user) {
         + `**Reminder Time/Date:** ${reminders[x].dateTime}\n`
         + `**Session Time/Date:** ${new Date(reminders[x].sessionTimeDateF)}\n`
         + `**Players to Remind:** `;
-        var players = reminders[x].playersString.split(',');
+        var players = reminders[x].playersString.split(' ');
         for (var y = 0; y < players.length; y++) {
           if (y > 0) output += ', '
           output += `<@${players[y]}>`;
@@ -3867,7 +3863,7 @@ async function handleAddReminderCommand(msg, cmd, args, user) {
       dateTime: new Date(targetTimestamp),
       sessionTimeDateF: sessionTimeDateF,
       timeStamp: targetTimestamp,
-      playersString: playersString,
+      playersString: playersString.split(',').join(' '),
       MilliSecondsFromNow: targetTimestamp - Date.now(),
       gmID: msg.author.id,
       userFolderID: userFolderID,
