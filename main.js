@@ -882,7 +882,11 @@ async function findFolderByName(
       await sleep(2000);
       return findFileByName(folderName, parentID, callback, channelID);
     }
-    else if (err) return console.error(err);
+    else if (err) {
+      console.error(err);
+      logWrite('findFolderByName returning -1...');
+      return -1;
+    }
     // optimistically, there will usually be a unique result
     if (res.data.files.length === 1) {
       // prep to return the file id
@@ -964,6 +968,9 @@ async function findFileByName(filename, parentID, channelID) {
         }
         else {
           lastFoundFileID = -1;
+          if (err.hasOwnProperty('code') && err.code === 404) {
+            logWrite(`findFileByName: got 404 for file ${filename}...`);
+          }
         }
         // console.error(err);
       }
@@ -1006,6 +1013,10 @@ async function getFileContents(fileID, channelID) {
         logWrite('getFileContents trying again in 2 seconds...');
         await sleep(2000);
         return getFileContents(fileID, channelID);
+      }
+      else if (err.hasOwnProperty('code') && err.code === 404) {
+        logWrite(`getFileContents got 404 for ${fileID}`);
+        return '';
       }
       else {
         return console.error(err);
@@ -2655,6 +2666,8 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
     fields: 'nextPageToken, files(id, name, parents)'},
     async (err, res) => {
       if (err && err.hasOwnProperty('code') && err.code === 500) {
+        msg.reply('Google Drive had an error; you may see double output.')
+        .catch((e)=>{doNothing();});
         console.error(err);
         logWrite('handleListPlayersCommand trying again in 2 seconds');
         await sleep(2000);
@@ -2731,6 +2744,8 @@ async function handleRemovePlayersCommand(msg, cmd, args, user) {
     fields: 'nextPageToken, files(id, name, parents)'},
     async (err, res) => {
       if (err) {
+        msg.reply('Google Drive had an error; you may see double output.')
+        .catch((e)=>{doNothing();});
         console.error(err);
         if (err.hasOwnProperty('code') && err.code === 500) {
           logWrite('handleRemovePlayersCommand trying again in 2 seconds...');
@@ -2755,6 +2770,8 @@ async function handleRemovePlayersCommand(msg, cmd, args, user) {
             if (err)
             {
               if (err.hasOwnProperty('code') && err.code === 500) {
+                msg.reply('Google Drive had an error; you may see double output.')
+                .catch((e)=>{doNothing();});
                 console.error(err);
                 logWrite('handleRemovePlayersCommand trying again in 2 seconds...');
                 await sleep(2000);
@@ -2834,6 +2851,8 @@ async function handleClearPlayersCommand(msg, cmd, args, user) {
     async (err, res) => {
       if (err) {
         if (err.hasOwnProperty('code') && err.code === 500) {
+          msg.reply('Google Drive had an error; you may see double output.')
+          .catch((e)=>{doNothing();});
           console.error(err);
           logWrite('handleClearPlayersCommand trying again in 2 seconds...');
           await sleep(2000);
@@ -3035,6 +3054,8 @@ async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
       if (err) {
         console.error(err);
         if (err.hasOwnProperty('code') && err.code === 500) {
+          msg.reply('Google Drive had an error; you may see double output.')
+          .catch((e)=>{doNothing();});
           logWrite('handleRemoveNPCInitCommand trying again in 2 seconds...');
           await sleep(2000);
           return handleRemoveNPCInitCommand(msg, cmd, args, user);
@@ -3058,6 +3079,8 @@ async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
             if (err) {
               if (err.hasOwnProperty('code') && err.code === 500) {
                 console.error(err);
+                msg.reply('Google Drive had an error; you may see double output.')
+                .catch((e)=>{doNothing();});
                 logWrite('handleRemoveNPCInitCommand trying again in 2 seconds...');
                 await sleep(2000);
                 return handleRemoveNPCInitCommand(msg, cmd, args, user);
@@ -3163,22 +3186,25 @@ async function handleListNPCInitCommand(msg, cmd, args, user) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannel})/${msg.author.id}`);
   removeHourglass(msg);
 }
-async function _clearNPCDrivePayload(err, res, gmPlayChannelID) {
+async function _clearNPCDrivePayload(err, res, parentFolderID, gmPlayChannelID) {
   drive.files.list(
     {q:`"${parentFolderID}" in parents and name="${filename}"`,
     fields: 'nextPageToken, files(id, name, parents)'},
     async (err, res) => {
       unlockDiskForChannel(gmPlayChannelID);
       if (err) {
-        if (res.hasOwnProperty('code') && res.code === 500) {
+        if (err.hasOwnProperty('code') && err.code === 500) {
           console.error(err);
           logWrite('_clearNPCDrivePayload trying again in 2 seconds...');
           await sleep(2000);
           return _clearNPCDrivePayload(err, res, gmPlayChannelID);
         }
+        else {
+          return console.error(err);
+        }
       }
       logSpam('_clearNPCDrivePayload encountered no significant error');
-      if (res.data.files.length == 0) { doNothing(); }
+      if (res.data.files.length === 0) { return; }
       else {
         // delete it
         res.data.files.map((file) => {
@@ -3212,19 +3238,21 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
       while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
       unlockDiskForChannel(gmPlayChannelID);
       if (err) {
-        if (res.hasOwnProperty('code') && res.code === 500) {
+        if (err.hasOwnProperty('code') && err.code === 500) {
+          msg.reply('Google Drive had an error; you may see double output.')
+          .catch((e)=>{doNothing();});
           console.error(err);
           logWrite('_clearNPCDrivePayload trying again in 2 seconds...');
           await sleep(2000);
           lockDiskForChannel(gmPlayChannelID);
-          return _clearNPCDrivePayload(err, res, gmPlayChannelID);
+          return _clearNPCDrivePayload(err, res, parentFolderID, gmPlayChannelID);
         }
         else {
           return console.error(err);
         }
       }
       logSpam('Clear NPC Drive Payload encountered no significant error');
-      if (res.data.files.length == 0) { doNothing(); }
+      if (res.data.files.length === 0) { return; }
       else {
         // delete it
         res.data.files.map((file) => {
