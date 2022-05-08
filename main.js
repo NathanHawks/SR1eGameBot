@@ -338,17 +338,16 @@ async function openFile(msg, args) {
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
   msg.channel.send("```\n" + output + "```").catch((e) => {console.log(e);});
 }
-function listAllFiles(msg) {
+async function listAllFiles(msg) {
   var nextPageToken = undefined;
   var output = '--- [filename] ---------   ------------ googleID ------------- ------------ parentID -------------\n';
   var finalout = '';
-  var iteratePage = function (nextPageToken, level=0) {
+  var iteratePage = async function (nextPageToken=undefined, level=0) {
     var q = { fields: 'nextPageToken, files(id, name, parents)' };
-    var filesFound = [];
-    q.pageToken = nextPageToken;
+    if (nextPageToken !== undefined) q.pageToken = nextPageToken;
     logSpam('Querying GDrive for a list');
     lockDiskForChannel('system');
-    drive.files.list(q, (err, res) => {
+    drive.files.list(q, async (err, res) => {
       lockDiskForChannel('system');
       if (res.data.files) {
         logSpam(`res.data.files got ${res.data.files.length}`);
@@ -356,8 +355,15 @@ function listAllFiles(msg) {
       else {
         logSpam('res.data.files got nothing');
       }
-      if (err) return console.error(err);
-      logSpam('No error returned');
+      if (err) {
+        if (err.hasOwnProperty('code') && err.code === 500) {
+          console.error(err);
+          logWrite('Trying again in 2 seconds');
+          await sleep(2000);
+          iteratePage(nextPageToken, level);
+        }
+      }
+      logSpam('No significant error returned');
       var files = res.data.files;
       if (files.length) {
         logSpam(res.data.nextPageToken);
@@ -419,7 +425,7 @@ function listAllFiles(msg) {
   if (nextPageToken !== undefined) q.pageToken = nextPageToken;
   logSpam('Querying GDrive for a list');
   lockDiskForChannel('system');
-  drive.files.list(q, (err, res) => {
+  drive.files.list(q, async (err, res) => {
     lockDiskForChannel('system');
     if (res.data.files) {
       logSpam(`res.data.files got ${res.data.files.length}`);
@@ -427,14 +433,18 @@ function listAllFiles(msg) {
     else {
       logSpam('res.data.files got nothing');
     }
-    if (err) return console.error(err);
-    logSpam('No error returned');
+    if (err && err.hasOwnProperty('code') && err.code ===500) {
+      console.error(err);
+      logWrite('Trying again after 2 seconds...');
+      await sleep(2000);
+      iteratePage();
+    }
+    logSpam('No significant error returned');
     var files = res.data.files;
     if (files.length) {
       logSpam(res.data.nextPageToken);
-      var x = 0;
-      for (x = 0; x < files.length; x++) {
-        global.filesFound[filesFound.length] = files[x];
+      for (var x = 0; x < files.length; x++) {
+        global.filesFound[global.filesFound.length] = files[x];
       }
       nextPageToken = res.data.nextPageToken;
       logSpam('nextPageToken = ' + nextPageToken);
@@ -556,17 +566,25 @@ function deleteAllFiles() {
   const drive = google.drive({version: 'v3', auth});
   drive.files.list({
     fields: 'nextPageToken, files(id, name)',
-  }, (err, res) => {
-    if (err) return console.error(err);
+  }, async (err, res) => {
+    if (err && err.hasOwnProperty('code') && err.code === 500) {
+      console.error(err);
+      logWrite('Trying again in 2 seconds...');
+      await sleep(2000);
+      return deleteAllFiles();
+    }
+    else if (err) {
+      return console.error(err);
+    }
     const files = res.data.files;
     if (files.length) {
       console.log(`DX: Deleting ${files.length} files...`);
       files.map((file) => {
         deleteFileById(file.id, doNothing);
       });
-      console.log("DX: All commands sent.")
+      logWrite("DX: All commands sent.")
     } else {
-      console.log('No files found.');
+      logWrite('No files found.');
     }
   });
 }
@@ -857,8 +875,14 @@ async function findFolderByName(
     mimeType: 'application/vnd.google-apps.folder',
     fields: 'files(id, name, parents)',
   };
-  drive.files.list(q, (err, res) => {
-    if (err) return console.error(err);
+  drive.files.list(q, async (err, res) => {
+    if (err && err.hasOwnProperty('code') && err.code === 500) {
+      console.error(err);
+      logWrite('findFolderByName trying again in 2 seconds...');
+      await sleep(2000);
+      return findFileByName(folderName, parentID, callback, channelID);
+    }
+    else if (err) return console.error(err);
     // optimistically, there will usually be a unique result
     if (res.data.files.length === 1) {
       // prep to return the file id
@@ -897,9 +921,15 @@ async function createFolder(
       'mimeType': 'application/vnd.google-apps.folder'
     },
     fields: 'id'
-  }, (err, file) => {
+  }, async (err, file) => {
     unlockDiskForChannel(channelID);
-    if (err) return console.error(err);
+    if (err && err.hasOwnProperty('code') && err.code === 500) {
+      console.error(err);
+      logWrite('createFolder trying again in 2 seconds...');
+      await sleep(2000);
+      return createFolder(folderName, parentID, callback, channelID);
+    }
+    else if (err) return console.error(err);
     callback(err,file);
   });
 }
@@ -924,9 +954,17 @@ async function findFileByName(filename, parentID, channelID) {
   drive.files.list(
     {q: `"${parentID}" in parents and name="${filename}"`,
     fields: 'nextPageToken, files(id, name, parents)'},
-    (err, res) => {
+    async (err, res) => {
       if (err) {
-        lastFoundFileID = -1;
+        if (err.hasOwnProperty('code') && err.code === 500) {
+          logWrite(err);
+          logWrite('findFileByName trying again in 2 seconds...');
+          await sleep(2000);
+          return findFileByName(filename, parentID, channelID);
+        }
+        else {
+          lastFoundFileID = -1;
+        }
         // console.error(err);
       }
       else if (res && res.data.files.length === 1) {
@@ -960,8 +998,19 @@ async function getFileContents(fileID, channelID) {
   logSpam('Seeking file in GDrive');
   var auth = global.auth;
   const drive = google.drive({version: 'v3', auth});
-  drive.files.get({fileId: fileID, alt: "media"}, (err, res) => {
-    if (err) { unlockDiskForChannel(channelID); return console.error(err); }
+  drive.files.get({fileId: fileID, alt: "media"}, async (err, res) => {
+    if (err) {
+      unlockDiskForChannel(channelID);
+      if (err.hasOwnProperty('code') && err.code === 500) {
+        console.error(err);
+        logWrite('getFileContents trying again in 2 seconds...');
+        await sleep(2000);
+        return getFileContents(fileID, channelID);
+      }
+      else {
+        return console.error(err);
+      }
+    }
     // strip padding which was added to bypass a very weird API error
     fileContent=res.data.substring(0,res.data.length-2);
     addToCache({id: fileID, content: fileContent}, 'fileContent');
@@ -981,8 +1030,14 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
   // Create/Update the file; does the file already exist
   drive.files.list({q:`"${parentFolderID}" in parents and name="${filename}"`,
     fields: 'files(id, name, parents)'},
-    (err, res) => {
-      if (err) return console.error(err);
+    async (err, res) => {
+      if (err && err.hasOwnProperty('code') && err.code === 500) {
+        console.error(err);
+        logWrite('setContentsByFilenameAndParent trying again in 2 seconds...');
+        await sleep(2000);
+        return setContentsByFilenameAndParent(msg, filename, parentFolderID, contents);
+      }
+      else if (err) return console.error(err);
       // no, the file doesn't exist for this channel/user pairing
       if (res.data.files.length === 0) {
         // create it
@@ -990,10 +1045,16 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
           resource: { 'name': filename, 'parents': [parentFolderID] },
           media: { 'mimeType': 'text/plain', 'body': `${contents}/2` },
           fields: 'id'
-        }, (err, file) => {
+        }, async (err, file) => {
           logSpam(`Creating file ${filename}`);
           unlockDiskForChannel(channelID);
-          if (err) return console.error(err);
+          if (err && err.hasOwnProperty('code') && err.code === 500) {
+            console.error(err);
+            logWrite('setContentsByFilenameAndParent trying again in 2 seconds...');
+            await sleep(2000);
+            return setContentsByFilenameAndParent(msg, filename, parentFolderID, contents);
+          }
+          else if (err) return console.error(err);
           // don't add to cache -- let it happen on next load
           return;
         });
@@ -1002,10 +1063,16 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
         res.data.files.map((file) => {
             drive.files.update({
               fileId: file.id, media: {body: `${contents}/2`}},
-              (err, res) => {
+              async (err, res) => {
                 logSpam(`Updating file ${filename}`);
                 unlockDiskForChannel(channelID);
-                if (err) return console.error(err);
+                if (err) {
+                  console.error(err);
+                  logWrite('setContentsByFilenameAndParent trying again in 2 seconds...');
+                  await sleep(2000);
+                  return setContentsByFilenameAndParent(msg, filename, parentFolderID, contents);
+                }
+                else if (err) return console.error(err);
                 else return;
             });
             // update cache
@@ -1022,7 +1089,16 @@ async function deleteFileById(fileId, callback=(err,res)=>{}, channelID="system"
   lockDiskForChannel(channelID);
   var auth = global.auth;
   const drive = google.drive({version: 'v3', auth});
-  drive.files.delete({fileId:fileId}, (err, res) => {
+  drive.files.delete({fileId:fileId}, async (err, res) => {
+    if (err && err.hasOwnProperty('code') && err.code === 500) {
+      console.error(err);
+      logWrite('deleteFileById trying again in 2 seconds');
+      await sleep(2000);
+      return deleteFileById(fileId, callbaack, channellID);
+    }
+    else if (err) {
+      return console.error(err);
+    }
     unlockDiskForChannel(channelID);
     callback(err, res);
   });
@@ -1887,6 +1963,9 @@ function handleHelpCommand(msg, cmd, args, user) {
   ;
   var troubleshoot1 = '\n:fire_extinguisher: **Troubleshooting** :fire_extinguisher:\n\n'
     + 'GameBot has a few bugs, plus Google Drive API can occasionally drop a request.\n\n'
+    + '**IMPORTANT:** The bot needs the following channel permissions to work: View Channel, Send Messages, and Add Reactions. '
+    + '**Make sure you\'re giving these permissions to the bot, and not everyone!**\n'
+    + '\n'
     + 'If you get no response from a command and the hourglass doesn\'t go away, you can '
     + 'often fix it yourself by typing `!unlock`.\n'
     + '\n'
@@ -2560,6 +2639,7 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
 }
 async function handleListPlayersCommand(msg, cmd, args, user) {
   logWrite('\x1b[32m [ ==================== handleListPlayersCommand ================ ]\x1b[0m');
+  var lastFoundFileID = -1;
   await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -2573,9 +2653,14 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
   lockDiskForChannel(gmPlayChannelID);
   drive.files.list({q:`"${userFolderID}" in parents and name="${filename}"`,
     fields: 'nextPageToken, files(id, name, parents)'},
-    (err, res) => {
-      lastFoundFileID = -1;
-      if (err) return console.error(err);
+    async (err, res) => {
+      if (err && err.hasOwnProperty('code') && err.code === 500) {
+        console.error(err);
+        logWrite('handleListPlayersCommand trying again in 2 seconds');
+        await sleep(2000);
+        return handleListPlayersCommand(msg, cmd, args, user);
+      }
+      else if (err) return console.error(err);
       // the file doesn't exist for this channel/user pairing
       if (res.data.files.length == 0) {
         // no group; report so, and prep to abort
@@ -2592,7 +2677,7 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
   );
   while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
   // abort if no group
-  if (lastFoundFileID == -1) {
+  if (lastFoundFileID === -1) {
     removeHourglass(msg);
     return;
   }
@@ -2644,22 +2729,41 @@ async function handleRemovePlayersCommand(msg, cmd, args, user) {
   drive.files.list(
     {q: `"${userFolderID}" in parents and name="${filename}"`,
     fields: 'nextPageToken, files(id, name, parents)'},
-    (err, res) => {
-      if (err) console.error(err);
+    async (err, res) => {
+      if (err) {
+        console.error(err);
+        if (err.hasOwnProperty('code') && err.code === 500) {
+          logWrite('handleRemovePlayersCommand trying again in 2 seconds...');
+          await sleep(2000);
+          return handleRemovePlayersCommand(msg, cmd, args, user);
+        }
+      }
       // in the event of no match
       if (res.data.files.length) {
         res.data.files.map((file) => {
           lastFoundFileID = file.id;
         });
       } else {
-        setContentsByFilenameAndParent(msg, filename, userFolderID, '');
+        await setContentsByFilenameAndParent(msg, filename, userFolderID, '');
+        while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
         // now the file surely exists -- redo the find, get the file id
         lockDiskForChannel(gmPlayChannelID);
         drive.files.list(
           {q: `"${userFolderID}" in parents and name="${filename}"`,
           fields: 'nextPageToken, files(id, name, parents)'},
-          (err, res) => {
-            if (err) return console.error(err);
+          async (err, res) => {
+            if (err)
+            {
+              if (err.hasOwnProperty('code') && err.code === 500) {
+                console.error(err);
+                logWrite('handleRemovePlayersCommand trying again in 2 seconds...');
+                await sleep(2000);
+                return handleRemovePlayersCommand(msg, cmd, args, user);
+              }
+              else {
+                return console.error(err);
+              }
+            }
             // we must check for filename match
             if (res.data && res.data.files.length) {
               res.data.files.map((file)=>{
@@ -2727,8 +2831,18 @@ async function handleClearPlayersCommand(msg, cmd, args, user) {
   lockDiskForChannel(gmPlayChannelID);
   drive.files.list({q:`"${parentFolderID}" in parents and name="${filename}"`,
     fields: 'nextPageToken, files(id, name, parents)'},
-    (err, res) => {
-      if (err) return console.error(err);
+    async (err, res) => {
+      if (err) {
+        if (err.hasOwnProperty('code') && err.code === 500) {
+          console.error(err);
+          logWrite('handleClearPlayersCommand trying again in 2 seconds...');
+          await sleep(2000);
+          return handleClearPlayersCommand(msg, cmd, args, user);
+        }
+        else {
+          return console.error(err);
+        }
+      }
       // the file doesn't exist for this channel/user pairing
       if (res.data.files.length == 0) {
         // nothing to delete; we're done here
@@ -2861,8 +2975,6 @@ async function handleAddNPCInitCommand(msg, cmd, args, user) {
   await ensureFolderTriplet(msg);
   var content = args.join(" ");
   var filename = "gmNPCInit"
-  var auth = global.auth;
-  var drive = google.drive({version: 'v3', auth});
   while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
   var userFolderID = await findUserFolderFromMsg(msg, true);
   while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
@@ -2919,8 +3031,15 @@ async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
   drive.files.list(
     {q: `"${userFolderID}" in parents and name="${filename}"`,
     fields: 'nextPageToken, files(id, name, parents)'},
-    (err, res) => {
-      if (err) console.error(err);
+    async (err, res) => {
+      if (err) {
+        console.error(err);
+        if (err.hasOwnProperty('code') && err.code === 500) {
+          logWrite('handleRemoveNPCInitCommand trying again in 2 seconds...');
+          await sleep(2000);
+          return handleRemoveNPCInitCommand(msg, cmd, args, user);
+        }
+      }
       // in the event of no match
       if (res.data.files.length) {
         res.data.files.map((file) => {
@@ -2935,8 +3054,18 @@ async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
         drive.files.list(
           {q: `"${userFolderID}" in parents and name="${filename}"`,
           fields: 'nextPageToken, files(id, name, parents)'},
-          (err, res) => {
-            if (err) return console.error(err);
+          async (err, res) => {
+            if (err) {
+              if (err.hasOwnProperty('code') && err.code === 500) {
+                console.error(err);
+                logWrite('handleRemoveNPCInitCommand trying again in 2 seconds...');
+                await sleep(2000);
+                return handleRemoveNPCInitCommand(msg, cmd, args, user);
+              }
+              else {
+                return console.error(err);
+              }
+            }
             // we must check for filename match
             if (res.data && res.data.files.length) {
               res.data.files.map((file)=>{
@@ -3034,6 +3163,33 @@ async function handleListNPCInitCommand(msg, cmd, args, user) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannel})/${msg.author.id}`);
   removeHourglass(msg);
 }
+async function _clearNPCDrivePayload(err, res, gmPlayChannelID) {
+  drive.files.list(
+    {q:`"${parentFolderID}" in parents and name="${filename}"`,
+    fields: 'nextPageToken, files(id, name, parents)'},
+    async (err, res) => {
+      unlockDiskForChannel(gmPlayChannelID);
+      if (err) {
+        if (res.hasOwnProperty('code') && res.code === 500) {
+          console.error(err);
+          logWrite('_clearNPCDrivePayload trying again in 2 seconds...');
+          await sleep(2000);
+          return _clearNPCDrivePayload(err, res, gmPlayChannelID);
+        }
+      }
+      logSpam('_clearNPCDrivePayload encountered no significant error');
+      if (res.data.files.length == 0) { doNothing(); }
+      else {
+        // delete it
+        res.data.files.map((file) => {
+          deleteFileById(file.id, (err,res)=>{ doNothing(); }, gmPlayChannelID);
+          file.content = '';
+          addToCache(file, 'fileContent');
+        });
+      }
+    }
+  );
+}
 async function handleClearNPCInitCommand(msg, cmd, args, user) {
   logWrite('\x1b[32m [ ==================== handleClearNPCInitCommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
@@ -3050,13 +3206,29 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
   drive.files.list(
     {q:`"${parentFolderID}" in parents and name="${filename}"`,
     fields: 'nextPageToken, files(id, name, parents)'},
-    (err, res) => {
+    async (err, res) => {
+      // see also _clearNPCDrivePayload()
+      var gmPlayChannelID = await getPlayChannel(msg);
+      while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
       unlockDiskForChannel(gmPlayChannelID);
-      if (err) return console.error(err);
-      if (res.data.files.length == 0) { } else {
+      if (err) {
+        if (res.hasOwnProperty('code') && res.code === 500) {
+          console.error(err);
+          logWrite('_clearNPCDrivePayload trying again in 2 seconds...');
+          await sleep(2000);
+          lockDiskForChannel(gmPlayChannelID);
+          return _clearNPCDrivePayload(err, res, gmPlayChannelID);
+        }
+        else {
+          return console.error(err);
+        }
+      }
+      logSpam('Clear NPC Drive Payload encountered no significant error');
+      if (res.data.files.length == 0) { doNothing(); }
+      else {
         // delete it
         res.data.files.map((file) => {
-          deleteFileById(file.id, (err,res)=>{}, gmPlayChannelID);
+          deleteFileById(file.id, (err,res)=>{ doNothing(); }, gmPlayChannelID);
           file.content = '';
           addToCache(file, 'fileContent');
         });
@@ -3858,13 +4030,16 @@ async function handleAddReminderCommand(msg, cmd, args, user) {
     }
     logSpam(`timestampMinus ${timestampMinus}`);
     var targetTimestamp = sessionTimestamp.valueOf() - timestampMinus;
+    // set minimum delay to 15 seconds in case reminder is instant
+    var msFromNow = targetTimestamp - Date.now();
+    if (msFromNow < 15000) msFromNow = 15000;
     // start reminder object
     reminders[reminders.length] = {
       dateTime: new Date(targetTimestamp),
       sessionTimeDateF: sessionTimeDateF,
       timeStamp: targetTimestamp,
       playersString: playersString.split(',').join(' '),
-      MilliSecondsFromNow: targetTimestamp - Date.now(),
+      MilliSecondsFromNow: msFromNow,
       gmID: msg.author.id,
       userFolderID: userFolderID,
       playChannelID: playChannelID
