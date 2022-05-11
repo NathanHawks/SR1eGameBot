@@ -1634,6 +1634,12 @@ bot.on('messageReactionAdd', (reaction, user) => {
   }
 });
 
+bot.on('error', (error) => {
+  logWrite('Network error, trying to reconnect...');
+});
+bot.on('reconnecting', (message) => {
+    logWrite('Reconnected.');
+});
 // @ ============== COMMAND HANDLERS ==============
 // handle rolls, tests, & opposed tests
 function handleRollCommand(msg, cmd, args, user, override=null) {
@@ -4599,13 +4605,13 @@ async function handleAmmoFireSubcommand(msg, cmd, args, user) {
       msg.reply(` weapon **${gunFired}** is not loaded!`)
       .catch((e)=>{console.error(e);});
     }
-    else if (gun.maxROF < nbrShots) {
+    else if (Number(gun.maxROF) < Number(nbrShots)) {
       msg.reply(` this gun's maximum rate of fire is only ${gun.maxROF}.`
         + ` Try firing again with a valid number of shots.`)
       .catch((e)=>{console.error(e);});
     }
     else {
-      if (gun.ammoQtyLoaded < nbrShots) {
+      if (Number(gun.ammoQtyLoaded) < Number(nbrShots)) {
         msg.reply(` you fired ${gun.ammoQtyLoaded} ${gun.ammoTypeLoaded}s from `
           + `your ${gunFired} before the weapon clicked empty.`)
         .catch((e)=>{console.error(e);});
