@@ -360,7 +360,7 @@ async function listAllFiles(msg) {
           console.error(err);
           logWrite('Trying again in 2 seconds');
           await sleep(2000);
-          iteratePage(nextPageToken, level);
+          await iteratePage(nextPageToken, level);
         }
       }
       logSpam('No significant error returned');
@@ -881,7 +881,7 @@ async function findFolderByName(
       console.error(err);
       logWrite('findFolderByName trying again in 2 seconds...');
       await sleep(2000);
-      return findFileByName(folderName, parentID, callback, channelID);
+      return await findFileByName(folderName, parentID, callback, channelID);
     }
     else if (err) {
       console.error(err);
@@ -932,7 +932,7 @@ async function createFolder(
       console.error(err);
       logWrite('createFolder trying again in 2 seconds...');
       await sleep(2000);
-      return createFolder(folderName, parentID, callback, channelID);
+      return await createFolder(folderName, parentID, callback, channelID);
     }
     else if (err) return console.error(err);
     callback(err,file);
@@ -965,7 +965,7 @@ async function findFileByName(filename, parentID, channelID) {
           logWrite(err);
           logWrite('findFileByName trying again in 2 seconds...');
           await sleep(2000);
-          return findFileByName(filename, parentID, channelID);
+          return await findFileByName(filename, parentID, channelID);
         }
         else {
           lastFoundFileID = -1;
@@ -1013,7 +1013,7 @@ async function getFileContents(fileID, channelID) {
         console.error(err);
         logWrite('getFileContents trying again in 2 seconds...');
         await sleep(2000);
-        return getFileContents(fileID, channelID);
+        return await getFileContents(fileID, channelID);
       }
       else if (err.hasOwnProperty('code') && err.code === 404) {
         logWrite(`getFileContents got 404 for ${fileID}`);
@@ -1048,7 +1048,7 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
         console.error(err);
         logWrite('setContentsByFilenameAndParent trying again in 2 seconds...');
         await sleep(2000);
-        return setContentsByFilenameAndParent(msg, filename, parentFolderID, contents);
+        return await setContentsByFilenameAndParent(msg, filename, parentFolderID, contents);
       }
       else if (err) return console.error(err);
       // no, the file doesn't exist for this channel/user pairing
@@ -1066,7 +1066,7 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
             console.error(err);
             logWrite('setContentsByFilenameAndParent trying again in 2 seconds...');
             await sleep(2000);
-            return setContentsByFilenameAndParent(msg, filename, parentFolderID, contents);
+            return await setContentsByFilenameAndParent(msg, filename, parentFolderID, contents);
           }
           else if (err) return console.error(err);
           // don't add to cache -- let it happen on next load
@@ -1084,7 +1084,7 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
                   console.error(err);
                   logWrite('setContentsByFilenameAndParent trying again in 2 seconds...');
                   await sleep(2000);
-                  return setContentsByFilenameAndParent(msg, filename, parentFolderID, contents);
+                  return await setContentsByFilenameAndParent(msg, filename, parentFolderID, contents);
                 }
                 else if (err) return console.error(err);
                 else return;
@@ -1108,7 +1108,7 @@ async function deleteFileById(fileId, callback=(err,res)=>{}, channelID="system"
       console.error(err);
       logWrite('deleteFileById trying again in 2 seconds');
       await sleep(2000);
-      return deleteFileById(fileId, callbaack, channellID);
+      return await deleteFileById(fileId, callbaack, channellID);
     }
     else if (err) {
       return console.error(err);
@@ -1637,8 +1637,9 @@ bot.on('messageReactionAdd', (reaction, user) => {
 bot.on('error', (error) => {
   logWrite('Network error, trying to reconnect...');
 });
+
 bot.on('reconnecting', (message) => {
-    logWrite('Reconnected.');
+  doNothing();
 });
 // @ ============== COMMAND HANDLERS ==============
 // handle rolls, tests, & opposed tests
@@ -2722,7 +2723,7 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
         console.error(err);
         logWrite('handleListPlayersCommand trying again in 2 seconds');
         await sleep(2000);
-        return handleListPlayersCommand(msg, cmd, args, user);
+        return await handleListPlayersCommand(msg, cmd, args, user);
       }
       else if (err) return console.error(err);
       // the file doesn't exist for this channel/user pairing
@@ -2801,7 +2802,7 @@ async function handleRemovePlayersCommand(msg, cmd, args, user) {
         if (err.hasOwnProperty('code') && err.code === 500) {
           logWrite('handleRemovePlayersCommand trying again in 2 seconds...');
           await sleep(2000);
-          return handleRemovePlayersCommand(msg, cmd, args, user);
+          return await handleRemovePlayersCommand(msg, cmd, args, user);
         }
       }
       // in the event of no match
@@ -2826,7 +2827,7 @@ async function handleRemovePlayersCommand(msg, cmd, args, user) {
                 console.error(err);
                 logWrite('handleRemovePlayersCommand trying again in 2 seconds...');
                 await sleep(2000);
-                return handleRemovePlayersCommand(msg, cmd, args, user);
+                return await handleRemovePlayersCommand(msg, cmd, args, user);
               }
               else {
                 return console.error(err);
@@ -2907,7 +2908,7 @@ async function handleClearPlayersCommand(msg, cmd, args, user) {
           console.error(err);
           logWrite('handleClearPlayersCommand trying again in 2 seconds...');
           await sleep(2000);
-          return handleClearPlayersCommand(msg, cmd, args, user);
+          return await handleClearPlayersCommand(msg, cmd, args, user);
         }
         else {
           return console.error(err);
@@ -3109,7 +3110,7 @@ async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
           .catch((e)=>{doNothing();});
           logWrite('handleRemoveNPCInitCommand trying again in 2 seconds...');
           await sleep(2000);
-          return handleRemoveNPCInitCommand(msg, cmd, args, user);
+          return await handleRemoveNPCInitCommand(msg, cmd, args, user);
         }
       }
       // in the event of no match
@@ -3134,7 +3135,7 @@ async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
                 .catch((e)=>{doNothing();});
                 logWrite('handleRemoveNPCInitCommand trying again in 2 seconds...');
                 await sleep(2000);
-                return handleRemoveNPCInitCommand(msg, cmd, args, user);
+                return await handleRemoveNPCInitCommand(msg, cmd, args, user);
               }
               else {
                 return console.error(err);
@@ -3248,7 +3249,7 @@ async function _clearNPCDrivePayload(err, res, parentFolderID, gmPlayChannelID) 
           console.error(err);
           logWrite('_clearNPCDrivePayload trying again in 2 seconds...');
           await sleep(2000);
-          return _clearNPCDrivePayload(err, res, gmPlayChannelID);
+          return await _clearNPCDrivePayload(err, res, gmPlayChannelID);
         }
         else {
           return console.error(err);
@@ -3296,7 +3297,7 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
           logWrite('_clearNPCDrivePayload trying again in 2 seconds...');
           await sleep(2000);
           lockDiskForChannel(gmPlayChannelID);
-          return _clearNPCDrivePayload(err, res, parentFolderID, gmPlayChannelID);
+          return await _clearNPCDrivePayload(err, res, parentFolderID, gmPlayChannelID);
         }
         else {
           return console.error(err);
