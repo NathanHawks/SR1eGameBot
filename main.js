@@ -27,7 +27,7 @@ var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
 /*
 + 'Chasing bugs in the initiative and macro systems. Normal rolls should be fine.'
 */
-+ ' NEW FEATURES ARE AFOOT! See **!help** to learn about **scenes** and **reminders!**'
++ ' NEW FEATURES ARE AFOOT! See **!help** to learn about **scenes**, **reminders**, **virtual GM screen**, and **ammo tracking**!'
 + ' Please notify me of any suspected bugs ASAP with a screenshot and timezone: <@360086569778020352>'
 //+ ' If initiative bugs out, just type the command again and it will probably work on the 2nd try.'
 ;
@@ -1043,6 +1043,7 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
   drive.files.list({q:`"${parentFolderID}" in parents and name="${filename}"`,
     fields: 'files(id, name, parents)'},
     async (err, res) => {
+      unlockDiskForChannel(msg.channel.id);
       if (err && err.hasOwnProperty('code') && err.code === 500) {
         console.error(err);
         logWrite('setContentsByFilenameAndParent trying again in 2 seconds...');
@@ -1051,6 +1052,7 @@ async function setContentsByFilenameAndParent(msg, filename, parentFolderID, con
       }
       else if (err) return console.error(err);
       // no, the file doesn't exist for this channel/user pairing
+      lockDiskForChannel(msg.channel.id);
       if (res.data.files.length === 0) {
         // create it
         drive.files.create({
@@ -1749,6 +1751,7 @@ function handleHelpCommand(msg, cmd, args, user) {
       case 'macros':
       case 'gmscreen':
       case 'reminders':
+      case 'ammo':
       case 'troubleshoot':
         whatToShow = args[0];
       break;
@@ -1763,10 +1766,11 @@ function handleHelpCommand(msg, cmd, args, user) {
   var index1 = '\nHelp Topics:\n'
     + '`main        ` - Dice rolls, Rule of 6, Target Numbers, Opposed Tests\n'
     + '`init        ` - Initiative for Shadowrun 1e-3e\n'
-    + '`scene       ` - Prepare text and music for deploying later\n'
+    + '`scene       ` - Prepare text and music for deploying later :new:\n'
     + '`macros      ` - Saving and re-using named dice rolls\n'
-    + '`gmscreen    ` - Doing initiative and/or scene prep in a hidden channel\n'
-    + '`reminders   ` - Automatically DM your players on timers of your choosing\n'
+    + '`gmscreen    ` - Doing initiative and/or scene prep in a hidden channel :new:\n'
+    + '`reminders   ` - Automatically DM your players on timers of your choosing :new:\n'
+    + '`ammo        ` - Track ammo during combat :new:\n'
     + '`troubleshoot` - Command stuck? Bot not responding in a channel? Try this\n'
     + '\n'
     + 'Example: type **!help main** for the main help.\n'
@@ -1973,6 +1977,41 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '\n'
     + 'Patreon: <https://patreon.com/nathanhawks> | <@360086569778020352>'
   ;
+  var ammo1 = '\n:gun: **Ammo Tracking** :gun:\n\n'
+    + 'GameBot can track ammo during combat, enforcing max ROF and weapon capacity.\n\n'
+    + '**!ammo addgun** name maxROF ammoContainerType ammoCapacity ammoTypes\n'
+    + 'Adds a weapon for ammo tracking purposes. The name must not have any spaces or commas.\n'
+    + 'If the gun is compatible with multiple types of round, separate them with spaces.\n'
+    + 'You should keep the name short, since you\'ll be typing it for the `!ammo fire` and `!ammo reload` commands.\n'
+    + 'If the rules don\'t specify maxROF any other way, don\'t forget autofire is Skill Rating +1.\n'
+    + '**Example:** `!ammo addgun uzi3 7 clip 16 slug`\n\n'
+    + '**!ammo delgun** name\n'
+    + '**Example:** `!ammo delgun uzi3`\n'
+    + 'Removes the uzi3 from your inventory.\n\n'
+    + '**!ammo addammo** qtyContainers containerType qtyRounds roundType maxRounds\n'
+    + 'The maxRounds should match the ammoCapacity of the gun you want to use this ammo for.\n'
+    + 'The roundType should match one of the ammoTypes for the matching weapon.\n'
+    + '**Example:** `!ammo addammo 10 clip 16 slug 16`\n'
+    + 'Adds 10 clips that are fully loaded with 16 slugs each. This matches the uzi3.\n\n'
+  ;
+  var ammo2 = '\n\n'
+    + '**!ammo delammo** qtyContainers containerType qtyRounds roundType maxRounds\n'
+    + '**Example:** `!ammo delammo 4 clip 16 slug 16`\n'
+    + 'Removes 4 of those clips for your uzi3 from your inventory.\n\n'
+    + '**!ammo list**\n'
+    + 'Shows a list of guns, and what they\'re loaded with, plus a list of your ammo.\n'
+    + 'Empty clips are not shown, so track those yourself.\n\n'
+    + '**!ammo fire** weaponName nbrShots\n'
+    + 'Depletes a number of rounds (nbrShots) from the gun identified by weaponName, assuming nbrShots doesn\'t exceed the gun\'s maxROF.\n'
+    + 'If you try to shoot more rounds than are currently loaded, the weapon will be depleted of all ammo and you will be told how many rounds were shot before the weapon clicked empty.\n\n'
+    + '**!ammo reload** weaponName\nor\n**!ammo reload** weaponName shotType\n'
+    + 'The first form assumes you only have one compatible ammo type for that weapon.\n'
+    + '**Example:** `!ammo reload uzi3`\n'
+    + 'The second form allows you to specify which type of round you want to load, for cases where your weapon has multiple compatible ammoTypes *and* you have compatible ammo entries for 2 or more of those ammoTypes.\n'
+    + '**Example:** `!ammo reload enfield shot`\n'
+    + '\n'
+    + 'Patreon: <https://patreon.com/nathanhawks> | <@360086569778020352>'
+  ;
   var troubleshoot1 = '\n:fire_extinguisher: **Troubleshooting** :fire_extinguisher:\n\n'
     + 'GameBot has a few bugs, plus Google Drive API can occasionally drop a request.\n\n'
     + '**IMPORTANT:** The bot needs the following channel permissions to work: View Channel, Send Messages, and Add Reactions. '
@@ -2024,6 +2063,11 @@ function handleHelpCommand(msg, cmd, args, user) {
     case 'reminders':
       reminders1 = addMaintenanceStatusMessage(reminders1);
       msg.reply(reminders1).catch((e) => {console.error(e);});
+    break;
+    case 'ammo':
+      ammo2 = addMaintenanceStatusMessage(ammo2);
+      msg.reply(ammo1).catch((e) => {console.error(e);});
+      msg.reply(ammo2).catch((e) => {console.error(e);});
     break;
     case 'troubleshoot':
       troubleshoot1 = addMaintenanceStatusMessage(troubleshoot1);
@@ -4458,7 +4502,7 @@ async function handleAmmoListSubcommand(msg, cmd, args, user) {
     ammos = _ammoContentAsObject(content);
   }
   filename = 'gunList';
-  var fileID = await findFileByName(filename, parentFolderID, playChannelID);
+  fileID = await findFileByName(filename, parentFolderID, playChannelID);
   while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
   var guns = [];
   if (fileID !== -1) {
@@ -4479,7 +4523,7 @@ async function handleAmmoListSubcommand(msg, cmd, args, user) {
         output += `**Not loaded**\n`
       }
       else {
-        output += `Loaded with ${guns[x].ammoQtyLoaded} ${guns[x].ammoTypeLoaded}\n`;
+        output += `Loaded with ${guns[x].ammoQtyLoaded} ${guns[x].ammoTypeLoaded}s\n`;
       }
     }
   }
@@ -4488,11 +4532,20 @@ async function handleAmmoListSubcommand(msg, cmd, args, user) {
     output += `You have no ammo setup yet in channel <#${playChannelID}>.\n`;
   }
   else {
+    var hasAmmo = false;
     for (var x = 0; x < ammos.length; x++) {
-      output += `:arrow_right: ${ammos[x].qtyContainers} ${ammos[x].containerType}s `
+      if (
+        Number(ammos[x].qtyContainers) > 0
+        && Number(ammos[x].qtyRounds) > 0
+      )
+      {
+        hasAmmo = true;
+        output += `:arrow_right: ${ammos[x].qtyContainers} ${ammos[x].containerType}s `
         + `of ${ammos[x].roundType} with ${ammos[x].qtyRounds} rounds (max `
-        + `${ammos[x].maxRounds})\n`;
+          + `${ammos[x].maxRounds})\n`;
+      }
     }
+    if (hasAmmo === false) output += `All your ammo containers are empty.\n`;
   }
   msg.reply(output).catch((e)=>{console.error(e);});
   removeHourglass(msg);
@@ -4507,7 +4560,7 @@ function _makeGunSaveString(guns) {
       + `${gun.ammoContainerType},${gun.ammoCapacity},${gun.ammoTypeLoaded},`
       + `${gun.ammoQtyLoaded},${gun.ammoTypes}`;
   }
-  logSpam(`handleAmmoAddGunSubcommand: ${gunData}`);
+  logSpam(`_makeGunSaveString: ${gunData}`);
   return gunData;
 }
 async function handleAmmoFireSubcommand(msg, cmd, args, user) {
@@ -4570,7 +4623,7 @@ async function handleAmmoFireSubcommand(msg, cmd, args, user) {
         if (guns[x].name === gunFired) guns[x] = gun;
       }
       var saveString = _makeGunSaveString(guns);
-      await setContentsByFilenameAndParent(msg, filename, playChannelID, saveString);
+      await setContentsByFilenameAndParent(msg, filename, parentFolderID, saveString);
       while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
     }
   }
@@ -4578,7 +4631,158 @@ async function handleAmmoFireSubcommand(msg, cmd, args, user) {
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
-
+  logWrite('\x1b[32m [ ==================== handleAmmoReloadSubcommand =============== ]\x1b[0m');
+  await msg.react('⏳').catch((e) => {console.log(e);});
+  var gunReloading = args[1];
+  var ammoReloading = (args.length === 3) ? args[2] : undefined;
+  var filename = 'ammoList';
+  var ammoPartial = {};
+  var gun = {};
+  var playChannelID = await getPlayChannel(msg);
+  while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
+  await ensureFolderTriplet(msg);
+  while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
+  var parentFolderID = await findUserFolderFromMsg(msg, true);
+  while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
+  var fileID = await findFileByName(filename, parentFolderID, playChannelID);
+  while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
+  var ammos = [];
+  if (fileID !== -1) {
+    var content = await getFileContents(fileID, playChannelID);
+    while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
+    ammos = _ammoContentAsObject(content);
+  }
+  filename = 'gunList';
+  fileID = await findFileByName(filename, parentFolderID, playChannelID);
+  while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
+  var guns = [];
+  if (fileID !== -1) {
+    logSpam(`Loading guns content`);
+    var content = await getFileContents(fileID, playChannelID);
+    while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
+    guns = _gunsContentAsObject(content);
+  }
+  if (guns.length === 0) {
+    msg.reply(` you have no gun to reload.`).catch((e)=>{console.error(e);});
+  }
+  else if (ammos.length === 0) {
+    msg.reply(` you have no ammo to reload with.`).catch((e)=>{console.error(e);});
+  }
+  else {
+    gun = {}; // will contain the match from guns
+    logSpam(`Seeking gun match`);
+    for (var x = 0; x < guns.length; x++) {
+      if (guns[x].name === gunReloading) {
+        logSpam(`Gun match found`);
+        gun = guns[x];
+      }
+    }
+    if (gun === {}) {
+      msg.reply(` the gun name ${gunReloading} did not match any gun you have `
+        + `setup in channel <#${playChannelID}>.`)
+      .catch((e)=>{console.error(e);});
+    }
+    else {
+      // we have a gun match; try to match ammo
+      var ammoMatches = []; // multiple matches
+      var ammo = {}; // single match
+      for (var x = 0; x < ammos.length; x++) {
+        if (
+          ammos[x].containerType === gun.ammoContainerType
+          && ammos[x].maxRounds === gun.ammoCapacity
+          && gun.ammoTypes.split(' ').indexOf(ammos[x].roundType) > -1
+          && Number(ammos[x].qtyRounds) > 0
+          && Number(ammos[x].qtyContainers) > 0
+        )
+        {
+          logSpam(`Ammo match found`);
+          logSpam(`${gun.ammoCapacity} === ${ammos[x].maxRounds}`);
+          ammoMatches[ammoMatches.length] = ammos[x];
+        }
+      }
+      if (ammoMatches.length === 0) {
+        msg.reply(` you have no ammo compatible with this gun.`)
+        .catch((e)=>{console.error(e);});
+      }
+      else if (ammoMatches.length > 1 && ammoReloading === undefined) {
+        msg.reply(` multiple ammo entries are compatible with this gun, so you `
+          + `must specify which round type you want to reload.`)
+        .catch((e)=>{console.error(e);});
+      }
+      else if (ammoMatches.length === 1) {
+        // we have a match
+        ammo = ammoMatches[0];
+        logSpam(`Single ammo match found`)
+      }
+      else if (ammoReloading !== undefined) {
+        // make sure there's a match with the ammo type in ammoReloading
+        for (var x = 0; x < ammoMatches.length; x++) {
+          if (ammoMatches[x].roundType === ammoReloading) {
+            ammo = ammoMatches[x];
+          }
+        }
+      }
+      if (ammo !== {}) {
+        logSpam(`Proceeding with singular ammo match`);
+        // deplete the 1 container being injected into the gun from the ammo list
+        var foundMatch = false;
+        for (var x = 0; x < ammos.length; x++) {
+          if (
+            foundMatch === false
+            && ammos[x].containerType === ammo.containerType
+            && ammos[x].qtyRounds === ammo.qtyRounds
+            && ammos[x].roundType === ammo.roundType
+            && ammos[x].maxRounds === ammo.maxRounds
+            && ammos[x].qtyContainers > 0
+          )
+          {
+            foundMatch = true;
+            ammos[x].qtyContainers = Number(ammos[x].qtyContainers) - 1;
+          }
+        }
+        if (gun.ammoTypeLoaded !== 'not loaded') {
+          // eject any remaining rounds from the gun and save as an ammo entry
+          ammoPartial = {
+            qtyContainers: 1,
+            containerType: gun.ammoContainerType,
+            qtyRounds: gun.ammoQtyLoaded,
+            roundType: gun.ammoTypeLoaded,
+            maxRounds: gun.ammoCapacity
+          };
+          ammoContentString = _makeAmmoSaveString(ammos);
+          ammos = _mergeNewAmmo(ammoContentString, ammoPartial);
+        }
+        var ammoSaveString = _makeAmmoSaveString(ammos);
+        await setContentsByFilenameAndParent(msg, 'ammoList', parentFolderID, ammoSaveString);
+        while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
+        // reload the weapon
+        gun.ammoQtyLoaded = ammo.qtyRounds;
+        gun.ammoTypeLoaded = ammo.roundType;
+        for (var x = 0; x < guns.length; x++) {
+          if (guns[x].name === gun.name) {
+            guns[x] = gun;
+          }
+        }
+        // save the ammo list and the gun list
+        logSpam(`Attempting to save gunList`);
+        filename = 'gunList';
+        var saveString = _makeGunSaveString(guns);
+        logSpam(`saveString\n${saveString}`);
+        await setContentsByFilenameAndParent(msg, filename, parentFolderID, saveString);
+        while (isDiskLockedForChannel(playChannelID)) { sleep(15); }
+        logSpam(`Attempting to save ammoList`);
+        filename = 'ammoList';
+        saveString = _makeAmmoSaveString(ammos);
+        logSpam(`saveString\n${saveString}`);
+        await setContentsByFilenameAndParent(msg, filename, parentFolderID, saveString);
+        while (isDiskLockedForChannel(playChannelID)) { sleep(15); }
+        msg.reply(` your weapon was reloaded.`)
+        .catch((e)=>{console.error(e);});
+      }
+    }
+  }
+  removeHourglass(msg);
+  logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleAmmoCommand(msg, cmd, args, user) {
     var sub = args[0];
