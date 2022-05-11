@@ -4192,6 +4192,7 @@ async function handleCancelReminderCommand(msg, cmd, args, user) {
 async function handleAmmoAddGunSubcommand(msg, cmd, args, user) {
   logWrite('\x1b[32m [ ==================== handleAmmoAddGunSubcommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
+  var output = '';
   var gun = {
     name: args[1],
     maxROF: args[2],
@@ -4220,8 +4221,7 @@ async function handleAmmoAddGunSubcommand(msg, cmd, args, user) {
     // create file
     await setContentsByFilenameAndParent(msg, filename, parentFolderID, gunData);
     while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
-    msg.reply(` gun added; you now have 1 gun in channel <#${playChannelID}>.`)
-    .catch((e)=>{console.error(e);});
+    output = ` gun added; you now have 1 gun in channel <#${playChannelID}>.`;
   }
   else {
     // update file
@@ -4240,21 +4240,21 @@ async function handleAmmoAddGunSubcommand(msg, cmd, args, user) {
       var count = content.split('\n').length
       await setContentsByFilenameAndParent(msg, filename, parentFolderID, content);
       while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
-      msg.reply(` gun added; you now have ${count} guns in channel <#${playChannelID}>.`)
-      .catch((e)=>{console.error(e);});
+      output = ` gun added; you now have ${count} guns in channel <#${playChannelID}>.`;
     }
     else {
-      msg.reply(` you can't use the same name for multiple guns and you've `
-        + `already used the name **${gun.name}**.`)
-      .catch((e)=>{console.error(e);});
+      output = ` you can't use the same name for multiple guns and you've `
+        + `already used the name **${gun.name}**.`;
     }
   }
+  msg.reply(addMaintenanceStatusMessage(output)).catch((e)=>{console.error(e);});
   removeHourglass(msg);
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleAmmoDelGunSubcommand(msg, cmd, args, user) {
   logWrite('\x1b[32m [ ==================== handleAmmoDelGunSubcommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
+  var output = '';
   var gun = {
     name: args[1],
   };
@@ -4272,16 +4272,14 @@ async function handleAmmoDelGunSubcommand(msg, cmd, args, user) {
     // create file
     await setContentsByFilenameAndParent(msg, filename, parentFolderID, '');
     while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
-    msg.reply(` you have no guns to remove in channel <#${playChannelID}>.`)
-    .catch((e)=>{console.error(e);});
+    output = ` you have no guns to remove in channel <#${playChannelID}>.`;
   }
   else {
     // update file
     var content = await getFileContents(fileID, playChannelID);
     while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
     if (content === '') {
-      msg.reply(` you have no guns to remove in channel <#${playChannelID}>.`)
-      .catch((e)=>{console.error(e);});
+      output = ` you have no guns to remove in channel <#${playChannelID}>.`;
     }
     else {
       while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
@@ -4299,10 +4297,10 @@ async function handleAmmoDelGunSubcommand(msg, cmd, args, user) {
       var count = 0;
       if (output === '') count = 0;
       else count = output.split('\n').length
-      msg.reply(` gun removed; you now have ${count} guns in channel <#${playChannelID}>.`)
-      .catch((e)=>{console.error(e);});
+      output = ` gun removed; you now have ${count} guns in channel <#${playChannelID}>.`;
     }
   }
+  msg.reply(addMaintenanceStatusMessage(output)).catch((e)=>{console.error(e);});
   removeHourglass(msg);
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
@@ -4355,6 +4353,12 @@ function _makeAmmoSaveString(ammos) {
   var saveString = '';
   ammos.map((ammo) => {
     if (saveString !== '') saveString = `${saveString}\n`;
+    if (
+      Number(ammo.qtyContainers) > 0
+      && Number(ammo.qtyRounds) > 0
+      && ammo.roundType !== 'undefined'
+      && ammo.roundType !== undefined
+    )
     saveString = `${saveString}${ammo.qtyContainers},${ammo.containerType},`
     + `${ammo.qtyRounds},${ammo.roundType},${ammo.maxRounds}`
   });
@@ -4364,6 +4368,7 @@ function _makeAmmoSaveString(ammos) {
 async function handleAmmoAddAmmoSubcommand(msg, cmd, args, user) {
   logWrite('\x1b[32m [ ==================== handleAmmoAddAmmoSubcommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
+  var output = '';
   var ammo = {
     qtyContainers: args[1],
     containerType: args[2],
@@ -4387,10 +4392,9 @@ async function handleAmmoAddAmmoSubcommand(msg, cmd, args, user) {
     var content = _makeAmmoSaveString([ammo]);
     await setContentsByFilenameAndParent(msg, filename, parentFolderID, content);
     while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
-    msg.reply(` you added ${ammo.qtyContainers} ${ammo.containerType}s `
+    output = ` you added ${ammo.qtyContainers} ${ammo.containerType}s `
       + `(${ammo.qtyRounds}/${ammo.maxRounds} ${ammo.roundType}s) in channel `
-      + `<#${playChannelID}>.`)
-    .catch((e)=>{console.error(e);});
+      + `<#${playChannelID}>.`;
   }
   // update file
   else {
@@ -4400,17 +4404,18 @@ async function handleAmmoAddAmmoSubcommand(msg, cmd, args, user) {
     var content = _makeAmmoSaveString(ammos);
     await setContentsByFilenameAndParent(msg, filename, parentFolderID, content);
     while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
-    msg.reply(` you added ${ammo.qtyContainers} ${ammo.containerType}s `
+    output = ` you added ${ammo.qtyContainers} ${ammo.containerType}s `
       + `(${ammo.qtyRounds}/${ammo.maxRounds} ${ammo.roundType}s) in channel `
-      + `<#${playChannelID}>.`)
-    .catch((e)=>{console.error(e);});
+      + `<#${playChannelID}>.`;
   }
+  msg.reply(addMaintenanceStatusMessage(output)).catch((e)=>{console.error(e);});
   removeHourglass(msg);
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleAmmoDelAmmoSubcommand(msg, cmd, args, user) {
   logWrite('\x1b[32m [ ==================== handleAmmoDelAmmoSubcommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
+  var output = '';
   var delAmmo = {
     qtyContainers: args[1],
     containerType: args[2],
@@ -4429,8 +4434,7 @@ async function handleAmmoDelAmmoSubcommand(msg, cmd, args, user) {
   while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
   if (fileID === -1) {
     // no ammo to delete
-    msg.reply(` you have no ammo to delete in channel <#${playChannelID}>.`)
-    .catch((e) => { console.error(e); });
+    output = ` you have no ammo to delete in channel <#${playChannelID}>.`;
   }
   else {
     var content = await getFileContents(fileID, playChannelID);
@@ -4453,14 +4457,13 @@ async function handleAmmoDelAmmoSubcommand(msg, cmd, args, user) {
           Number(oldAmmos[x].qtyContainers) - Number(delAmmo.qtyContainers);
         if (oldAmmos[x].qtyContainers < 0) {
           oldAmmos[x].qtyContainers = 0;
-          msg.reply(` you only had ${hadQty} of that ammo to begin with; they`
-            + ` will be removed.`).catch((e)=>{console.error(e);});
+          output = ` you only had ${hadQty} of that ammo to begin with; they`
+            + ` will be removed.`;
         }
         else {
-          msg.reply(` ${delAmmo.qtyContainers} ${delAmmo.containerType}s of`
+          output = ` ${delAmmo.qtyContainers} ${delAmmo.containerType}s of`
             + ` ${delAmmo.roundType} (qty ${delAmmo.qtyRounds}/${delAmmo.maxRounds}`
-            + ` max) were removed from channel <#${playChannelID}>.`)
-          .catch((e)=>{error.console(e);});
+            + ` max) were removed from channel <#${playChannelID}>.`;
         }
         var saveString = _makeAmmoSaveString(oldAmmos);
         await setContentsByFilenameAndParent(msg, filename, parentFolderID, saveString);
@@ -4468,6 +4471,7 @@ async function handleAmmoDelAmmoSubcommand(msg, cmd, args, user) {
       }
     }
   }
+  msg.reply(addMaintenanceStatusMessage(output)).catch((e)=>{console.error(e);});
   removeHourglass(msg);
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
@@ -4554,7 +4558,7 @@ async function handleAmmoListSubcommand(msg, cmd, args, user) {
     }
     if (hasAmmo === false) output += `All your ammo containers are empty.\n`;
   }
-  msg.reply(output).catch((e)=>{console.error(e);});
+  msg.reply(addMaintenanceStatusMessage(output)).catch((e)=>{console.error(e);});
   removeHourglass(msg);
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
@@ -4573,6 +4577,7 @@ function _makeGunSaveString(guns) {
 async function handleAmmoFireSubcommand(msg, cmd, args, user) {
   logWrite('\x1b[32m [ ==================== handleAmmoFireSubcommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
+  var output = '';
   var gunFired = args[1];
   var nbrShots = args[2];
   var filename = 'gunList';
@@ -4587,8 +4592,7 @@ async function handleAmmoFireSubcommand(msg, cmd, args, user) {
   var fileID = await findFileByName(filename, parentFolderID, playChannelID);
   while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
   if (fileID === -1) {
-    msg.reply(` you have no guns setup yet in channel <#${playChannelID}>.`)
-    .catch((e)=>{console.error(e);});
+    output = ` you have no guns setup yet in channel <#${playChannelID}>.`;
   }
   else {
     var content = await getFileContents(fileID, playChannelID);
@@ -4598,31 +4602,26 @@ async function handleAmmoFireSubcommand(msg, cmd, args, user) {
       if (guns[x].name === gunFired) gun = guns[x];
     }
     if (gun === {}) {
-      msg.reply(` I couldn't find a gun named ${gunFired} in your list of guns `
-        + `in channel <#${playChannelID}>.`)
-      .catch((e)=>{console.error(e);});
+      output = ` I couldn't find a gun named ${gunFired} in your list of guns `
+        + `in channel <#${playChannelID}>.`;
     }
     else if (gun.ammoTypeLoaded === 'not loaded') {
-      msg.reply(` weapon **${gunFired}** is not loaded!`)
-      .catch((e)=>{console.error(e);});
+      output = ` weapon **${gunFired}** is not loaded!`;
     }
     else if (Number(gun.maxROF) < Number(nbrShots)) {
-      msg.reply(` this gun's maximum rate of fire is only ${gun.maxROF}.`
-        + ` Try firing again with a valid number of shots.`)
-      .catch((e)=>{console.error(e);});
+      output = ` this gun's maximum rate of fire is only ${gun.maxROF}.`
+        + ` Try firing again with a valid number of shots.`;
     }
     else {
       if (Number(gun.ammoQtyLoaded) < Number(nbrShots)) {
-        msg.reply(` you fired ${gun.ammoQtyLoaded} ${gun.ammoTypeLoaded}s from `
-          + `your ${gunFired} before the weapon clicked empty.`)
-        .catch((e)=>{console.error(e);});
+        output = ` you fired ${gun.ammoQtyLoaded} ${gun.ammoTypeLoaded}s from `
+          + `your ${gunFired} before the weapon clicked empty.`;
         gun.ammoQtyLoaded = 0;
         gun.ammoTypeLoaded = 'not loaded';
       }
       else {
-        msg.reply(` you fired ${nbrShots} ${gun.ammoTypeLoaded}s from your `
-          + `${gunFired}.`)
-        .catch((e)=>{console.error(e);});
+        output = ` you fired ${nbrShots} ${gun.ammoTypeLoaded}s from your `
+          + `${gunFired}.`;
         gun.ammoQtyLoaded = Number(gun.ammoQtyLoaded) - Number(nbrShots);
       }
       // save the gunList now that some ammo has been removed
@@ -4634,12 +4633,14 @@ async function handleAmmoFireSubcommand(msg, cmd, args, user) {
       while (isDiskLockedForChannel(playChannelID)) { await sleep(15); }
     }
   }
+  msg.reply(addMaintenanceStatusMessage(output)).catch((e)=>{console.error(e);});
   removeHourglass(msg);
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
   logWrite('\x1b[32m [ ==================== handleAmmoReloadSubcommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
+  var output = '';
   var gunReloading = args[1];
   var ammoReloading = (args.length === 3) ? args[2] : undefined;
   var filename = 'ammoList';
@@ -4670,24 +4671,23 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
     guns = _gunsContentAsObject(content);
   }
   if (guns.length === 0) {
-    msg.reply(` you have no gun to reload.`).catch((e)=>{console.error(e);});
+    output = ` you have no gun to reload.`;
   }
   else if (ammos.length === 0) {
-    msg.reply(` you have no ammo to reload with.`).catch((e)=>{console.error(e);});
+    output = ` you have no ammo to reload with.`;
   }
   else {
     gun = {}; // will contain the match from guns
     logSpam(`Seeking gun match`);
     for (var x = 0; x < guns.length; x++) {
-      if (guns[x].name === gunReloading) {
+      if (guns[x].name.toLowerCase() === gunReloading.toLowerCase()) {
         logSpam(`Gun match found`);
         gun = guns[x];
       }
     }
     if (gun === {}) {
-      msg.reply(` the gun name ${gunReloading} did not match any gun you have `
-        + `setup in channel <#${playChannelID}>.`)
-      .catch((e)=>{console.error(e);});
+      output = ` the gun name ${gunReloading} did not match any gun you have `
+        + `setup in channel <#${playChannelID}>.`;
     }
     else {
       // we have a gun match; try to match ammo
@@ -4708,28 +4708,54 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
         }
       }
       if (ammoMatches.length === 0) {
-        msg.reply(` you have no ammo compatible with this gun.`)
-        .catch((e)=>{console.error(e);});
+        output = ` you have no ammo compatible with this gun.`;
       }
       else if (ammoMatches.length > 1 && ammoReloading === undefined) {
-        msg.reply(` multiple ammo entries are compatible with this gun, so you `
-          + `must specify which round type you want to reload.`)
-        .catch((e)=>{console.error(e);});
+        // first determine if the ammo types are all the same
+        var multiTypes = false;
+        var firstType = '';
+        for (var x = 0; x < ammoMatches.length; x++) {
+          if (firstType === '') { firstType = ammoMatches[x].roundType; }
+          else if (ammoMatches[x].roundType !== firstType) { multiTypes = true; }
+        }
+        if (multiTypes) {
+          // if they are not all the same type, the user must specify
+          output = ` multiple ammo entries with different round types are `
+            + `compatible with this gun, so you `
+            + `must specify which round type you want to reload.`;
+        }
+        else {
+          // if they are all the same ammo type, use the most full container
+          for (var x = 0; x < ammoMatches.length; x++) {
+            if (ammo === {}) ammo = ammoMatches[x];
+            else if (Number(ammo.qtyRounds) < Number(ammoMatches[x].qtyRounds)) {
+              ammo = ammoMatches[x];
+            }
+          }
+          output = ` your weapon was reloaded.`;
+        }
       }
       else if (ammoMatches.length === 1) {
         // we have a match
         ammo = ammoMatches[0];
-        logSpam(`Single ammo match found`)
+        logSpam(`Single ammo match found`);
       }
       else if (ammoReloading !== undefined) {
         // make sure there's a match with the ammo type in ammoReloading
         for (var x = 0; x < ammoMatches.length; x++) {
+          // use the compatible container with the most rounds in it
           if (ammoMatches[x].roundType === ammoReloading) {
-            ammo = ammoMatches[x];
+            if (ammo === {}) {
+              ammo = ammoMatches[x];
+            }
+            else if (Number(ammo.qtyRounds < Number(ammoMatches[x].qtyRounds))) {
+              ammo = ammoMatches[x];
+            }
           }
         }
+        output = ` your weapon was reloaded.`;
       }
-      if (ammo !== {}) {
+      if (ammo !== {} && ammo.roundType !== undefined) {
         logSpam(`Proceeding with singular ammo match`);
         // deplete the 1 container being injected into the gun from the ammo list
         var foundMatch = false;
@@ -4783,11 +4809,11 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
         logSpam(`saveString\n${saveString}`);
         await setContentsByFilenameAndParent(msg, filename, parentFolderID, saveString);
         while (isDiskLockedForChannel(playChannelID)) { sleep(15); }
-        msg.reply(` your weapon was reloaded.`)
-        .catch((e)=>{console.error(e);});
+        output = ` your weapon was reloaded.`;
       }
     }
   }
+  msg.reply(addMaintenanceStatusMessage(output)).catch((e)=>{console.error(e);});
   removeHourglass(msg);
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
