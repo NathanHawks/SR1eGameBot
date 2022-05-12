@@ -40,6 +40,10 @@ function addMaintenanceStatusMessage(output) {
 }
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 // internal setup
+// for reconnecting
+global.reconnecting = false;
+global.reconnectTimeoutID = 0;
+global.reconnectDelayMS = 5000;
 // for reminders
 global.reminders = [];
 global.lastRemindersTime = '';
@@ -822,7 +826,7 @@ async function findUserFolderFromUserID(msg, userID, usePlayChannel=false) {
 function ensureFolderByName(name, parentID=null, channelID="system") {
   findFolderByName(name, parentID, (err, res) => {
     if (err) return console.error(err);
-    logSpam(`Ensuring folder ${name} exists`);
+    logSpam(`Ensuring folder "${name}" exists`);
     const files = res.data.files;
     if (files.length === 0) {
       logSpam('It doesn\'t exist; creating it');
@@ -1624,6 +1628,7 @@ catch (e) {
 bot.on('ready', () => {
     logWrite('Connected; Logged in as: ['+ bot.user.tag + ']');
     bot.user.setPresence({game:{name:'!help for help'}});
+    global.reconnectDelayMS = 5000;
 });
 
 // Setup reaction handler (when 🎲 UI for triggering re-roll is clicked)
@@ -1634,12 +1639,29 @@ bot.on('messageReactionAdd', (reaction, user) => {
   }
 });
 
+function timedReconnect(bot, token) {
+  if (global.reconnecting = true) return;
+  logWrite(`Network error, trying to reconnect in ${global.reconnectDelayMS/1000} seconds...`);
+  global.reconnecting = true;
+  global.reconnectTimeoutID = setTimeout((bot, token) => {
+    bot.login(token);
+    global.reconnecting = false;
+    global.reconnectTimeoutID = 0;
+  }, global.reconnectDelayMS, bot, token);
+  global.reconnectDelayMS = global.reconnectDelayMS * 2;
+}
+
 bot.on('error', (error) => {
-  logWrite('Network error, trying to reconnect...');
+  timedReconnect(bot, token);
+});
+
+bot.on('disconnect', (message) => {
+  timedReconnect(bot, token);
 });
 
 bot.on('reconnecting', (message) => {
   doNothing();
+  logSpam('Reconnecting...');
 });
 // @ ============== COMMAND HANDLERS ==============
 // handle rolls, tests, & opposed tests
@@ -4352,15 +4374,17 @@ function _mergeNewAmmo(oldAmmosContent, newAmmo) {
 function _makeAmmoSaveString(ammos) {
   var saveString = '';
   ammos.map((ammo) => {
-    if (saveString !== '') saveString = `${saveString}\n`;
     if (
       Number(ammo.qtyContainers) > 0
       && Number(ammo.qtyRounds) > 0
       && ammo.roundType !== 'undefined'
       && ammo.roundType !== undefined
     )
-    saveString = `${saveString}${ammo.qtyContainers},${ammo.containerType},`
-    + `${ammo.qtyRounds},${ammo.roundType},${ammo.maxRounds}`
+    {
+      if (saveString !== '') saveString = `${saveString}\n`;
+      saveString = `${saveString}${ammo.qtyContainers},${ammo.containerType},`
+      + `${ammo.qtyRounds},${ammo.roundType},${ammo.maxRounds}`
+    }
   });
   logSpam(`_makeAmmoSaveString: ${saveString}`);
   return saveString;
@@ -4641,6 +4665,13 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
   logWrite('\x1b[32m [ ==================== handleAmmoReloadSubcommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var output = '';
+  if (args[1] === undefined || args.length === 1) {
+    output = ` you need to specify a weapon to reload.`
+    msg.reply(addMaintenanceStatusMessage(output)).catch((e)=>{console.error(e);});
+    removeHourglass(msg);
+    logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
+    return;
+  }
   var gunReloading = args[1];
   var ammoReloading = (args.length === 3) ? args[2] : undefined;
   var filename = 'ammoList';
@@ -4745,10 +4776,13 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
         for (var x = 0; x < ammoMatches.length; x++) {
           // use the compatible container with the most rounds in it
           if (ammoMatches[x].roundType === ammoReloading) {
-            if (ammo === {}) {
+            logSpam(`Trying specific type of round: ${ammoReloading}`);
+            if (ammo === {} || ammo.roundType === undefined) {
+              logSpam('Setting ammo var because it is empty');
               ammo = ammoMatches[x];
             }
             else if (Number(ammo.qtyRounds < Number(ammoMatches[x].qtyRounds))) {
+              logSpam('Setting ammo var because we found a more-full container');
               ammo = ammoMatches[x];
             }
           }
