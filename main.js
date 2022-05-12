@@ -1640,7 +1640,7 @@ bot.on('messageReactionAdd', (reaction, user) => {
 });
 
 function timedReconnect(bot, token) {
-  if (global.reconnecting = true) return;
+  if (global.reconnecting === true) return;
   logWrite(`Network error, trying to reconnect in ${global.reconnectDelayMS/1000} seconds...`);
   global.reconnecting = true;
   global.reconnectTimeoutID = setTimeout((bot, token) => {
