@@ -40,10 +40,6 @@ function addMaintenanceStatusMessage(output) {
 }
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 // internal setup
-// for reconnecting
-global.reconnecting = false;
-global.reconnectTimeoutID = 0;
-global.reconnectDelayMS = 5000;
 // for reminders
 global.reminders = [];
 global.lastRemindersTime = '';
@@ -1626,9 +1622,8 @@ catch (e) {
 }
 
 bot.on('ready', () => {
-    logWrite('Connected; Logged in as: ['+ bot.user.tag + ']');
+    logWrite('Connected as ['+ bot.user.tag + ']');
     bot.user.setPresence({game:{name:'!help for help'}});
-    global.reconnectDelayMS = 5000;
 });
 
 // Setup reaction handler (when 🎲 UI for triggering re-roll is clicked)
@@ -1639,29 +1634,20 @@ bot.on('messageReactionAdd', (reaction, user) => {
   }
 });
 
-function timedReconnect(bot, token) {
-  if (global.reconnecting === true) return;
-  logWrite(`Network error, trying to reconnect in ${global.reconnectDelayMS/1000} seconds...`);
-  global.reconnecting = true;
-  global.reconnectTimeoutID = setTimeout((bot, token) => {
-    bot.login(token);
-    global.reconnecting = false;
-    global.reconnectTimeoutID = 0;
-  }, global.reconnectDelayMS, bot, token);
-  global.reconnectDelayMS = global.reconnectDelayMS * 2;
-}
-
 bot.on('error', (error) => {
-  timedReconnect(bot, token);
+  logSpam('Network error.')
 });
 
 bot.on('disconnect', (message) => {
-  timedReconnect(bot, token);
+  logSpam('Disconnected.');
 });
 
 bot.on('reconnecting', (message) => {
-  doNothing();
   logSpam('Reconnecting...');
+});
+
+bot.on('resume', (message) => {
+  logSpam('Reconnected.');
 });
 // @ ============== COMMAND HANDLERS ==============
 // handle rolls, tests, & opposed tests
