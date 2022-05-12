@@ -16,20 +16,8 @@ function doNothing (err=null, res=null) {}
 var isMaintenanceModeBool = true;
 // set status message to send as warning when isMaintenanceModeBool is true
 var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
-/*
-+ 'The bot\'s in maintenance mode.** If it forgets rerolls faster than normal, '
-+ 'it means I rebooted the bot.'
-*/
-/*
-+ ' Testing a major upgrade! Please DM me if the bot goes offline!'
-+ ' Pzzhht! -<@360086569778020352>'
-*/
-/*
-+ 'Chasing bugs in the initiative and macro systems. Normal rolls should be fine.'
-*/
 + ' NEW FEATURES ARE AFOOT! See **!help** to learn about **scenes**, **reminders**, **virtual GM screen**, and **ammo tracking**!'
 + ' Please notify me of any suspected bugs ASAP with a screenshot and timezone: <@360086569778020352>'
-//+ ' If initiative bugs out, just type the command again and it will probably work on the 2nd try.'
 ;
 // conditionally add warning message
 function addMaintenanceStatusMessage(output) {
@@ -1466,6 +1454,15 @@ function sortInitPass(a, b) {
   } else bReaction = 0;
   return bReaction - aReaction;
 }
+function sortCPRTiebreaker(a, b) {
+  var aReroll = 0;
+  var bReroll = 0;
+  while (aReroll === bReroll) {
+    aReroll = d10();
+    bReroll = d10();
+  }
+  return bReroll - aReroll;
+}
 function sort1ETiebreaker(tmpArr, tbArr) {
   let didSort = false;
   if (tmpArr.length === 1) return [tmpArr, tbArr];
@@ -1744,7 +1741,7 @@ function handleRollCommand(msg, cmd, args, user, override=null) {
     // post results
     msg.channel.send(output).catch((e) => {console.log(e);});
     // log activity
-    console.log(getColorDate() + ' 🎲');
+    logWrite('🎲');
     // provide reroll ui (dice reaction)
     msg.react('🎲').catch((e) => {console.log(e);});
     // no return
@@ -1858,6 +1855,7 @@ function handleHelpCommand(msg, cmd, args, user) {
       + ':arrow_right: **!init3** - Shadowrun 3e initiative\n'
       + ':arrow_right: **!init3flip** - Shadowrun 3e initiative, reversed\n'
       + ':arrow_right: **!initcp** - Cyberpunk 2020 initiative\n'
+      + ':arrow_right: **!initcpr** - Cyberpunk RED initiative\n'
       + '\n'
       + 'The bot remembers stuff; you won\'t need to redo setup, just update whatever '
         + 'changes. **However:**\n'
@@ -2121,8 +2119,6 @@ async function handleInitCommand(msg, cmd, args, user) {
   var playerRolls = [];
   var npcPhases = [];
   var playerPhases = [];
-  var auth = global.auth;
-  var drive = google.drive({version: 'v3', auth});
   while (isDiskLockedForChannel(gmPlayChannelID)) { await sleep(15); }
   // get author's userFolderID for play channel
   userFolderID = await findUserFolderFromMsg(msg, true);
@@ -2266,6 +2262,7 @@ async function handleInitCommand(msg, cmd, args, user) {
         passSub = [10, 20, 30, 40];
       break;
       case 'initcp':
+      case 'initcpr':
         passTH = [1000, 2000, 3000, 4000];
         passSub = [0, 0, 0, 0];
       break;
@@ -2274,7 +2271,7 @@ async function handleInitCommand(msg, cmd, args, user) {
     for (var x = 0; x < gmPlayersArr.length; x++) {
       var total = 0;
       var init = playerInitContent[x].split(" ");
-      if (cmd !== 'initcp') {
+      if (cmd !== 'initcp' && cmd !== 'initcpr') {
         var [junk,rolls] = rollDice(init[0], false, -1)
       }
       else var rolls = rollD10s(init[0]);
@@ -2306,7 +2303,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       if (gmNPCArr[x].length) {
         var total = 0;
         var init = gmNPCArr[x].split(" ");
-        if (cmd !== 'initcp') {
+        if (cmd !== 'initcp' && cmd !== 'initcpr') {
           var [junk,rolls] = rollDice(init[0], false, -1)
         }
         else rolls = rollD10s(init[0]);
@@ -2362,7 +2359,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       // if the player is supposed to go on this phase (init passes aside)
       if (playerPhases[y].indexOf(x) !== -1) {
         var formattedEntry = `*[${x}]* <@${gmPlayersArr[y]}> (${playerInitContent[y].split(" ")[1]})`;
-        if (cmd !== 'init' && cmd !== 'initflip' && cmd !== 'init2' && cmd !== 'init2flip' && cmd !== 'initcp') {
+        if (cmd !== 'init' && cmd !== 'initflip' && cmd !== 'init2' && cmd !== 'init2flip' && cmd !== 'initcp' && cmd !== 'initcpr') {
           // it's not 2nd edition: enforce the init passes rule
           if (playerWentArr.indexOf(y) === -1) {
             // the player hasn't gone yet this pass
@@ -2406,7 +2403,7 @@ async function handleInitCommand(msg, cmd, args, user) {
       // if the npc is supposed to go this phase (init passes aside)
       if (npcPhases[y].indexOf(x) !== -1) {
         var formattedEntry = `*[${x}]* ${gmNPCArr[y].split(" ")[2]} (${gmNPCArr[y].split(" ")[1]})`;
-        if (cmd !== 'init' && cmd !== 'initflip' && cmd !== 'init2' && cmd !== 'init2flip' && cmd !== 'initcp') {
+        if (cmd !== 'init' && cmd !== 'initflip' && cmd !== 'init2' && cmd !== 'init2flip' && cmd !== 'initcp' && cmd !== 'initcpr') {
           // enforce the init passes rule
           if (npcWentArr.indexOf(y) === -1) {
             // the npc hasn't gone yet this pass
@@ -2443,7 +2440,7 @@ async function handleInitCommand(msg, cmd, args, user) {
         }
       }
     }
-    if (cmd !== 'init' && cmd !== 'initflip' && cmd !== 'init2' && cmd !== 'init2flip' && cmd !== 'initcp') {
+    if (cmd !== 'init' && cmd !== 'initflip' && cmd !== 'init2' && cmd !== 'init2flip' && cmd !== 'initcp' && cmd !== 'initcpr') {
       // has everyone gone yet this pass?
       if (playerWentArr.length == gmPlayersArr.length
         && npcWentArr.length == gmNPCArr.length
@@ -2517,8 +2514,14 @@ async function handleInitCommand(msg, cmd, args, user) {
   for (var x = ordArr.length - 1; x > -1 ; x--) {
     // at this point each phase is a comma-separated list of formattedEntry's
     tmpArr = ordArr[x].split(",");
-    // sortReaction is a nice tidy affair
-    tmpArr = tmpArr.sort(sortReaction);
+    if (cmd !== 'initcp' && cmd !== 'initcpr') {
+      // sortReaction is a nice tidy affair
+      tmpArr = tmpArr.sort(sortReaction);
+    }
+    else if (cmd === 'initcpr') {
+      // roll d10 for each tie until one party beats the other
+      tmpArr = tmpArr.sort(sortCPRTiebreaker);
+    }
     // 1e tiebreaker rule: a player on 2nd phase comes after a player on 1st phase, etc
     if (cmd === 'init' || cmd === 'initflip') {
       // loop of characters acting this phase
@@ -2560,6 +2563,7 @@ async function handleInitCommand(msg, cmd, args, user) {
     case 'init2':
     case 'init3':
     case 'initcp':
+    case 'initcpr':
       // add to output from high to low
       for (var x = ordArr.length-1; x > 0; x--) {
         if (ordArr[x].length) { output += `${ordArr[x]}\n`; }
@@ -4912,6 +4916,7 @@ function handleMessage(msg, user=msg.author) {
           case 'init2flip':
           case 'init3flip':
           case 'initcp':
+          case 'initcpr':
             handleInitCommand(msg, cmd, args, user);
           break;
           case 'setgm':
