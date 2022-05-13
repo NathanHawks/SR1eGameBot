@@ -1640,11 +1640,13 @@ bot.on('disconnect', (message) => {
 });
 
 bot.on('reconnecting', (message) => {
-  logSpam('Reconnecting...');
+  // this goes off every 30-45 seconds, kill it
+  // logSpam('Reconnecting...');
 });
 
 bot.on('resume', (message) => {
-  logSpam('Reconnected.');
+  // same issue as reconnecting event
+  // logSpam('Reconnected.');
 });
 // @ ============== COMMAND HANDLERS ==============
 // handle rolls, tests, & opposed tests
@@ -2089,6 +2091,11 @@ function handleHelpCommand(msg, cmd, args, user) {
   }
 }
 async function handleInitCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   await msg.react('⏳').catch((e) => {console.log(e);});
   logWrite('\x1b[32m [ ==================== handleInitCommand ======================= ]\x1b[0m');
   var gmPlayChannelID = await getPlayChannel(msg);
@@ -2590,6 +2597,11 @@ async function handleInitCommand(msg, cmd, args, user) {
 async function handleSetGMCommand(msg, cmd, args, user) {
   // serverID.channelID.userID.gmWhoIsGM STRING
   // without flag: set self as GM
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleSetGMCommand ====================== ]\x1b[0m');
   var gmPlayChannelID = await getPlayChannel(msg);
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -2629,6 +2641,11 @@ async function handleSetGMCommand(msg, cmd, args, user) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleSetPlayersCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleSetPlayersCommand ================= ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
@@ -2653,6 +2670,11 @@ async function handleSetPlayersCommand(msg, cmd, args, user) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleAddPlayersCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   if (args.length) {
     if (args[0].substring(0,2) !== '<@') {
       msg.reply(addMaintenanceStatusMessage('this command requires you to "@" people correctly.')).catch((e) => {console.log(e);});
@@ -2713,6 +2735,11 @@ async function handleAddPlayersCommand(msg, cmd, args, user) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleListPlayersCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleListPlayersCommand ================ ]\x1b[0m');
   var lastFoundFileID = -1;
   await msg.react('⏳').catch((e) => {console.log(e);});
@@ -2788,6 +2815,11 @@ async function handleListPlayersCommand(msg, cmd, args, user) {
   removeHourglass(msg);
 }
 async function handleRemovePlayersCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleRemovePlayersCommand ============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
@@ -2897,6 +2929,11 @@ async function handleRemovePlayersCommand(msg, cmd, args, user) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleClearPlayersCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleClearPlayersCommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
@@ -2948,6 +2985,11 @@ async function handleClearPlayersCommand(msg, cmd, args, user) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleSetInitCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   if (args) {
     // deal with the inevitable player who can't grok pressing a spacebar between fields
     if (args[0] && args.length == 1 && args[0].toLowerCase().indexOf('d6+') !== -1) {
@@ -3019,6 +3061,11 @@ async function handleSetInitCommand(msg, cmd, args, user) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleSetNPCInitCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   args = modifyNPCInput(args);
   if (!validateNPCInput(msg, args)) {
     return;
@@ -3047,6 +3094,11 @@ async function handleSetNPCInitCommand(msg, cmd, args, user) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleAddNPCInitCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   args = modifyNPCInput(args);
   if (!validateNPCInput(msg, args)) {
     return;
@@ -3096,6 +3148,11 @@ async function handleAddNPCInitCommand(msg, cmd, args, user) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleRemoveNPCInitCommand ============== ]\x1b[0m');
   var lastFoundFileID = -1;
   await msg.react('⏳').catch((e) => {console.log(e);});
@@ -3207,6 +3264,11 @@ async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleListNPCInitCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleListNPCInitCommand ================ ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannel = await getPlayChannel(msg);
@@ -3281,6 +3343,11 @@ async function _clearNPCDrivePayload(err, res, parentFolderID, gmPlayChannelID) 
   );
 }
 async function handleClearNPCInitCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleClearNPCInitCommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
@@ -3335,6 +3402,11 @@ async function handleClearNPCInitCommand(msg, cmd, args, user) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleSaveMacroCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   if (args.length < 2)
     return msg.reply(addMaintenanceStatusMessage(':no_entry_sign: Not enough options. Needs a name followed by any valid dice roll command.'))
     .catch((e) => {console.log(e);});
@@ -3400,6 +3472,11 @@ async function handleSaveMacroCommand(msg, cmd, args, user) {
   removeHourglass(msg);
 }
 async function handleRollMacroCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   if (args.length < 1)
     return msg.reply(addMaintenanceStatusMessage(':no_entry_sign: You didn\'t specify which macro I should roll.'))
     .catch((e) => {console.log(e);});
@@ -3457,6 +3534,11 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
   removeHourglass(msg);
 }
 async function handleRemoveMacroCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   if (args.length < 1)
     return msg.reply(addMaintenanceStatusMessage(':no_entry_sign: You didn\'t specify which macro I should remove.'))
     .catch((e) => {console.log(e);});
@@ -3517,6 +3599,11 @@ async function handleRemoveMacroCommand(msg, cmd, args, user) {
   removeHourglass(msg);
 }
 async function handleListMacrosCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleListMacrosCommand ================= ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   await ensureFolderTriplet(msg);
@@ -3618,6 +3705,11 @@ async function getPlayChannel(msg) {
 }
 // checks the current play channel and replies with a channel link
 async function handleCheckChannelCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleCheckChannelCommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -3633,6 +3725,11 @@ async function handleCheckChannelCommand(msg, cmd, args, user) {
 // set the play channel so that commands can be entered in a secret channel
 // useful for NPC inits and scene content
 async function handleSetChannelCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleSetChannelCommand ================= ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   if (args.length === 1) {
@@ -3669,6 +3766,11 @@ async function handleSetChannelCommand(msg, cmd, args, user) {
   removeHourglass(msg);
 }
 async function handleSetSceneCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleSetSceneCommand =================== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -3705,6 +3807,11 @@ async function handleSetSceneCommand(msg, cmd, args, user) {
   removeHourglass(msg);
 }
 async function handleDelSceneCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleDelSceneCommand =================== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -3750,6 +3857,11 @@ async function handleDelSceneCommand(msg, cmd, args, user) {
   removeHourglass(msg);
 }
 async function handleGetSceneCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleGetSceneCommand =================== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var gmPlayChannelID = await getPlayChannel(msg);
@@ -3785,6 +3897,11 @@ async function handleGetSceneCommand(msg, cmd, args, user) {
   removeHourglass(msg);
 }
 async function handleListScenesCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleListScenesCommand ================= ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   while (isDiskLockedForChannel(msg.channel.id)) { await sleep(15); }
@@ -4011,6 +4128,11 @@ async function addReminders(msg, reminders) {
   logSpam(`System reminders var has ${global.reminders.length} entries`);
 }
 async function handleListRemindersCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   await msg.react('⏳').catch((e) => {console.log(e);});
   logWrite('\x1b[32m [ ==================== handleListRemindersCommand ======================= ]\x1b[0m');
   var playChannelID = await getPlayChannel(msg);
@@ -4054,6 +4176,11 @@ async function handleListRemindersCommand(msg, cmd, args, user) {
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleAddReminderCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   await msg.react('⏳').catch((e) => {console.log(e);});
   logWrite('\x1b[32m [ ==================== handleAddReminderCommand ======================= ]\x1b[0m');
   var sessionTimeDateF = args[0];
@@ -4144,6 +4271,11 @@ async function handleAddReminderCommand(msg, cmd, args, user) {
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleCancelReminderCommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   await msg.react('⏳').catch((e) => {console.log(e);});
   logWrite('\x1b[32m [ ==================== handleCancelReminderCommand ======================= ]\x1b[0m');
   // parse args
@@ -4202,6 +4334,11 @@ async function handleCancelReminderCommand(msg, cmd, args, user) {
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleAmmoAddGunSubcommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleAmmoAddGunSubcommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var output = '';
@@ -4264,6 +4401,11 @@ async function handleAmmoAddGunSubcommand(msg, cmd, args, user) {
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleAmmoDelGunSubcommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleAmmoDelGunSubcommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var output = '';
@@ -4380,6 +4522,11 @@ function _makeAmmoSaveString(ammos) {
   return saveString;
 }
 async function handleAmmoAddAmmoSubcommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleAmmoAddAmmoSubcommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var output = '';
@@ -4427,6 +4574,11 @@ async function handleAmmoAddAmmoSubcommand(msg, cmd, args, user) {
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleAmmoDelAmmoSubcommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleAmmoDelAmmoSubcommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var output = '';
@@ -4509,6 +4661,11 @@ function _gunsContentAsObject(content) {
   return gunsArr;
 }
 async function handleAmmoListSubcommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleAmmoListSubcommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var filename = 'ammoList';
@@ -4589,6 +4746,11 @@ function _makeGunSaveString(guns) {
   return gunData;
 }
 async function handleAmmoFireSubcommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleAmmoFireSubcommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var output = '';
@@ -4652,6 +4814,11 @@ async function handleAmmoFireSubcommand(msg, cmd, args, user) {
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
+  if (msg.channel.guild === undefined) {
+    msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
+    .catch((e)=>{error.log(e);});
+    return;
+  }
   logWrite('\x1b[32m [ ==================== handleAmmoReloadSubcommand =============== ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   var output = '';

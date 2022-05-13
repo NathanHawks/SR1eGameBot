@@ -2,3 +2,5 @@
 discordauth.json
 googlecredentials.json
 googletoken.json
+lastlog.txt
+errlog.txt
