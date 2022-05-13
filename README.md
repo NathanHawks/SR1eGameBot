@@ -162,7 +162,7 @@ examples:
 Every adventure has passages of text that must be given to the players at each new scene.
 You no longer need to type these out in real time! Now you can prepare the texts in advance via the bot, and deploy them easily later.
 
-!**setscene** name music_link scene_text<br/>
+!**setscene** name musicLink sceneText<br/>
 Creates or updates a named scene. The music link is optional. Scene text can have line breaks and formatting, and is only limited by Discord message length limits.<br/>
 **Example 1:** `!setscene example1 https://www.youtube.com/watch?v=zsq-tAz54Pg The orks burst through the door carrying uzis and a grudge.`<br/>
 **Example 2:** `!setscene example2 Suddenly the band stops playing as everyone stares at you in horror.`
@@ -187,7 +187,7 @@ Players still need to **!setgm** and **!setinit** in the play channel.
 Step :one:: Go to your hidden channel<br/>
 This will be the channel where you do all your prep from now on.
 
-Step :two:: **!setchannel** link_to_play_channel<br/>
+Step :two:: **!setchannel** linkToPlayChannel<br/>
 Your "play channel" is the channel players have access to; your main channel for the game.<br/>
 You make a channel link by typing the # sign and typing the channel name or choosing it from the pop-up menu.<br/>
 **If the channel name is highlighted blue, you did it right.**
@@ -202,8 +202,8 @@ Step :three:: Do your prep!
 
 The bot can DM reminders of your upcoming game sessions to your players.
 
-**!addreminder** session_date&time timer1 timer2 etc<br/>
-* *session_date&time* needs the format **YYYY-MM-DD*T*HH:MM** *(note the "T" separating date from time)*
+**!addreminder** sessionDate&Time timer1 timer2 etc<br/>
+* *sessionDate&Time* needs the format **YYYY-MM-DD*T*HH:MM** *(note the "T" separating date from time)*
 * Note the hour of the session must be in 24-hour format; e.g. for 6pm, you enter 18:00
 * Each *timer* needs a format of minutes, hours, or days, such as **10m**, **3h**, **7d** etc
 * **Example:** `!addreminder 2022-05-04T18:00 30m 6h 1d 3d 7d`

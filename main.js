@@ -1868,7 +1868,7 @@ function handleHelpCommand(msg, cmd, args, user) {
       + ':arrow_right: To play in two games *at the same time,* you\'ll need two channels.\n'
       + '\n'
     ;
-    var init2 = '\n'
+    var init2 = '\n\n:boom: **Initiative System** continued :boom:\n'
     + '\n'
     + ':nerd: **Other initiative commands** :nerd:\n```'
       + 'Shortcut  Full command    [Required] options\n'
@@ -1959,7 +1959,7 @@ function handleHelpCommand(msg, cmd, args, user) {
     + 'Step :one:: Go to your hidden channel\n'
     + 'This will be the channel where you do all your prep from now on.\n'
     + '\n'
-    + 'Step :two:: **!setchannel** *link_to_play_channel*\n'
+    + 'Step :two:: **!setchannel** *linkToPlayChannel*\n'
     + 'Your "play channel" is the channel players have access to; your main channel for the game. '
     + 'You make a channel link by typing the # sign and typing the channel name or choosing it from the pop-up menu. '
     + '**If the channel name is highlighted blue, you did it right.**\n'
@@ -1974,8 +1974,8 @@ function handleHelpCommand(msg, cmd, args, user) {
   ;
   var reminders1 = '\n:alarm_clock: **Reminders** :alarm_clock:\n\n'
     + 'The bot can DM reminders of your upcoming game sessions to your players.\n\n'
-    + '**!addreminder** session_date&time timer1 timer2 etc\n'
-    + '*session_date&time* needs the format **YYYY-MM-DD*T*HH:MM** *(note the "T" separating date from time)*\n'
+    + '**!addreminder** sessionDate&Time timer1 timer2 etc\n'
+    + '*sessionDate&Time* needs the format **YYYY-MM-DD*T*HH:MM** *(note the "T" separating date from time)*\n'
     + 'Note the hour of the session must be in 24-hour format; e.g. for 6pm, you enter 18:00\n'
     + 'Each *timer* needs a format of minutes, hours, or days, such as **10m**, **3h**, **7d** etc\n'
     + '**Example:** !addreminder 2022-05-04T18:00 30m 6h 1d 3d 7d\n'
@@ -2009,7 +2009,7 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '**Example:** `!ammo addammo 10 clip 16 slug 16`\n'
     + 'Adds 10 clips that are fully loaded with 16 slugs each. This matches the uzi3.\n\n'
   ;
-  var ammo2 = '\n\n'
+  var ammo2 = '\n:gun: **Ammo Tracking** continued :gun:\n'
     + '**!ammo delammo** qtyContainers containerType qtyRounds roundType maxRounds\n'
     + '**Example:** `!ammo delammo 4 clip 16 slug 16`\n'
     + 'Removes 4 of those clips for your uzi3 from your inventory.\n\n'
