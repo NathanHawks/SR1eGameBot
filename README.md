@@ -9,6 +9,14 @@ does **initiative for Cyberpunk 2020 and Cyberpunk RED**.
 
 Instructions on using the bot are below, after the self-hosting instructions.
 
+* <a href="#how-to-install">How to Install</a>
+* <a href="#shadowrun-dicebot-features">Shadowrun Dicebot Features</a>
+* <a href="#boom-initiative-system-boom">Initiative System</a>
+* <a href="#blue_book-prepared-scenes-with-or-without-music-blue_book">Prepared Scenes</a>
+* <a href="#ninja-virtual-gm-screen-ninja">Virtual GM Screen</a>
+* <a href="#alarm_clock-reminders-alarm_clock">Reminders</a>
+* <a href="#gun-ammo-tracking-gun">Ammo Tracking</a>
+
 ## How to Install
 
 [Click here to deploy the bot on your server](https://discordapp.com/oauth2/authorize?client_id=609274260007026689&scope=bot&permissions=0).
@@ -251,7 +259,7 @@ The second form allows you to specify which type of round you want to load, for 
 
 ## Misc ##
 
-  All initiative-related and macro-related commands are a little slow (due to communication with Google Drive). They get faster after the first use. The :hourglass_flowing_sand: reaction means it's working on your request.
+  With the exception of non-macro dice rolls, all commands are a little slow (due to communication with Google Drive). Thanks to caching, they get much faster over time. The :hourglass_flowing_sand: reaction means it's working on your request.
 
   Commands are not case-sensitive. Go WiLd WitH tHaT.
 
