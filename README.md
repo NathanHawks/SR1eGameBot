@@ -49,7 +49,7 @@ Instructions on using the bot are below, after the self-hosting instructions.
 
 There are a few admin commands that are hard-coded only to respond to me, the bot's author. If you self-host, you can gain access to them:
 
-1. Find out your Discord ID (it's ***not*** your username followed by a few numbers; it's all numbers; it will be the third number that appears in your bot's logfile when you use any of the initiative commands).
+1. Find out your Discord ID (it's ***not*** your username followed by a few numbers; it's all numbers; it will be the final number that appears in your bot's logfile when you use any of the initiative commands).
 2. Do a find-and-replace in main.js, replacing all occurrences of my Discord ID, 360086569778020352, with your Discord ID.
 3. Push the changes and restart the bot.
 
