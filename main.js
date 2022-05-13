@@ -1,10 +1,10 @@
 /*
  * Shadowrun 1e GameBot by Discord user AstroMacGuffin#1486 (Nathan Hawks)
+ * https://github.com/NathanHawks/SR1eGameBot
  * Yes I do regret baking 1e into the name
- * version 0.13, yeah that sounds good
+ * version 0.2, yeah that sounds good
  * Released under the terms of the UnLicense. This work is in the public domain.
  * Released as-is with no warranty or claim of usability for any purpose.
- * The file cache doesn't work, don't enable it.
  */
 // require express for log date/time
 var express = require('express');
@@ -16,7 +16,7 @@ function doNothing (err=null, res=null) {}
 var isMaintenanceModeBool = true;
 // set status message to send as warning when isMaintenanceModeBool is true
 var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
-+ ' NEW FEATURES ARE AFOOT! See **!help** to learn about **scenes**, **reminders**, **virtual GM screen**, and **ammo tracking**!'
++ ' NEW FEATURES ARE AFOOT! See `!help` to learn about **scenes**, **reminders**, **virtual GM screen**, and **ammo tracking**!'
 + ' Please notify me of any suspected bugs ASAP with a screenshot and timezone: <@360086569778020352>'
 ;
 // conditionally add warning message
@@ -1787,7 +1787,7 @@ function handleHelpCommand(msg, cmd, args, user) {
     + '`ammo        ` - Track ammo during combat :new:\n'
     + '`troubleshoot` - Command stuck? Bot not responding in a channel? Try this\n'
     + '\n'
-    + 'Example: type **!help main** for the main help.\n'
+    + 'Example: type `!help main` for the main help.\n'
   ;
   var main1 = '\nMain Help:\n'
     + '**====== Plain Old d6\'s ======**\n'
@@ -1906,7 +1906,7 @@ function handleHelpCommand(msg, cmd, args, user) {
   ;
   var scene1 = '\n:blue_book: **Prepared Scenes with (or without) Music** :blue_book:\n'
     + '\n'
-    + '**It is strongly recommended** that you also read **!help gmscreen** so you can do your prep in secret!\n'
+    + '**It is strongly recommended** that you also read `!help gmscreen` so you can do your prep in secret!\n'
     + '\n'
     + 'Every adventure has passages of text that must be given to the players at each new scene. '
     + 'You no longer need to type these out in real time! Now you can prepare the texts in advance via the bot, and deploy them easily later.\n'
@@ -1934,7 +1934,7 @@ function handleHelpCommand(msg, cmd, args, user) {
     + 'These commands allow you to manage named dice rolls and use them any time just by typing a quick command.\n'
     + '\n'
     + '!***save*** *name* *dice_command_without_preceding_bang*\n'
-    + 'Creates or updates a named "dice command". *(See **!help main** for valid "dice commands".)*\n'
+    + 'Creates or updates a named "dice command". *(See `!help main` for valid "dice commands".)*\n'
     + '\n'
     + '!***roll*** *name*\n'
     + 'Rolls the saved "dice command" with the given name.\n'
@@ -5010,7 +5010,7 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
 }
 async function handleAmmoCommand(msg, cmd, args, user) {
     var sub = args[0];
-    switch (sub) {
+    switch (sub.toLowerCase()) {
       case 'addgun':
         handleAmmoAddGunSubcommand(msg, cmd, args, user);
       break;

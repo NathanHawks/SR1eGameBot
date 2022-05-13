@@ -2,7 +2,10 @@
 
 ## What It Is
 
-A Discord dicebot for SR1e/2e/3e, which does d6 rolls with modifiers, as well as Success Tests and Opposed Success Tests. It can also store **dice macros,** and even generates **initiative** for Shadowrun 1st-3rd Editions -- both forwards and backwards.
+A Discord dicebot for Shadowrun 1e/2e/3e, which does d6 rolls with modifiers, as well as Success Tests and Opposed Success Tests. It can also store **dice macros,** and even generates **initiative** for Shadowrun 1st-3rd Editions -- both forwards and backwards. **New in 2022**
+it also does **reminders**, **ammo tracking**, **scene text and music**, and has a
+**virtual GM screen** for hiding your prep from your players. And, hey, why not: it also
+does **initiative for Cyberpunk 2020 and Cyberpunk RED**.
 
 Instructions on using the bot are below, after the self-hosting instructions.
 
@@ -91,7 +94,7 @@ examples:
 * Anyone can click the :game_die: reaction to reroll any *recent* roll.
 * Remove and re-add your reaction to keep re-rolling that roll.
 
-## :boom: EXPERIMENTAL: Initiative System :boom:
+## :boom: Initiative System :boom:
 
 ### Player setup:
 
@@ -108,6 +111,7 @@ examples:
 ### :game_die: **Rolling Initiative** :game_die:
 
   :arrow_right: **!init** - Shadowrun 1e initiative<br/>  :arrow_right: **!initflip** - Shadowrun 1e initiative, reversed<br/>  :arrow_right: **!init2** - Shadowrun 2e initiative<br/>  :arrow_right: **!init2flip** - Shadowrun 2e initiative, reversed<br/>  :arrow_right: **!init3** - Shadowrun 3e initiative<br/>  :arrow_right: **!init3flip** - Shadowrun 3e initiative, reversed<br/>  :arrow_right: **!initcp** - Cyberpunk 2020 initiative<br/>
+  :arrow_right: **!initcpr** - Cyberpunk RED initiative
 
   The bot remembers stuff; you won't need to redo setup, just update whatever changes. ***However:***
 
@@ -142,6 +146,109 @@ examples:
   e.g. **!addnpcinits 1 5 thugs** (means the thugs have 1d6+5 initiative).
 
   If you have multiple NPC's with the same label, **!removeNPCInits** also accepts the format !removenpcinits X Y label which requires a full match. But, having multiple NPC's with the same label is confusing anyway, so maybe just don't do that.
+
+## :blue_book: Prepared Scenes with (or without) Music :blue_book: ##
+
+**It is strongly recommended** that you also read `!help gmscreen` so you can do your prep in secret!
+
+Every adventure has passages of text that must be given to the players at each new scene.
+You no longer need to type these out in real time! Now you can prepare the texts in advance via the bot, and deploy them easily later.
+
+!**setscene** *name* *music_link* *scene_text*<br/>
+Creates or updates a named scene. The music link is optional. Scene text can have line breaks and formatting, and is only limited by Discord message length limits.<br/>
+**Example 1:** !setscene example1 <https://www.youtube.com/watch?v=zsq-tAz54Pg> The orks burst through the door carrying uzis and a grudge.<br/>
+**Example 2:** !setscene example2 Suddenly the band stops playing as everyone stares at you in horror.
+
+!**getscene** *name*<br/>
+Deploys the named scene. The name of the scene is **not** displayed in the output. Music (if any) is shown as a link, with Discord\'s embedded player below that.
+
+!**listscenes**<br/>
+Shows a list of scene names that you\'ve saved to the current channel (or play channel, if you\'re using the virtual GM Screen feature).
+
+!**delscene** *name*<br/>
+Deletes one or more scenes identified by name(s). To delete multiple scenes, simply put spaces between the names. **Deleted scenes cannot be recovered!**
+
+## :ninja: Virtual GM Screen :ninja: ##
+
+Using this feature, **ammo tracking**, **reminders**, **initiative** and **scene** commands can be done in a hidden channel.
+
+Players still need to **!setgm** and **!setinit** in the play channel.
+
+**It's simple!**
+
+Step :one:: Go to your hidden channel<br/>
+This will be the channel where you do all your prep from now on.
+
+Step :two:: **!setchannel** link_to_play_channel<br/>
+Your "play channel" is the channel players have access to; your main channel for the game.<br/>
+You make a channel link by typing the # sign and typing the channel name or choosing it from the pop-up menu.<br/>
+**If the channel name is highlighted blue, you did it right.**
+
+Step :three:: Do your prep!
+
+**Notes about running various commands behind the GM screen:**<br/>
+:arrow_forward: !getscene will output to the play channel so you don't need to reveal your scene titles.<br/>
+:arrow_forward: You can now run !init in secret, or you can prep your NPC's in the secret channel and then do the !init command in the play channel.
+
+## :alarm_clock: Reminders :alarm_clock: ##
+
+The bot can DM reminders of your upcoming game sessions to your players.
+
+**!addreminder** session_date&time timer1 timer2 etc<br/>
+*session_date&time* needs the format **YYYY-MM-DD*T*HH:MM** *(note the "T" separating date from time)*<br/>
+Note the hour of the session must be in 24-hour format; e.g. for 6pm, you enter 18:00<br/>
+Each *timer* needs a format of minutes, hours, or days, such as **10m**, **3h**, **7d** etc<br/>
+**Example:** !addreminder 2022-05-04T18:00 30m 6h 1d 3d 7d<br/>
+Sets a game session at 6pm on May 4, and five reminders (30 minutes before the session, etc)<br/>
+The reminders will go to everyone you've got in your players list at the time when you added the reminder.<br/>
+To manage your players list, see the `!setplayers`, `!addplayers`, etc commands under `!help init`
+
+**!listreminders**<br/>
+Shows a list of your upcoming reminders, and the ID's you'd use to cancel them if necessary, plus who they're going to.<br/>
+Due to Discord message size-limits this command can be slow if you have more than a few reminders.
+
+**!cancelreminder** id#1 id#2 etc<br/>
+Cancels one or more reminders. See `!listreminders` to get the ID's.
+
+
+## :gun: **Ammo Tracking** :gun: ##
+
+GameBot can track ammo during combat, enforcing max ROF and weapon capacity.
+
+**!ammo addgun** name maxROF ammoContainerType ammoCapacity ammoTypes<br/>
+Adds a weapon for ammo tracking purposes. The name must not have any spaces or commas.<br/>
+If the gun is compatible with multiple types of round, separate them with spaces.<br/>
+You should keep the name short, since you'll be typing it for the `!ammo fire` and `!ammo reload` commands.<br/>
+If the rules don't specify maxROF any other way, don't forget autofire is Skill Rating +1.<br/>
+**Example:** `!ammo addgun uzi3 7 clip 16 slug`
+
+**!ammo delgun** name<br/>
+**Example:** `!ammo delgun uzi3`<br/>
+Removes the uzi3 from your inventory.
+
+**!ammo addammo** qtyContainers containerType qtyRounds roundType maxRounds<br/>
+The maxRounds should match the ammoCapacity of the gun you want to use this ammo for.<br/>
+The roundType should match one of the ammoTypes for the matching weapon.<br/>
+**Example:** `!ammo addammo 10 clip 16 slug 16`<br/>
+Adds 10 clips that are fully loaded with 16 slugs each. This matches the uzi3.
+
+**!ammo delammo** qtyContainers containerType qtyRounds roundType maxRounds<br/>
+**Example:** `!ammo delammo 4 clip 16 slug 16`<br/>
+Removes 4 of those clips for your uzi3 from your inventory.
+
+**!ammo list**<br/>
+Shows a list of guns, and what they're loaded with, plus a list of your ammo.<br/>
+Empty clips are not shown, so track those yourself.
+
+**!ammo fire** weaponName nbrShots<br/>
+Depletes a number of rounds (nbrShots) from the gun identified by weaponName, assuming nbrShots doesn't exceed the gun's maxROF.<br/>
+If you try to shoot more rounds than are currently loaded, the weapon will be depleted of all ammo and you will be told how many rounds were shot before the weapon clicked empty.
+
+**!ammo reload** weaponName<br/>or<br/>**!ammo reload** weaponName shotType<br/>
+The first form assumes you only have one compatible ammo type for that weapon.<br/>
+**Example:** `!ammo reload uzi3`<br/>
+The second form allows you to specify which type of round you want to load, for cases where your weapon has multiple compatible ammoTypes *and* you have compatible ammo entries for 2 or more of those ammoTypes.<br/>
+**Example:** `!ammo reload enfield shot`
 
 ## Misc ##
 
