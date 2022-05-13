@@ -164,7 +164,7 @@ You no longer need to type these out in real time! Now you can prepare the texts
 
 !**setscene** name music_link scene_text<br/>
 Creates or updates a named scene. The music link is optional. Scene text can have line breaks and formatting, and is only limited by Discord message length limits.<br/>
-**Example 1:** `!setscene example1 <https://www.youtube.com/watch?v=zsq-tAz54Pg> The orks burst through the door carrying uzis and a grudge.`<br/>
+**Example 1:** `!setscene example1 https://www.youtube.com/watch?v=zsq-tAz54Pg The orks burst through the door carrying uzis and a grudge.`<br/>
 **Example 2:** `!setscene example2 Suddenly the band stops playing as everyone stares at you in horror.`
 
 !**getscene** name<br/>
