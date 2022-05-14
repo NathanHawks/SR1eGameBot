@@ -3479,7 +3479,6 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
   }
   // coexist with Dice Maiden
   var argsString = args.join(' ');
-  logSpam(argsString);
   var argsStringMatches = argsString.match(/(\d*)(D\d*)((?:[+*-](?:\d+|\([A-Z]*\)))*)(?:\+(D\d*))?/i);
   if (argsStringMatches.length > 0) {
     logSpam(`Coexisting with Dice Maiden (by ignoring !roll ${argsString})`);
@@ -3615,8 +3614,6 @@ async function handleListMacrosCommand(msg, cmd, args, user) {
   logWrite('\x1b[32m [ ==================== handleListMacrosCommand ================= ]\x1b[0m');
   await msg.react('⏳').catch((e) => {console.log(e);});
   await ensureFolderTriplet(msg);
-  var auth = global.auth;
-  var drive = google.drive({version: 'v3', auth});
   var filename = 'savedRolls';
   var parentFolderID = -1;
   var savedRollsFileID = -1;
