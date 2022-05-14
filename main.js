@@ -3477,6 +3477,14 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
     .catch((e)=>{error.log(e);});
     return;
   }
+  // coexist with Dice Maiden
+  var argsString = args.join(' ');
+  logSpam(argsString);
+  var argsStringMatches = argsString.match(/(\d*)(D\d*)((?:[+*-](?:\d+|\([A-Z]*\)))*)(?:\+(D\d*))?/i);
+  if (argsStringMatches.length > 0) {
+    logSpam(`Coexisting with Dice Maiden (by ignoring !roll ${argsString})`);
+    return;
+  }
   if (args.length < 1)
     return msg.reply(addMaintenanceStatusMessage(':no_entry_sign: You didn\'t specify which macro I should roll.'))
     .catch((e) => {console.log(e);});
