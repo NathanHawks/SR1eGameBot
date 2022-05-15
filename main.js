@@ -1582,9 +1582,7 @@ function rollD10s(numDiceInt) {
 }
 // ============= main script =======================================
 // @ ============== DISCORD SETUP SCRIPT ==============
-// disabled: var Discord = require('discord.io');
 const Discord = require('discord.js'); // new hotness
-var logger = require('winston'); // why not
 
 // load auth & other tokens (this must be configured in heroku)
 var token = null;
@@ -1596,11 +1594,6 @@ else {
   token = auth.token;
 }
 
-// Configure logger
-logger.remove(logger.transports.Console);
-logger.add(new logger.transports.Console, { colorize: true });
-logger.level = 'debug';
-
 // Connect to Discord
 var bot = new Discord.Client();
 try {
@@ -1608,13 +1601,13 @@ try {
 }
 catch (e) {
   console.error(e);
-  console.log('Trying to connect again in 15 seconds...');
+  logWrite('Trying to connect again in 15 seconds...');
   sleep(15000);
   try {
     bot.login(token);
   }
   catch (e) {
-    console.log('Couldn\'t connect.');
+    logWrite('Couldn\'t connect.');
   }
 }
 
@@ -3477,7 +3470,8 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
     .catch((e)=>{error.log(e);});
     return;
   }
-  // coexist with Dice Maiden
+  // coexist with Dice Maiden;
+  // hat tip https://stackoverflow.com/questions/43564985/regex-for-dice-rolling-system-and-capturing-using-javascript
   var argsString = args.join(' ');
   var argsStringMatches = argsString.match(/(\d*)(D\d*)((?:[+*-](?:\d+|\([A-Z]*\)))*)(?:\+(D\d*))?/i);
   if (argsStringMatches.length > 0) {
