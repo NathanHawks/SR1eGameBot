@@ -330,6 +330,7 @@ async function listAllFiles(msg) {
   var nextPageToken = undefined;
   var output = '--- [filename] ---------   ------------ googleID ------------- ------------ parentID -------------\n';
   var finalout = '';
+  const drive = google.drive({version: 'v3', auth: global.auth});
   var iteratePage = async function (nextPageToken=undefined, level=0) {
     var q = { fields: 'nextPageToken, files(id, name, parents)' };
     if (nextPageToken !== undefined) q.pageToken = nextPageToken;
@@ -406,47 +407,8 @@ async function listAllFiles(msg) {
       }
     });
   }
-  var auth = global.auth;
-  const drive = google.drive({version: 'v3', auth});
-  var q = {};
-  q = { fields: 'nextPageToken, files(id, name, parents)' };
-  if (nextPageToken !== undefined) q.pageToken = nextPageToken;
-  logSpam('Querying GDrive for a list');
-  lockDiskForChannel('system');
-  drive.files.list(q, async (err, res) => {
-    lockDiskForChannel('system');
-    if (res.data.files) {
-      logSpam(`res.data.files got ${res.data.files.length}`);
-    }
-    else {
-      logSpam('res.data.files got nothing');
-    }
-    if (err && err.hasOwnProperty('code') && err.code ===500) {
-      console.error(err);
-      logWrite('Trying again after 2 seconds...');
-      await sleep(2000);
-      iteratePage();
-    }
-    logSpam('No significant error returned');
-    var files = res.data.files;
-    if (files.length) {
-      logSpam(res.data.nextPageToken);
-      for (var x = 0; x < files.length; x++) {
-        global.filesFound[global.filesFound.length] = files[x];
-      }
-      nextPageToken = res.data.nextPageToken;
-      logSpam('nextPageToken = ' + nextPageToken);
-    } else if (res.data.nextPageToken === 'undefined' || res.data.nextPageToken === undefined) {
-      nextPageToken = undefined;
-    } else {
-      nextPageToken = undefined;
-      output += 'No files found.';
-    }
-    if (nextPageToken) iteratePage(nextPageToken);
-    logSpam('Finishing callback');
-  });
-  unlockDiskForChannel('system');
   while(isDiskLockedForChannel('system')) { sleep(15); }
+  iteratePage();
   logSpam('Disk unlocked');
 }
 function deleteFile(msg, args) {
