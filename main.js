@@ -88,11 +88,10 @@ function cacheHas(file, cacheAs) {
 }
 function getCacheIndex(file, cacheAs, create=true) {
   var r = -1;
-  var i = 0;
   var id = file.id;
   if (cacheAs === 'playChannel' || cacheAs === 'folderTriplet') {
     // fast-track playChannel seek
-    for (i = 0; i < global.cache[cacheAs].length; i++) {
+    for (let i = 0; i < global.cache[cacheAs].length; i++) {
       var obj = global.cache[cacheAs][i];
       if (obj.server === file.server
         && obj.channel === file.channel
@@ -103,21 +102,19 @@ function getCacheIndex(file, cacheAs, create=true) {
     }
   }
   if (id) {
-    // fast track id => index seeking
+    // id => index seeking
     var idIndex = [];
-    global.cache[cacheAs].map((c) => {
-      idIndex[i] = c.googleID;
-      i++;
-    });
+    for (let i = 0; i < global.cache[cacheAs].length; i++) {
+      idIndex[i] = global.cache[cacheAs][i].googleID;
+    }
     r = idIndex.indexOf(id);
     if (r > -1) {
-      logSpam('Found cache index ' + cacheAs + r);
+      // logSpam('Found cache index ' + cacheAs + r);
       return r;
     }
   }
   r = -1;
-  i = 0;
-  for (i = 0; i < global.cache[cacheAs].length; i++) {
+  for (let i = 0; i < global.cache[cacheAs].length; i++) {
     // valid matches: id match; or parent & discordID (filename) match together
     // if (_cache_googleIDMatch(obj, file)) r = i;
     // servers don't need a parent, just the filename
