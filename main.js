@@ -16,8 +16,7 @@ function doNothing (err=null, res=null) {}
 var isMaintenanceModeBool = true;
 // set status message to send as warning when isMaintenanceModeBool is true
 var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
-+ ' NEW FEATURES ARE AFOOT! See `!help` to learn about **scenes**, **reminders**, **virtual GM screen**, and **ammo tracking**!'
-+ ' Please notify me of any suspected bugs ASAP with a screenshot and timezone: <@360086569778020352>'
++ ' See `!help` for **new features!** See `!help troubleshoot` if you suspect a bug.'
 ;
 // conditionally add warning message
 function addMaintenanceStatusMessage(output) {
@@ -1998,7 +1997,9 @@ function handleHelpCommand(msg, cmd, args, user) {
     + 'Notify me of any suspected bugs with a screenshot showing the time of the command, '
     + 'and your timezone: <@360086569778020352>\n'
     + '\n'
-    + 'If we don\'t share a server, you can find me on Classic Shadowrun: https://discord.gg/HBDPU6k'
+    + 'If we don\'t share a server, you can find me on Classic Shadowrun: https://discord.gg/HBDPU6k\n'
+    + '\n'
+    + 'You can also report bugs at <https://github.com/NathanHawks/SR1eGameBot/issues>.'
   ;
   switch (whatToShow) {
     case 'index':
@@ -3433,7 +3434,7 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
   // hat tip https://stackoverflow.com/questions/43564985/regex-for-dice-rolling-system-and-capturing-using-javascript
   var argsString = args.join(' ');
   var argsStringMatches = argsString.match(/(\d*)(D\d*)((?:[+*-](?:\d+|\([A-Z]*\)))*)(?:\+(D\d*))?/i);
-  if (argsStringMatches.length > 0) {
+  if (!argsStringMatches && argsStringMatches.length > 0) {
     logSpam(`Coexisting with Dice Maiden (by ignoring !roll ${argsString})`);
     return;
   }
@@ -5013,9 +5014,9 @@ function handleMessage(msg, user=msg.author) {
           case 'list':
             if (user.id == '360086569778020352') listAllFiles(msg);
           break;
-           case 'delall':
-            if (user.id == '360086569778020352') deleteAllFiles();
-          break;
+          // case 'delall':
+          //   if (user.id == '360086569778020352') deleteAllFiles();
+          // break;
           case 'del':
             if (user.id == '360086569778020352') deleteFile(msg, args);
           break;
