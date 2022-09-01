@@ -3434,7 +3434,7 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
   // hat tip https://stackoverflow.com/questions/43564985/regex-for-dice-rolling-system-and-capturing-using-javascript
   var argsString = args.join(' ');
   var argsStringMatches = argsString.match(/(\d*)(D\d*)((?:[+*-](?:\d+|\([A-Z]*\)))*)(?:\+(D\d*))?/i);
-  if (!argsStringMatches && argsStringMatches.length > 0) {
+  if (argsStringMatches && argsStringMatches.length > 0) {
     logSpam(`Coexisting with Dice Maiden (by ignoring !roll ${argsString})`);
     return;
   }
@@ -4968,7 +4968,7 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleAmmoCommand(msg, cmd, args, user) {
-    var sub = args[0];
+    var sub = args[0]||"";
     switch (sub.toLowerCase()) {
       case 'addgun':
         handleAmmoAddGunSubcommand(msg, cmd, args, user);
