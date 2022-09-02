@@ -409,6 +409,9 @@ async function setStringByNameAndParent(filename, parentFolderID, contents) {
       {$set: [ {content: contents}, {name: filename}, {parent: ObjectId(parentFolderID)} ]},
       {upsert: true}
     );
+    // TODO: update cache
+    // delFromCache()
+    // addToCache()
   }
   catch (e) { logError(e); }
 }
