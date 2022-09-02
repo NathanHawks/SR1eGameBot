@@ -12,7 +12,7 @@ const crypto = require('crypto');
 const {config} = require('./config');
 const { logSpam, logWrite, logError } = require('./log');
 // for defaulting if's & callbacks
-function doNothing (err=null, res=null) {}
+function doNothing () {}
 // config object
 function getConfig() { return config; }
 // @ =================== CACHE ====================
@@ -174,7 +174,7 @@ async function ensureTriplet(msg) {
   } else {
     try {
       await ensureFolderByName(serverDiscordID, userDataFolderID);
-      serverFolderID = await findFolderByName(serverDiscordID, userDataFolder);
+      serverFolderID = await findFolderByName(serverDiscordID, userDataFolderID);
       if (serverFolderID)
         addToCache(
           {name: msg.channel.guild.id, dbID: serverFolderID}, 'server'
@@ -300,7 +300,7 @@ async function findUserDBIDFromDiscordID(msg, userID, usePlayChannel=false) {
         parents:[msg.channel.guild.id],
         id:channelFolder._id.toString()
       }, 'channel');
-      r = await findFolderByName(userID, channelFolderID);
+      r = await findFolderByName(userID, channelFolder._id.toString());
       if (r) {
         addToCache({
           name:userID,
@@ -487,27 +487,30 @@ function getModifierFromArgs(args) {
 function sortNumberDesc(a, b) { return b - a; }
 function sortReaction(a, b) {
   let aArr = a.split("(");
+  let aReaction, bReaction;
   if (aArr.length > 1) {
-    let aReaction = aArr[1].substring(0, aArr[1].length-1);
+    aReaction = aArr[1].substring(0, aArr[1].length-1);
   } else aReaction = 0;
   let bArr = b.split("(");
   if (bArr.length > 1) {
-    let bReaction = bArr[1].substring(0, bArr[1].length-1);
+    bReaction = bArr[1].substring(0, bArr[1].length-1);
   } else bReaction = 0;
   return bReaction - aReaction;
 }
 function sortInitPass(a, b) {
   let aArr = a.split("]");
+  let aReaction, bReaction;
   if (aArr.length > 1) {
-    let aReaction = aArr[0].substring(2);
+    aReaction = aArr[0].substring(2);
   } else aReaction = 0;
   let bArr = b.split("]");
   if (bArr.length > 1) {
-    let bReaction = bArr[0].substring(2);
+    bReaction = bArr[0].substring(2);
   } else bReaction = 0;
   return bReaction - aReaction;
 }
 function sortCPRTiebreaker(a, b) {
+  if (a !== b) return b - a;
   let aReroll = 0;
   let bReroll = 0;
   while (aReroll === bReroll) {
@@ -582,7 +585,7 @@ function getOpposedSetupArr(args) {
   }
   return [isOpposedBool,opponentDiceInt,opponentTNInt,isOpposedTestBool];
 }
-function makeOpposedOutput(isOpposedBool, successesInt, opponentSuccessesInt,
+function makeOpposedOutput(successesInt, opponentSuccessesInt,
   user, rollsIntArr, opponentRollsIntArr, note)
 {
   let successesFormattedString = '';
@@ -1022,7 +1025,8 @@ module.exports = {
   addToCache, delFromCache, getFromCache, ensureTriplet,
   findUserFolderDBIDFromMsg, findUserDBIDFromDiscordID, ensureFolderByName,
   findFolderByName, createFolder, findStringIDByName, getStringContents,
-  setStringByNameAndParent, deleteStringByID, removeHourglass, d6, d10,
+  setStringByNameAndParent, deleteStringByID, removeHourglass, addHourglass,
+  d6, d10,
   firstTwoLC, firstThreeLC, lastChar, getTNFromArgs, getModifierFromArgs,
   sortNumberDesc, sortReaction, sortInitPass, sortCPRTiebreaker,
   sort1ETiebreaker, getOpposedSetupArr, makeOpposedOutput, prepRollNote,

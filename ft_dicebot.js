@@ -78,7 +78,7 @@ function handleRollCommand(msg, cmd, args, user, override=null) {
       output += `[Total: ${total}] | `;
     }
     if (isOpposedBool) {
-      output += makeOpposedOutput(isOpposedBool, successesInt,
+      output += makeOpposedOutput(successesInt,
         opponentSuccessesInt, user, rollsIntArr, opponentRollsIntArr, note
       );
     }

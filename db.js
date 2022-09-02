@@ -1,11 +1,11 @@
 const {getConfig} = require('./api');
-const {MongoClient, ObjectId} = require('mongodb');
+const {MongoClient} = require('mongodb');
 class Database {
   constructor() {
     this.mdb = new MongoClient( getConfig().dbUrl );
   }
   static getTable(tableName) {
-    return this.mdb.collection("sr1egamebot");
+    return this.mdb.db("sr1egamebot").collection(tableName);
   }
 }
 module.exports = {db: new Database()};
