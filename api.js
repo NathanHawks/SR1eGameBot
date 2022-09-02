@@ -8,9 +8,10 @@
  */
 // require crypto for reminders (random strings)
 const crypto = require('crypto');
-// config vars
 const {config} = require('./config');
 const { logSpam, logWrite, logError } = require('./log');
+const {Database} = require('./db');
+const {ObjectId} = require('mongodb');
 // for defaulting if's & callbacks
 function doNothing () {}
 // config object
@@ -335,8 +336,8 @@ async function findFolderByName(
       + `folderName was ${folderName}, channel was ${channelID}`);
     return -1;
   }
-  const query = { $and: {name: folderName} };
-  if (parentID !== null) query.$and.parent = ObjectId(parentID);
+  const query = { $and: [{name: folderName}] };
+  if (parentID !== null) query.$and.push({parent: ObjectId(parentID)});
   try {
     const c = await Database.getTable("folders").findOne(query);
     callback(c);
@@ -353,7 +354,7 @@ async function createFolder(
   try {
     const doc = { name: folderName };
     if (parentID !== null) doc.parent = ObjectId(parentID);
-    Database.getTable("folders").insertOne(doc);
+    await Database.getTable("folders").insertOne(doc);
     callback();
   }
   catch (e) { logError(e); }
@@ -389,20 +390,23 @@ async function getStringContent(fileID) {
       return c.content;
     }
   }
-  const c = await Database.getTable("strings").findOne({ id: ObjectId(fileID) });
-  if (c && c.content) {
-    // Legacy: deal with a weird Google API error
-    fileContents=c.content.substring(0,c.content.length-2);
-    addToCache({id: fileID, content: fileContents}, 'fileContent');
+  try {
+    const c = await Database.getTable("strings").findOne({ id: ObjectId(fileID) });
+    if (c && c.content) {
+      // Legacy: deal with a weird Google API error
+      fileContents=c.content.substring(0,c.content.length-2);
+      addToCache({id: fileID, content: fileContents}, 'fileContent');
+    }
+    return fileContents;
   }
-  return fileContents;
+  catch (e) { logError(e); }
 }
 // Rewritten 9/1/22
 async function setStringByNameAndParent(filename, parentFolderID, contents) {
   try {
     await Database.getTable("strings").updateOne(
-      {$and: [ {name: filename, parent: parentFolderID} ]},
-      {$set: [ {content: contents}, {name: filename}, {parent: parentFolderID} ]},
+      {$and: [ {name: filename, parent: ObjectId(parentFolderID)} ]},
+      {$set: [ {content: contents}, {name: filename}, {parent: ObjectId(parentFolderID)} ]},
       {upsert: true}
     );
   }
@@ -410,8 +414,11 @@ async function setStringByNameAndParent(filename, parentFolderID, contents) {
 }
 // Rewritten 9/1/22
 async function deleteStringByID(fileId, callback=doNothing) {
-  Database.getTable("strings").deleteOne({id: ObjectId(fileId)});
-  callback();
+  try {
+    await Database.getTable("strings").deleteOne({id: ObjectId(fileId)});
+    callback();
+  }
+  catch (e) { logError(e); }
 }
 // Added 9/1/22
 async function addHourglass(msg) {
@@ -1024,7 +1031,7 @@ module.exports = {
   doNothing, getConfig, resetCache, cacheHas, getCacheIndex,
   addToCache, delFromCache, getFromCache, ensureTriplet,
   findUserFolderDBIDFromMsg, findUserDBIDFromDiscordID, ensureFolderByName,
-  findFolderByName, createFolder, findStringIDByName, getStringContents,
+  findFolderByName, createFolder, findStringIDByName, getStringContent,
   setStringByNameAndParent, deleteStringByID, removeHourglass, addHourglass,
   d6, d10,
   firstTwoLC, firstThreeLC, lastChar, getTNFromArgs, getModifierFromArgs,
@@ -1035,5 +1042,5 @@ module.exports = {
   getSceneList, updateSceneList, deleteSceneFromList, saveSceneList,
   addMaintenanceStatusMessage, sleep,
 
-  _addRemindersSetTimeoutPayload
+  _addRemindersSetTimeoutPayload, _makeReminderSaveString
 }

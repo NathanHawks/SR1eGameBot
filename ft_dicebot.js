@@ -6,6 +6,11 @@
  * Released under the terms of the UnLicense. This work is in the public domain.
  * Released as-is with no warranty or claim of usability for any purpose.
  */
+const {
+  lastChar, rollDice, getTNFromArgs, getOpposedSetupArr, getModifierFromArgs,
+  addMaintenanceStatusMessage, prepRollNote, makeOpposedOutput
+} = require('./api');
+const {logError, logWrite} = require('./log');
 function handleRollCommand(msg, cmd, args, user, override=null) {
   // allow multiple roll commands separated by semicolon
   let cmdArr = null;
@@ -60,14 +65,15 @@ function handleRollCommand(msg, cmd, args, user, override=null) {
     let note = prepRollNote(cmd, args, tnInt);
 
     // GO: Roll the bones ============================================
-    let retarr = rollDice(numDiceInt, isTestBool, tnInt);
+    retarr = rollDice(numDiceInt, isTestBool, tnInt);
     let successesInt = retarr[0];
     let rollsIntArr = retarr[1];
     // handle opposed roll
+    let opponentRollsIntArr, opponentSuccessesInt;
     if (isOpposedBool) {
       let retarr = rollDice(opponentDiceInt, isOpposedTestBool, opponentTNInt);
-      let opponentSuccessesInt = retarr[0];
-      let opponentRollsIntArr = retarr[1];
+      opponentSuccessesInt = retarr[0];
+      opponentRollsIntArr = retarr[1];
     }
     // prep output and deliver it ====================================
     // handle total'd roll

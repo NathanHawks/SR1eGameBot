@@ -8,12 +8,14 @@
  */
 const { logSpam, logWrite } = require('./log');
 const {
-  findFolderByName, _addRemindersSetTimeoutPayload, getActiveReminders
+  findFolderByName, _addRemindersSetTimeoutPayload, getActiveReminders,
+  createFolder, ensureFolderByName
 } = require('./api');
 // Checked 9/1/22
 async function initAll() {
   await initInitiative();
   await initReminders();
+  console.log(global.folderID);
 }
 // Checked 9/1/22
 async function initInitiative() {
@@ -30,19 +32,14 @@ async function initInitiative() {
   } else {
     // INSTALL =====================================================
     logWrite(`Installing ${folderName} folder.`);
-    createFolder(folderName, null, () => {
-        // fetch ID of new folder
-        findFolderByName(folderName, null, (folder) => {
-            if (folder) { findAndSetFolderID(folder, folderName); }
-          }
-        );
-      }
-    );
+    await createFolder(folderName);
+    const folder = await findFolderByName(folderName);
+    findAndSetFolderID(folder, folderName);
   }
 }
 // Checked 9/1/22
 async function initReminders() {
-  let userDataFolder = await findFolderByName('UserData');
+  const userDataFolder = await findFolderByName('UserData');
   await ensureFolderByName('reminders', userDataFolder._id.toString());
   let reminderFolder = await findFolderByName(
     'reminders', userDataFolder._id.toString()

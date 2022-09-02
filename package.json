@@ -1,6 +1,6 @@
 {
   "name": "game-bot",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "A tool for Shadowrun GMs",
   "main": "main.js",
   "author": "Nathan Hawks",

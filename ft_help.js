@@ -6,7 +6,7 @@
  * Released under the terms of the UnLicense. This work is in the public domain.
  * Released as-is with no warranty or claim of usability for any purpose.
  */
- function handleHelpCommand(msg, cmd, args, user) {
+ function handleHelpCommand(msg, cmd, args) {
    let whatToShow = 'main';
    // legacy help commands
    if (args.length && args[0] == 2 || cmd === 'inithelp') {

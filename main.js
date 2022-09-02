@@ -6,25 +6,26 @@
  * Released under the terms of the UnLicense. This work is in the public domain.
  * Released as-is with no warranty or claim of usability for any purpose.
  */
+const { resetCache } = require('./api');
 const { openFile, listAllFiles, deleteFile, showCache, clearCache, adminUnlock,
   adminUnlockAll, deleteAllFiles } = require('./admin');
 const { logSpam, logWrite, logError } = require('./log');
 const {handleAmmoCommand} = require('./ft_ammo');
 const {handleRollCommand} = require('./ft_dicebot');
 const {handleCheckChannelCommand, handleSetChannelCommand}
-  = require('ft_gmscreen');
-const {handleHelpCommand} = require('ft_help');
+  = require('./ft_gmscreen');
+const {handleHelpCommand} = require('./ft_help');
 const {handleInitCommand, handleSetGMCommand, handleRemovePlayersCommand,
   handleClearPlayersCommand, handleSetInitCommand, handleSetNPCInitCommand,
   handleAddNPCInitCommand, handleListNPCInitCommand, handleRemoveNPCInitCommand,
   handleClearNPCInitCommand, handleListPlayersCommand, handleAddPlayersCommand,
-  handleSetPlayersCommand} = require('ft_initiative');
+  handleSetPlayersCommand} = require('./ft_initiative');
 const {handleSaveMacroCommand, handleRollMacroCommand, handleRemoveMacroCommand,
-  handleListMacrosCommand} = require('ft_macro');
+  handleListMacrosCommand} = require('./ft_macro');
 const {handleListRemindersCommand, handleAddReminderCommand,
-  handleCancelReminderCommand} = require('ft_reminders');
+  handleCancelReminderCommand} = require('./ft_reminders');
 const {handleSetSceneCommand, handleDelSceneCommand, handleGetSceneCommand,
-  handleListScenesCommand} = require('ft_scene');
+  handleListScenesCommand} = require('./ft_scene');
 const {initAll} = require('./init');
 // set true to activate warning messages
 global.isMaintenanceModeBool = true;
@@ -72,9 +73,9 @@ else {
 // Connect to Discord
 global.bot = new Discord.Client({
   intents: [
-    Discord.Intents.FLAGS.GUILDS,
-    Discord.Intents.FLAGS.GUILD_MESSAGES,
-    Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+    Discord.GatewayIntentBits.Guilds,
+    Discord.GatewayIntentBits.GuildMessages,
+    Discord.GatewayIntentBits.GuildMessageReactions,
   ]
 });
 try {
@@ -137,7 +138,7 @@ function handleMessage(msg, user=msg.author) {
       switch(cmd) {
           case 'help':
           case 'inithelp':
-            handleHelpCommand(msg, cmd, args, user);
+            handleHelpCommand(msg, cmd, args);
           break;
           case 'list':
             if (user.id == '360086569778020352') listAllFiles(msg);
@@ -171,58 +172,58 @@ function handleMessage(msg, user=msg.author) {
           case 'init3flip':
           case 'initcp':
           case 'initcpr':
-            handleInitCommand(msg, cmd, args, user);
+            handleInitCommand(msg, cmd, user);
           break;
           case 'setgm':
-            handleSetGMCommand(msg, cmd, args, user);
+            handleSetGMCommand(msg, args, user);
           break;
           case 'setp':
           case 'setplayers':
           case 'setplayer':
-            handleSetPlayersCommand(msg, cmd, args, user);
+            handleSetPlayersCommand(msg, args);
           break;
           case 'addp':
           case 'addplayers':
           case 'addplayer':
-            handleAddPlayersCommand(msg, cmd, args, user);
+            handleAddPlayersCommand(msg, args);
           break;
           case 'lp':
           case 'listplayers':
-            handleListPlayersCommand(msg, cmd, args, user);
+            handleListPlayersCommand(msg);
           break;
           case 'rmp':
           case 'removeplayer':
           case 'removeplayers':
-            handleRemovePlayersCommand(msg, cmd, args, user);
+            handleRemovePlayersCommand(msg, args);
           break;
           case 'clrp':
           case 'clearplayers':
-            handleClearPlayersCommand(msg, cmd, args, user);
+            handleClearPlayersCommand(msg);
           break;
           case 'si':
           case 'seti':
           case 'setinit':
-            handleSetInitCommand(msg, cmd, args, user);
+            handleSetInitCommand(msg, args);
           break;
           case 'setn':
           case 'setnpc':
           case 'setnpcs':
           case 'setnpcinits':
           case 'setnpcinit':
-            handleSetNPCInitCommand(msg, cmd, args, user);
+            handleSetNPCInitCommand(msg, args);
           break;
           case 'addn':
           case 'addnpc':
           case 'addnpcs':
           case 'addnpcinits':
           case 'addnpcinit':
-            handleAddNPCInitCommand(msg, cmd, args, user);
+            handleAddNPCInitCommand(msg, args);
           break;
           case 'ln':
           case 'listnpcs':
           case 'listnpcinits':
           case 'listnpcinit':
-            handleListNPCInitCommand(msg, cmd, args, user);
+            handleListNPCInitCommand(msg);
           break;
           case 'rmn':
           case 'rmnpc':
@@ -231,56 +232,56 @@ function handleMessage(msg, user=msg.author) {
           case 'removenpcs':
           case 'removenpcinit':
           case 'removenpcinits':
-            handleRemoveNPCInitCommand(msg, cmd, args, user);
+            handleRemoveNPCInitCommand(msg, args);
           break;
           case 'clrn':
           case 'clearnpcinits':
           case 'clearnpcinit':
-            handleClearNPCInitCommand(msg, cmd, args, user);
+            handleClearNPCInitCommand(msg);
           break;
           case 'save':
-            handleSaveMacroCommand(msg, cmd, args, user);
+            handleSaveMacroCommand(msg, args);
           break;
           case 'roll':
             handleRollMacroCommand(msg, cmd, args, user);
           break;
           case 'removemacro':
           case 'rmm':
-            handleRemoveMacroCommand(msg, cmd, args, user);
+            handleRemoveMacroCommand(msg, args);
           break;
           case 'lm':
           case 'listmacros':
-            handleListMacrosCommand(msg, cmd, args, user);
+            handleListMacrosCommand(msg);
           break;
           case 'checkchannel':
-            handleCheckChannelCommand(msg, cmd, args, user);
+            handleCheckChannelCommand(msg);
           break;
           case 'setchannel':
-            handleSetChannelCommand(msg, cmd, args, user);
+            handleSetChannelCommand(msg, args);
           break;
           case 'setscene':
-            handleSetSceneCommand(msg, cmd, args, user);
+            handleSetSceneCommand(msg, args);
           break;
           case 'delscene':
-            handleDelSceneCommand(msg, cmd, args, user);
+            handleDelSceneCommand(msg, args);
           break;
           case 'getscene':
-            handleGetSceneCommand(msg, cmd, args, user);
+            handleGetSceneCommand(msg, args);
           break;
           case 'listscenes':
-            handleListScenesCommand(msg, cmd, args, user);
+            handleListScenesCommand(msg);
           break;
           case 'listreminders':
-            handleListRemindersCommand(msg, cmd, args, user);
+            handleListRemindersCommand(msg);
           break;
           case 'addreminder':
-            handleAddReminderCommand(msg, cmd, args, user);
+            handleAddReminderCommand(msg, args);
           break;
           case 'cancelreminder':
-            handleCancelReminderCommand(msg, cmd, args, user);
+            handleCancelReminderCommand(msg, args);
           break;
           case 'ammo':
-            handleAmmoCommand(msg, cmd, args, user);
+            handleAmmoCommand(msg, args);
           break;
           default:
             handleRollCommand(msg, cmd, args, user);
