@@ -15,7 +15,6 @@ const {
 async function initAll() {
   await initInitiative();
   await initReminders();
-  console.log(global.folderID);
 }
 // Checked 9/1/22
 async function initInitiative() {

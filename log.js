@@ -6,6 +6,7 @@
  * Released under the terms of the UnLicense. This work is in the public domain.
  * Released as-is with no warranty or claim of usability for any purpose.
  */
+const {config} = require('./config');
 function getCurrentDateNY() {
   let d = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
   return d;
@@ -58,7 +59,7 @@ async function logSpam(msg) {
   line = new String(line);
   line = line.padEnd(6);
 
-  if (getConfig().logspam)
+  if (config.logspam)
     console.log(`${d} ${getCyanString(`${file} ${line}`)} ${msg}`);
   return true;
 }
