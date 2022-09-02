@@ -7,14 +7,18 @@
  * Released as-is with no warranty or claim of usability for any purpose.
  */
 const { openFile, listAllFiles, deleteFile, showCache, clearCache, adminUnlock,
-adminUnlockAll, deleteAllFiles } = require('./admin');
+  adminUnlockAll, deleteAllFiles } = require('./admin');
 const { logSpam, logWrite, logError } = require('./log');
 const {handleAmmoCommand} = require('./ft_ammo');
 const {handleRollCommand} = require('./ft_dicebot');
 const {handleCheckChannelCommand, handleSetChannelCommand}
   = require('ft_gmscreen');
 const {handleHelpCommand} = require('ft_help');
-const {handleInitCommand} = require('ft_initiative');
+const {handleInitCommand, handleSetGMCommand, handleRemovePlayersCommand,
+  handleClearPlayersCommand, handleSetInitCommand, handleSetNPCInitCommand,
+  handleAddNPCInitCommand, handleListNPCInitCommand, handleRemoveNPCInitCommand,
+  handleClearNPCInitCommand, handleListPlayersCommand, handleAddPlayersCommand,
+  handleSetPlayersCommand} = require('ft_initiative');
 const {handleSaveMacroCommand, handleRollMacroCommand, handleRemoveMacroCommand,
   handleListMacrosCommand} = require('ft_macro');
 const {handleListRemindersCommand, handleAddReminderCommand,
@@ -23,19 +27,11 @@ const {handleSetSceneCommand, handleDelSceneCommand, handleGetSceneCommand,
   handleListScenesCommand} = require('ft_scene');
 const {initAll} = require('./init');
 // set true to activate warning messages
-var isMaintenanceModeBool = true;
+global.isMaintenanceModeBool = true;
 // set status message to send as warning when isMaintenanceModeBool is true
-var maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
-+ ' See `!help` for **new features!** See `!help troubleshoot` if you suspect a bug.'
+global.maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
++ 'See `!help` for **new features!** See `!help troubleshoot` if you suspect a bug.'
 ;
-// conditionally add warning message
-function addMaintenanceStatusMessage(output) {
-  var r = "";
-  if (isMaintenanceModeBool == true) r = output + " " + maintenanceStatusMessage;
-  else r = output;
-  return r;
-}
-function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 // internal setup
 // for reminders
 global.reminders = [];
@@ -52,8 +48,8 @@ global.config = {
   logspam:                            true,
 };
 resetCache();
-// function _cache_googleIDMatch(obj, file) {
-//   if (obj.googleID && file.id && obj.googleID === file.id)
+// function _cache_dbIDMatch(obj, file) {
+//   if (obj.dbID && file.id && obj.dbID === file.id)
 //     return true;
 //   else return false;
 // }
@@ -64,17 +60,17 @@ initAll();
 const Discord = require('discord.js');
 
 // load auth & other tokens
-var token = null;
+let token = null;
 if (process.env.hasOwnProperty('TOKEN')) {
   token = process.env.TOKEN;
 }
 else {
-  var auth = require('./discordauth.json');
+  let auth = require('./discordauth.json');
   token = auth.token;
 }
 
 // Connect to Discord
-var bot = new Discord.Client({
+global.bot = new Discord.Client({
   intents: [
     Discord.Intents.FLAGS.GUILDS,
     Discord.Intents.FLAGS.GUILD_MESSAGES,
@@ -82,14 +78,14 @@ var bot = new Discord.Client({
   ]
 });
 try {
-  bot.login(token);
+  global.bot.login(token);
 }
 catch (e) {
   console.error(e);
   logWrite('Trying to connect again in 15 seconds...');
   sleep(15000);
   try {
-    bot.login(token);
+    global.bot.login(token);
   }
   catch (e) {
     logWrite('Couldn\'t connect.');
@@ -98,7 +94,7 @@ catch (e) {
 
 bot.on('ready', () => {
     logWrite('Connected as ['+ bot.user.tag + ']');
-    bot.user.setPresence({game:{name:'!help for help'}});
+    global.bot.user.setPresence({game:{name:'!help for help'}});
 });
 
 // Setup reaction handler (when 🎲 UI for triggering re-roll is clicked)
@@ -109,20 +105,20 @@ bot.on('messageReactionAdd', (reaction, user) => {
   }
 });
 
-bot.on('error', (error) => {
+global.bot.on('error', (error) => {
   logSpam('Network error.')
 });
 
-bot.on('disconnect', (message) => {
+global.bot.on('disconnect', (message) => {
   logSpam('Disconnected.');
 });
 
-bot.on('reconnecting', (message) => {
+global.bot.on('reconnecting', (message) => {
   // this goes off every 30-45 seconds, kill it
   // logSpam('Reconnecting...');
 });
 
-bot.on('resume', (message) => {
+global.bot.on('resume', (message) => {
   // same issue as reconnecting event
   // logSpam('Reconnected.');
 });
@@ -132,10 +128,10 @@ function handleMessage(msg, user=msg.author) {
   // stop confusing people during development!!
   // if (user.id !== '360086569778020352') return;
   // check if message starts with `!`
-  var message = msg.content;
+  let message = msg.content;
   if (message.substring(0, 1) === '!') {
-      var args = message.substring(1).split(' ');
-      var cmd = args[0];
+      let args = message.substring(1).split(' ');
+      let cmd = args[0];
       args = args.splice(1);
       cmd = cmd.toLowerCase();
       switch(cmd) {
@@ -296,7 +292,7 @@ function handleMessage(msg, user=msg.author) {
 
 // Hook the handler
 try {
-  bot.on('messageCreate', (msg) => {    handleMessage(msg);   });
+  global.bot.on('messageCreate', (msg) => {    handleMessage(msg);   });
 }
 catch (e) {
   logError(e);

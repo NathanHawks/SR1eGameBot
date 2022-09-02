@@ -8,11 +8,11 @@
  */
 function handleRollCommand(msg, cmd, args, user, override=null) {
   // allow multiple roll commands separated by semicolon
-  var cmdArr = null;
+  let cmdArr = null;
   if (override !== null) cmdArr = override.split(";");
   else cmdArr = msg.content.split(";");
-  var output = '';
-  for (var x = 0; x < cmdArr.length; x++) {
+  let output = '';
+  for (let x = 0; x < cmdArr.length; x++) {
     if (output !== '') output += `\nRoll #${x+1}: `;
     // kill preceding or trailing space before it kills my parsing
     cmdArr[x] = cmdArr[x].trim();
@@ -22,11 +22,11 @@ function handleRollCommand(msg, cmd, args, user, override=null) {
     cmd = cmd.toLowerCase();
     if (cmd.substring(0, 1) === '!') cmd = cmd.substring(1);
     // SETUP: how many dice, and do we explode?
-    var isTestBool = false;
-    var isTotalBool = false;
-    var numDiceInt = 0;
-    var lastchar = lastChar(cmd);
-    var modifier = 0;
+    let isTestBool = false;
+    let isTotalBool = false;
+    let numDiceInt = 0;
+    let lastchar = lastChar(cmd);
+    let modifier = 0;
     if (lastchar == '!') {
       isTestBool = true;
       numDiceInt = cmd.substring(0, cmd.length-1);
@@ -41,38 +41,38 @@ function handleRollCommand(msg, cmd, args, user, override=null) {
     }
 
     // SETUP: was a TN given?
-    var tnInt = getTNFromArgs(args);
+    let tnInt = getTNFromArgs(args);
 
     // SETUP: is this an opposed roll?
-    var retarr = getOpposedSetupArr(args);
-    var isOpposedBool = retarr[0];
-    var opponentDiceInt = retarr[1];
-    var opponentTNInt = retarr[2];
-    var isOpposedTestBool = retarr[3];
+    let retarr = getOpposedSetupArr(args);
+    let isOpposedBool = retarr[0];
+    let opponentDiceInt = retarr[1];
+    let opponentTNInt = retarr[2];
+    let isOpposedTestBool = retarr[3];
     if (isOpposedTestBool === true && opponentTNInt === -1) {
       msg.reply(addMaintenanceStatusMessage(":no_entry_sign: you ordered an opposed test without an "
       + "opponent TN (the **otn** option).\nExample: **!6! tn4 vs5! *otn4***"))
-      .catch((e) => {console.log(e);});
+      .catch((e) => { logError(e); });
       return;
     }
 
     // SETUP: anything remaining is a note; prepare to pass it thru
-    var note = prepRollNote(cmd, args, tnInt);
+    let note = prepRollNote(cmd, args, tnInt);
 
     // GO: Roll the bones ============================================
-    var retarr = rollDice(numDiceInt, isTestBool, tnInt);
-    var successesInt = retarr[0];
-    var rollsIntArr = retarr[1];
+    let retarr = rollDice(numDiceInt, isTestBool, tnInt);
+    let successesInt = retarr[0];
+    let rollsIntArr = retarr[1];
     // handle opposed roll
     if (isOpposedBool) {
-      var retarr = rollDice(opponentDiceInt, isOpposedTestBool, opponentTNInt);
-      var opponentSuccessesInt = retarr[0];
-      var opponentRollsIntArr = retarr[1];
+      let retarr = rollDice(opponentDiceInt, isOpposedTestBool, opponentTNInt);
+      let opponentSuccessesInt = retarr[0];
+      let opponentRollsIntArr = retarr[1];
     }
     // prep output and deliver it ====================================
     // handle total'd roll
     if (isTotalBool) {
-      var total = 0;
+      let total = 0;
       rollsIntArr.map((roll)=>{total+=roll;})
       if (modifier) total += modifier;
       output += `[Total: ${total}] | `;
@@ -83,7 +83,7 @@ function handleRollCommand(msg, cmd, args, user, override=null) {
       );
     }
     else {
-      var successesFormattedString = "";
+      let successesFormattedString = "";
       if (successesInt > 0) {
         successesFormattedString = successesInt + ' successes ';
       }
@@ -97,11 +97,11 @@ function handleRollCommand(msg, cmd, args, user, override=null) {
     // modify output for maintenance mode status
     output = addMaintenanceStatusMessage(output);
     // post results
-    msg.channel.send(output).catch((e) => {console.log(e);});
+    msg.channel.send(output).catch((e) => { logError(e); });
     // log activity
     logWrite('🎲');
     // provide reroll ui (dice reaction)
-    msg.react('🎲').catch((e) => {console.log(e);});
+    msg.react('🎲').catch((e) => { logError(e); });
     // no return
   }
 

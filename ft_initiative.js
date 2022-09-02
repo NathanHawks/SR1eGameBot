@@ -12,39 +12,39 @@
      .catch((e)=>{error.log(e);});
      return;
    }
-   await msg.react('⏳').catch((e) => {console.log(e);});
+   addHourglass(msg);
    logWrite('\x1b[32m [ ==================== handleInitCommand ======================= ]\x1b[0m');
-   var gmPlayChannelID = await getPlayChannel(msg);
+   let gmPlayChannelID = await getPlayChannel(msg);
 
-   var lastFoundFileID = null;
+   let lastFoundFileID = null;
    await ensureTriplet(msg);
-   var userFolderID = '';
-   var gmPlayersFileID = '';
-   var gmPlayersString = '';
-   var gmPlayersArr = [];
-   var gmNPCFileID = '';
-   var gmNPCFileContent = '';
-   var gmNPCArr = [];
-   var playerInitContent = [];
-   var gmNPCFileContent = [];
-   var someoneIsntReady_GM = false;
-   var someoneIsntReady_Init = false;
-   var playerFolderIDs = [];
-   var playerGMFileID = [];
-   var playerInitFileID = [];
-   var playersNotSetGM = [];
-   var playersNotSetInit = [];
-   var skipFileActions = false;
-   var initWillFail = false;
-   var output = '';
-   var filename = '';
-   var npcRolls = [];
-   var playerRolls = [];
-   var npcPhases = [];
-   var playerPhases = [];
+   let userFolderID = '';
+   let gmPlayersFileID = '';
+   let gmPlayersString = '';
+   let gmPlayersArr = [];
+   let gmNPCFileID = '';
+   let gmNPCFileContent = '';
+   let gmNPCArr = [];
+   let playerInitContent = [];
+   let gmNPCFileContent = [];
+   let someoneIsntReady_GM = false;
+   let someoneIsntReady_Init = false;
+   let playerFolderIDs = [];
+   let playerGMFileID = [];
+   let playerInitFileID = [];
+   let playersNotSetGM = [];
+   let playersNotSetInit = [];
+   let skipFileActions = false;
+   let initWillFail = false;
+   let output = '';
+   let filename = '';
+   let npcRolls = [];
+   let playerRolls = [];
+   let npcPhases = [];
+   let playerPhases = [];
 
    // get author's userFolderID for play channel
-   userFolderID = await findUserDBIDFromMsg(msg, true);
+   userFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
    // get file ID of gm's (msg.author's) gmPlayers file, if any
    filename = 'gmPlayers';
@@ -52,20 +52,20 @@
 
    // make array of playerIDs from msg.author's gmPlayers file content, if any
    if (gmPlayersFileID !== -1) {
-     gmPlayersString = await getStringContents(gmPlayersFileID, gmPlayChannelID);
+     gmPlayersString = await getStringContent(gmPlayersFileID, gmPlayChannelID);
 
 
      gmPlayersArr = gmPlayersString.split(',');
    }
    // ensure all players have setgm to user, and have setinit
    // prune empty entries from gmPlayersArr
-   var tmpArr = [];
+   let tmpArr = [];
    gmPlayersArr.map((p)=>{
      if (p.length && p !== ' ') tmpArr[tmpArr.length] = p;
    });
    gmPlayersArr = tmpArr;
    // loop on gm's (msg.author's) list of players
-   for (var x = 0; x < gmPlayersArr.length; x++) {
+   for (let x = 0; x < gmPlayersArr.length; x++) {
      filename = 'gmWhoIsGM';
      // create an index of each player's folderID
 
@@ -92,7 +92,7 @@
        }
        else {
 
-         var playerGMContent = await getStringContents(playerGMFileID[x], gmPlayChannelID);
+         let playerGMContent = await getStringContent(playerGMFileID[x], gmPlayChannelID);
 
 
          if (playerGMContent !== user.id) {
@@ -114,7 +114,7 @@
        }
        else {
 
-         playerInitContent[x] = await getStringContents(playerInitFileID[x], gmPlayChannelID);
+         playerInitContent[x] = await getStringContent(playerInitFileID[x], gmPlayChannelID);
 
 
          if (playerInitContent[x].length == 0) {
@@ -147,7 +147,7 @@
      doNothing();
    }
    else {
-     gmNPCFileContent = await getStringContents(gmNPCFileID, gmPlayChannelID);
+     gmNPCFileContent = await getStringContent(gmNPCFileID, gmPlayChannelID);
 
      gmNPCArr = gmNPCFileContent.split(",");
    }
@@ -169,8 +169,8 @@
    if (!initWillFail) {
      playerRolls = [];
      // determine which init system we're emulating
-     var passTH = [];
-     var passSub = [];
+     let passTH = [];
+     let passSub = [];
      switch (cmd) {
        case 'init':
        case 'initflip':
@@ -191,14 +191,14 @@
        break;
      }
      // roll & calculate for players
-     for (var x = 0; x < gmPlayersArr.length; x++) {
-       var total = 0;
-       var init = playerInitContent[x].split(" ");
+     for (let x = 0; x < gmPlayersArr.length; x++) {
+       let total = 0;
+       let init = playerInitContent[x].split(" ");
        if (cmd !== 'initcp' && cmd !== 'initcpr') {
-         var [junk,rolls] = rollDice(init[0], false, -1)
+         let [junk,rolls] = rollDice(init[0], false, -1)
        }
-       else var rolls = rollD10s(init[0]);
-       for (var y = 0; y < rolls.length; y++) {
+       else let rolls = rollD10s(init[0]);
+       for (let y = 0; y < rolls.length; y++) {
          rolls[y] = Number(rolls[y]);
          total += rolls[y];
        }
@@ -222,15 +222,15 @@
        }
      }
      // roll & calculate for NPCs
-     for (var x = 0; x < gmNPCArr.length; x++) {
+     for (let x = 0; x < gmNPCArr.length; x++) {
        if (gmNPCArr[x].length) {
-         var total = 0;
-         var init = gmNPCArr[x].split(" ");
+         let total = 0;
+         let init = gmNPCArr[x].split(" ");
          if (cmd !== 'initcp' && cmd !== 'initcpr') {
-           var [junk,rolls] = rollDice(init[0], false, -1)
+           let [junk,rolls] = rollDice(init[0], false, -1)
          }
          else rolls = rollD10s(init[0]);
-         for (var y = 0; y < rolls.length; y++) {
+         for (let y = 0; y < rolls.length; y++) {
            rolls[y] = Number(rolls[y]);
            total += rolls[y];
          }
@@ -256,32 +256,32 @@
      }
    }
    // create dummy entries for output array so we can address higher items first
-   var ordArr = [];
+   let ordArr = [];
    // has each player or npc (by array index) gone yet this pass?
-   var playerWentArr = [];
-   var npcWentArr = [];
+   let playerWentArr = [];
+   let npcWentArr = [];
    // to bump people to the bottom
-   var nextOrdArr = [];
-   var nextPlayerWentArr = [];
-   var nextNPCWentArr = [];
-   var laterOrdArr = [];
-   var laterPlayerWentArr = [];
-   var laterNPCWentArr = [];
-   var furtherOrdArr = [];
-   var furtherPlayerWentArr = [];
-   var furtherNPCWentArr = [];
-   var farOrdArr = [];
-   var farPlayerWentArr = [];
-   var farNPCWentArr = [];
-   for (var x = 0; x <= 40; x++) { ordArr[x] = ''; }
+   let nextOrdArr = [];
+   let nextPlayerWentArr = [];
+   let nextNPCWentArr = [];
+   let laterOrdArr = [];
+   let laterPlayerWentArr = [];
+   let laterNPCWentArr = [];
+   let furtherOrdArr = [];
+   let furtherPlayerWentArr = [];
+   let furtherNPCWentArr = [];
+   let farOrdArr = [];
+   let farPlayerWentArr = [];
+   let farNPCWentArr = [];
+   for (let x = 0; x <= 40; x++) { ordArr[x] = ''; }
    // sort & format for output
    // create a downward loop for populating ordArr
-   for (var x = 40; x > 0; x--) {
+   for (let x = 40; x > 0; x--) {
      // loop thru players array (containing arrays of their dice-based phases)
-     for (var y = 0; y < playerPhases.length; y++) {
+     for (let y = 0; y < playerPhases.length; y++) {
        // if the player is supposed to go on this phase (init passes aside)
        if (playerPhases[y].indexOf(x) !== -1) {
-         var formattedEntry = `*[${x}]* <@${gmPlayersArr[y]}> (${playerInitContent[y].split(" ")[1]})`;
+         let formattedEntry = `*[${x}]* <@${gmPlayersArr[y]}> (${playerInitContent[y].split(" ")[1]})`;
          if (cmd !== 'init' && cmd !== 'initflip' && cmd !== 'init2' && cmd !== 'init2flip' && cmd !== 'initcp' && cmd !== 'initcpr') {
            // it's not 2nd edition: enforce the init passes rule
            if (playerWentArr.indexOf(y) === -1) {
@@ -322,10 +322,10 @@
        }
      }
      // loop thru npc array (containing arrays their dice-based phases)
-     for (var y = 0; y < npcPhases.length; y++) {
+     for (let y = 0; y < npcPhases.length; y++) {
        // if the npc is supposed to go this phase (init passes aside)
        if (npcPhases[y].indexOf(x) !== -1) {
-         var formattedEntry = `*[${x}]* ${gmNPCArr[y].split(" ")[2]} (${gmNPCArr[y].split(" ")[1]})`;
+         let formattedEntry = `*[${x}]* ${gmNPCArr[y].split(" ")[2]} (${gmNPCArr[y].split(" ")[1]})`;
          if (cmd !== 'init' && cmd !== 'initflip' && cmd !== 'init2' && cmd !== 'init2flip' && cmd !== 'initcp' && cmd !== 'initcpr') {
            // enforce the init passes rule
            if (npcWentArr.indexOf(y) === -1) {
@@ -377,7 +377,7 @@
          }
          if (nextOrdArr.length) {
            nextOrdArr.sort(sortInitPass);
-           for (var z = 0; z < nextOrdArr.length; z++) {
+           for (let z = 0; z < nextOrdArr.length; z++) {
              ordArr.splice(x, 0, nextOrdArr[z]);
            }
          }
@@ -399,28 +399,28 @@
            // second pass
            if (nextOrdArr.length) {
              nextOrdArr.sort(sortInitPass);
-             for (var z = 0; z < nextOrdArr.length; z++) {
+             for (let z = 0; z < nextOrdArr.length; z++) {
                ordArr.splice(x, 0, nextOrdArr[z]);
              }
            }
            // third pass
            if (laterOrdArr.length) {
              laterOrdArr.sort(sortInitPass);
-             for (var z = 0; z < laterOrdArr.length; z++) {
+             for (let z = 0; z < laterOrdArr.length; z++) {
                ordArr.splice(x, 0, laterOrdArr[z]);
              }
            }
            // fourth pass
            if (furtherOrdArr.length) {
              furtherOrdArr.sort(sortInitPass);
-             for (var z = 0; z < furtherOrdArr.length; z++) {
+             for (let z = 0; z < furtherOrdArr.length; z++) {
                ordArr.splice(x, 0, furtherOrdArr[z]);
              }
            }
            //. fifth pass
            if (farOrdArr.length) {
              farOrdArr.sort(sortInitPass);
-             for (var z = 0; z < farOrdArr.length; z++) {
+             for (let z = 0; z < farOrdArr.length; z++) {
                ordArr.splice(x, 0, farOrdArr[z]);
              }
            }
@@ -429,12 +429,12 @@
      }
    }
    // prep for possible 1e tiebreaker rule
-   var tbArr = [{name: '', phases: 0}];
+   let tbArr = [{name: '', phases: 0}];
    // prep for sorting
-   var tmpArr = [];
+   let tmpArr = [];
    // re-sort each phase for Reaction and 1e tiebreaker rule, and then split lines
    // backwards loop of element-per-phase array
-   for (var x = ordArr.length - 1; x > -1 ; x--) {
+   for (let x = ordArr.length - 1; x > -1 ; x--) {
      // at this point each phase is a comma-separated list of formattedEntry's
      tmpArr = ordArr[x].split(",");
      if (cmd !== 'initcp' && cmd !== 'initcpr') {
@@ -488,7 +488,7 @@
      case 'initcp':
      case 'initcpr':
        // add to output from high to low
-       for (var x = ordArr.length-1; x > 0; x--) {
+       for (let x = ordArr.length-1; x > 0; x--) {
          if (ordArr[x].length) { output += `${ordArr[x]}\n`; }
        }
      break;
@@ -496,7 +496,7 @@
      case 'init2flip':
      case 'init3flip':
        // add to output from low to high
-       for (var x = 0; x < ordArr.length; x++) { // 40 per pass times 5 passes
+       for (let x = 0; x < ordArr.length; x++) { // 40 per pass times 5 passes
          if (ordArr[x].length) { output += `${ordArr[x]}\n`; }
        }
      break;
@@ -505,7 +505,7 @@
      output += "========================\n";
    }
    // report
-   msg.reply(addMaintenanceStatusMessage(output)).catch((e) => {console.log(e);});
+   msg.reply(addMaintenanceStatusMessage(output)).catch((e) => { logError(e); });
 
    logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
    removeHourglass(msg);
@@ -519,13 +519,13 @@
      return;
    }
    logWrite('\x1b[32m [ ==================== handleSetGMCommand ====================== ]\x1b[0m');
-   var gmPlayChannelID = await getPlayChannel(msg);
+   let gmPlayChannelID = await getPlayChannel(msg);
 
-   var targetID = "";
+   let targetID = "";
    if (args.length) {
      if (args[0].substring(0,2) !== '<@') {
        msg.reply(addMaintenanceStatusMessage('this command requires you to "@" people correctly.'))
-       .catch((e) => {console.log(e);});
+       .catch((e) => { logError(e); });
        return;
      }
      targetID = args[0].substring(2, args[0].length-1);
@@ -533,16 +533,16 @@
        targetID = args[0].substring(3, args[0].length-1);
    }
    else targetID = user.id;
-   await msg.react('⏳').catch((e) => {console.log(e);});
+   addHourglass(msg);
    // ensure folder/subfolder chain: (root)/(UserData)/ServerID/ChannelID/UserID
      logSpam('handleSetGMCommand entering ensureTriplet');
    await ensureTriplet(msg);
      logSpam('handleSetGMCommand finished ensureTriplet');
 
    // now get the folderID of the user folder in this channel
-     logSpam('handleSetGMCommand entering findUserDBIDFromMsg');
-   var userFolderID = await findUserDBIDFromMsg(msg, true);
-     logSpam('handleSetGMCommand finished findUserDBIDFromMsg');
+     logSpam('handleSetGMCommand entering findUserFolderDBIDFromMsg');
+   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+     logSpam('handleSetGMCommand finished findUserFolderDBIDFromMsg');
 
      logSpam('handleSetGMCommand entering setStringByNameAndParent');
    await setStringByNameAndParent(msg, 'gmWhoIsGM', userFolderID, targetID);
@@ -551,8 +551,8 @@
      logSpam('handleSetGMCommand moving along');
    // remove reaction
    removeHourglass(msg);
-   if (targetID == msg.author.id) msg.reply(addMaintenanceStatusMessage(` you are now a GM in channel <#${gmPlayChannelID}>.`)).catch((e) => {console.log(e);});
-   else msg.reply(addMaintenanceStatusMessage(` your GM is now <@${targetID}> in this channel.`)).catch((e) => {console.log(e);});
+   if (targetID == msg.author.id) msg.reply(addMaintenanceStatusMessage(` you are now a GM in channel <#${gmPlayChannelID}>.`)).catch((e) => { logError(e); });
+   else msg.reply(addMaintenanceStatusMessage(` your GM is now <@${targetID}> in this channel.`)).catch((e) => { logError(e); });
    // listAllFiles();
    logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
  }
@@ -563,8 +563,8 @@
      return;
    }
    logWrite('\x1b[32m [ ==================== handleSetPlayersCommand ================= ]\x1b[0m');
-   await msg.react('⏳').catch((e) => {console.log(e);});
-   var gmPlayChannelID = await getPlayChannel(msg);
+   addHourglass(msg);
+   let gmPlayChannelID = await getPlayChannel(msg);
 
    await ensureTriplet(msg);
    // fixme: Discord has two formats, <@! vs <@
@@ -573,15 +573,15 @@
      if (args[x].substring(0, 1) == '!')
        args[x] = args[x].substring(1, args[x].length);
    }
-   var content = args.join(",");
+   let content = args.join(",");
 
-   var userFolderID = await findUserDBIDFromMsg(msg, true);
+   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
    await setStringByNameAndParent(msg, 'gmPlayers', userFolderID, content);
 
    // remove reaction
    removeHourglass(msg);
-   msg.reply(addMaintenanceStatusMessage(` your group in channel <#${gmPlayChannelID}> is now ${args.length} players.`)).catch((e) => {console.log(e);});
+   msg.reply(addMaintenanceStatusMessage(` your group in channel <#${gmPlayChannelID}> is now ${args.length} players.`)).catch((e) => { logError(e); });
    // listAllFiles();
    logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
  }
@@ -593,21 +593,21 @@
    }
    if (args.length) {
      if (args[0].substring(0,2) !== '<@') {
-       msg.reply(addMaintenanceStatusMessage('this command requires you to "@" people correctly.')).catch((e) => {console.log(e);});
+       msg.reply(addMaintenanceStatusMessage('this command requires you to "@" people correctly.')).catch((e) => { logError(e); });
        return;
      }
    }
    logWrite('\x1b[32m [ ==================== handleAddPlayersCommand ================= ]\x1b[0m');
-   await msg.react('⏳').catch((e) => {console.log(e);});
-   var gmPlayChannelID = await getPlayChannel(msg);
+   addHourglass(msg);
+   let gmPlayChannelID = await getPlayChannel(msg);
 
    await ensureTriplet(msg);
-   var gmPlayersFileID = null;
-   var filename = 'gmPlayers';
-   var auth = global.auth;
-   var drive = google.drive({version: 'v3', auth});
+   let gmPlayersFileID = null;
+   let filename = 'gmPlayers';
+   let auth = global.auth;
+   let drive = google.drive({version: 'v3', auth});
 
-   var userFolderID = await findUserDBIDFromMsg(msg, true);
+   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
    // see if the gmPlayers file already exists
 
    gmPlayersFileID = await findStringIDByName(filename, userFolderID, gmPlayChannelID);
@@ -615,12 +615,12 @@
    // get and parse the contents of the file
    try {
      if (gmPlayersFileID !== -1) {
-       var oldPlayerString = await getStringContents(gmPlayersFileID);
+       let oldPlayerString = await getStringContent(gmPlayersFileID);
 
-       var newPlayersArr = [];
+       let newPlayersArr = [];
        newPlayersArr = oldPlayerString.split(",");
-       var tmpArr = [];
-       for (var x = 0; x < newPlayersArr.length; x++) {
+       let tmpArr = [];
+       for (let x = 0; x < newPlayersArr.length; x++) {
          if (newPlayersArr[x].length > 0) tmpArr[tmpArr.length] = newPlayersArr[x];
        }
        newPlayersArr = tmpArr;
@@ -631,7 +631,7 @@
            newPlayersArr[newPlayersArr.length-1] = args[x].substring(3, args[x].length-1);
          }
        }
-       var newPlayersCount = newPlayersArr.length;
+       let newPlayersCount = newPlayersArr.length;
        // format for output/saving
        content = newPlayersArr.join(",");
        // save the new player list
@@ -639,7 +639,7 @@
 
        msg.reply(addMaintenanceStatusMessage(` you added ${args.length} players `
        + ` to your group in channel <#${gmPlayChannelID}>;`
-       + ` now there are ${newPlayersCount}.`)).catch((e) => {console.log(e);});
+       + ` now there are ${newPlayersCount}.`)).catch((e) => { logError(e); });
        removeHourglass(msg);
      } else {
        // if there is no file we fail forward to the !set version of the command
@@ -657,16 +657,16 @@
      return;
    }
    logWrite('\x1b[32m [ ==================== handleListPlayersCommand ================ ]\x1b[0m');
-   var lastFoundFileID = -1;
-   await msg.react('⏳').catch((e) => {console.log(e);});
-   var gmPlayChannelID = await getPlayChannel(msg);
+   let lastFoundFileID = -1;
+   addHourglass(msg);
+   let gmPlayChannelID = await getPlayChannel(msg);
 
    await ensureTriplet(msg);
-   var auth = global.auth;
-   var drive = google.drive({version: 'v3', auth});
-   var filename = 'gmPlayers';
+   let auth = global.auth;
+   let drive = google.drive({version: 'v3', auth});
+   let filename = 'gmPlayers';
 
-   var userFolderID = await findUserDBIDFromMsg(msg, true);
+   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
 
    drive.files.list({q:`"${userFolderID}" in parents and name="${filename}"`,
@@ -684,7 +684,7 @@
        // the file doesn't exist for this channel/user pairing
        if (res.data.files.length == 0) {
          // no group; report so, and prep to abort
-         msg.reply(addMaintenanceStatusMessage(` you currently have no group in channel <#${gmPlayChannelID}>.`)).catch((e) => {console.log(e);});
+         msg.reply(addMaintenanceStatusMessage(` you currently have no group in channel <#${gmPlayChannelID}>.`)).catch((e) => { logError(e); });
 
        } else {
          // be sure it's the right file
@@ -702,18 +702,18 @@
      return;
    }
    // get contents, parse, and count
-   var gmPlayersFileID = lastFoundFileID;
+   let gmPlayersFileID = lastFoundFileID;
    logSpam(`userFolderID ${userFolderID}`);
    logSpam('gmPlayersFileID ' + gmPlayersFileID);
-   var playersString = await getStringContents(gmPlayersFileID, gmPlayChannelID);
+   let playersString = await getStringContent(gmPlayersFileID, gmPlayChannelID);
 
-   var playersArr = playersString.split(',');
-   var tmpArr = [];
+   let playersArr = playersString.split(',');
+   let tmpArr = [];
    playersArr.map((p) => {
      if (p.length > 0) tmpArr[tmpArr.length] = p;
    });
    playersArr = tmpArr;
-   var output = '';
+   let output = '';
    // format for discord
    playersArr.map((p) => {
      if (p !== '') {
@@ -722,10 +722,10 @@
      }
    });
    if (playersArr.length == 0)
-     msg.reply(addMaintenanceStatusMessage(` you don\'t have a group in channel <#${gmPlayChannelID}> yet.`)).catch((e) => {console.log(e);});
+     msg.reply(addMaintenanceStatusMessage(` you don\'t have a group in channel <#${gmPlayChannelID}> yet.`)).catch((e) => { logError(e); });
    else
      msg.reply(addMaintenanceStatusMessage(` your group in channel <#${gmPlayChannelID}> is ${playersArr.length} players `
-     + `strong: ${output}`)).catch((e) => {console.log(e);});
+     + `strong: ${output}`)).catch((e) => { logError(e); });
    logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
    // remove reaction
    removeHourglass(msg);
@@ -737,17 +737,17 @@
      return;
    }
    logWrite('\x1b[32m [ ==================== handleRemovePlayersCommand ============== ]\x1b[0m');
-   await msg.react('⏳').catch((e) => {console.log(e);});
-   var gmPlayChannelID = await getPlayChannel(msg);
+   addHourglass(msg);
+   let gmPlayChannelID = await getPlayChannel(msg);
 
-   var lastFoundFileID = -1;
+   let lastFoundFileID = -1;
    await ensureTriplet(msg);
-   var content = args.join(" ");
-   var filename = "gmPlayers"
-   var auth = global.auth;
-   var drive = google.drive({version: 'v3', auth});
+   let content = args.join(" ");
+   let filename = "gmPlayers"
+   let auth = global.auth;
+   let drive = google.drive({version: 'v3', auth});
 
-   var userFolderID = await findUserDBIDFromMsg(msg, true);
+   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
 
    // ensure the file
@@ -808,17 +808,17 @@
 
    gmPlayersFileID = lastFoundFileID;
    // get and parse the contents
-   var oldContentString = await getStringContents(gmPlayersFileID);
+   let oldContentString = await getStringContent(gmPlayersFileID);
 
-   var contentArray = null;
+   let contentArray = null;
    if (oldContentString == '') contentArray = [];
    else contentArray = oldContentString.split(",");
-   var newContentArray = [];
+   let newContentArray = [];
    // parse the args entries and delete the requested entries
-   var removedIndex = [];
-   for (var y = 0; y < contentArray.length; y++) {
-     for (var x = 0; x < args.length; x++) {
-       var remove = args[x].substring(2, args[x].length-1); // <@!user_ID>
+   let removedIndex = [];
+   for (let y = 0; y < contentArray.length; y++) {
+     for (let x = 0; x < args.length; x++) {
+       let remove = args[x].substring(2, args[x].length-1); // <@!user_ID>
        if (remove.substring(0,1) == '!') {
          remove = remove.substring(1, remove.length);
        }
@@ -831,17 +831,17 @@
      }
    }
    // now rebuild it better
-   for (var y = 0; y < contentArray.length; y++) {
+   for (let y = 0; y < contentArray.length; y++) {
      if (removedIndex.indexOf(y) == -1)
        newContentArray[newContentArray.length] = contentArray[y];
    }
    // save, notify, remove hourglass
-   var newContentString = newContentArray.join(",");
+   let newContentString = newContentArray.join(",");
    setStringByNameAndParent(msg, filename, userFolderID, newContentString);
    removeHourglass(msg);
    msg.reply(addMaintenanceStatusMessage(` you removed ${removedIndex.length} players. `
    + `You now have ${newContentArray.length} players in channel <#${gmPlayChannelID}>.`))
-   .catch((e) => {console.log(e);});
+   .catch((e) => { logError(e); });
    logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
  }
  async function handleClearPlayersCommand(msg, cmd, args, user) {
@@ -851,16 +851,16 @@
      return;
    }
    logWrite('\x1b[32m [ ==================== handleClearPlayersCommand =============== ]\x1b[0m');
-   await msg.react('⏳').catch((e) => {console.log(e);});
-   var gmPlayChannelID = await getPlayChannel(msg);
+   addHourglass(msg);
+   let gmPlayChannelID = await getPlayChannel(msg);
 
    await ensureTriplet(msg);
    // do prep while waiting for long disk operation
-   var auth = global.auth;
-   var drive = google.drive({version: 'v3', auth});
-   var filename = 'gmPlayers';
+   let auth = global.auth;
+   let drive = google.drive({version: 'v3', auth});
+   let filename = 'gmPlayers';
 
-   var parentFolderID = await findUserDBIDFromMsg(msg, true);
+   let parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
 
    drive.files.list({q:`"${parentFolderID}" in parents and name="${filename}"`,
@@ -897,7 +897,7 @@
    // remove reaction
    removeHourglass(msg);
    msg.reply(addMaintenanceStatusMessage(` your group for channel <#${gmPlayChannelID}> was reset to 0 players.`))
-   .catch((e) => {console.log(e);});
+   .catch((e) => { logError(e); });
    logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
  }
  async function handleSetInitCommand(msg, cmd, args, user) {
@@ -910,23 +910,23 @@
      // deal with the inevitable player who can't grok pressing a spacebar between fields
      if (args[0] && args.length == 1 && args[0].toLowerCase().indexOf('d6+') !== -1) {
        args[0] = args[0].toLowerCase();
-       var tmpArr = args[0].split('d6+');
+       let tmpArr = args[0].split('d6+');
        args = tmpArr;
      }
      // allow the d6 and the +
      if (args[0] && args[0].length) {
-       var suspect = args[0].substring(args[0].length-2, args[0].length).toLowerCase();
+       let suspect = args[0].substring(args[0].length-2, args[0].length).toLowerCase();
        if (suspect == 'd6' || suspect == 'D6') {
          args[0] = args[0].substring(0, args[0].length-2);
        }
      }
      if (args && args[1] && args[1].length) {
-       var suspect = args[1].substring(0, 1);
+       let suspect = args[1].substring(0, 1);
        if (suspect == '+') {
          args[1] = args[1].substring(1, args[1].length);
        }
      }
-     var errOutput = '';
+     let errOutput = '';
      if (args.length !== 2) {
        errOutput += ':no_entry_sign: Wrong number of options; \n'
          + 'it\'s two numbers separated by a space.\n'
@@ -946,22 +946,22 @@
    // abort if any errors
    if (errOutput !== '') {
      msg.reply(addMaintenanceStatusMessage(`There was a problem.\n${errOutput}`))
-     .catch((e) => {console.log(e);});
+     .catch((e) => { logError(e); });
      return;
    }
    // and on to the show
    logWrite('\x1b[32m [ ==================== handleSetInitCommand ==================== ]\x1b[0m');
-   await msg.react('⏳').catch((e) => {console.log(e);});
+   addHourglass(msg);
    // serverID.channelID.userID.playerInit STRING
-   var content = args.join(" ");
+   let content = args.join(" ");
      logSpam('handleSetInitCommand entering ensureTriplet');
    await ensureTriplet(msg);
      logSpam('handleSetInitCommand finished ensureTriplet');
 
    // now get the folderID of the user folder in this channel
-     logSpam('handleSetInitCommand entering findUserDBIDFromMsg');
-   var userFolderID = await findUserDBIDFromMsg(msg);
-     logSpam('handleSetInitCommand finished findUserDBIDFromMsg');
+     logSpam('handleSetInitCommand entering findUserFolderDBIDFromMsg');
+   let userFolderID = await findUserFolderDBIDFromMsg(msg);
+     logSpam('handleSetInitCommand finished findUserFolderDBIDFromMsg');
 
      logSpam('handleSetInitCommand entering setStringByNameAndParent');
    await setStringByNameAndParent(msg, 'playerInit', userFolderID, content);
@@ -970,7 +970,7 @@
      logSpam('handleSetInitCommand moving along home');
    // reformat for output (better user feedback)
    tmpArr = content.split(" ");
-   var output = `${tmpArr[0]}d6 +${tmpArr[1]}`;
+   let output = `${tmpArr[0]}d6 +${tmpArr[1]}`;
    // remove reaction
    removeHourglass(msg);
    msg.reply(addMaintenanceStatusMessage(` your initiative formula (in this channel) is now ${output}.`));
@@ -988,25 +988,25 @@
    }
    // and on to the show
    logWrite('\x1b[32m [ ==================== handleSetNPCInitCommand ================= ]\x1b[0m');
-   await msg.react('⏳').catch((e) => {console.log(e);});
-   var gmPlayChannelID = await getPlayChannel(msg);
+   addHourglass(msg);
+   let gmPlayChannelID = await getPlayChannel(msg);
 
    await ensureTriplet(msg);
 
-   var userFolderID = await findUserDBIDFromMsg(msg, true);
-   var contentArray = [];
-   for (var x = 0; x < args.length; x++) {
+   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+   let contentArray = [];
+   for (let x = 0; x < args.length; x++) {
      contentArray[contentArray.length] = `${args[x]} ${args[x+1]} ${args[x+2]}`;
      x = x + 2;
    }
-   var content = contentArray.join(",");
+   let content = contentArray.join(",");
 
    await setStringByNameAndParent(msg, 'gmNPCInit', userFolderID, content);
 
    // remove reaction
    removeHourglass(msg);
    msg.reply(addMaintenanceStatusMessage(` your NPC's for this channel were reset, `
-   + `and you added ${contentArray.length} NPC's.`)).catch((e) => {console.log(e);});
+   + `and you added ${contentArray.length} NPC's.`)).catch((e) => { logError(e); });
    logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
  }
  async function handleAddNPCInitCommand(msg, cmd, args, user) {
@@ -1019,18 +1019,18 @@
    if (!validateNPCInput(msg, args)) {
      return;
    }
-   await msg.react('⏳').catch((e) => {console.log(e);});
+   addHourglass(msg);
    logWrite('\x1b[32m [ ==================== handleAddNPCInitCommand ================= ]\x1b[0m');
-   var gmPlayChannelID = await getPlayChannel(msg);
+   let gmPlayChannelID = await getPlayChannel(msg);
 
    await ensureTriplet(msg);
-   var content = args.join(" ");
-   var filename = "gmNPCInit"
+   let content = args.join(" ");
+   let filename = "gmNPCInit"
 
-   var userFolderID = await findUserDBIDFromMsg(msg, true);
+   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
    // find the file
-   var gmNPCFileID = await findStringIDByName(filename, userFolderID, gmPlayChannelID);
+   let gmNPCFileID = await findStringIDByName(filename, userFolderID, gmPlayChannelID);
 
    // don't get attached to the id just yet
    if (gmNPCFileID === -1) {
@@ -1044,23 +1044,23 @@
 
    // now we can have the id
    // get and parse the contents
-   var oldContentString = await getStringContents(gmNPCFileID);
+   let oldContentString = await getStringContent(gmNPCFileID);
 
-   var contentArray = null;
+   let contentArray = null;
    if (oldContentString == '') contentArray = [];
    else contentArray = oldContentString.split(",");
    // add the new entries
-   for (var x = 0; x < args.length; x++) {
-     var newNPC = `${args[x]} ${args[x+1]} ${args[x+2]}`;
+   for (let x = 0; x < args.length; x++) {
+     let newNPC = `${args[x]} ${args[x+1]} ${args[x+2]}`;
      contentArray[contentArray.length] = newNPC;
      x = x + 2;
    }
    // save, notify, remove hourglass
-   var newContentString = contentArray.join(",");
+   let newContentString = contentArray.join(",");
    setStringByNameAndParent(msg, filename, userFolderID, newContentString);
    removeHourglass(msg);
    msg.reply(addMaintenanceStatusMessage(` you now have ${contentArray.length} NPC's in channel <#${gmPlayChannelID}>.`))
-   .catch((e) => {console.log(e);});
+   .catch((e) => { logError(e); });
    logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
  }
  async function handleRemoveNPCInitCommand(msg, cmd, args, user) {
@@ -1070,17 +1070,17 @@
      return;
    }
    logWrite('\x1b[32m [ ==================== handleRemoveNPCInitCommand ============== ]\x1b[0m');
-   var lastFoundFileID = -1;
-   await msg.react('⏳').catch((e) => {console.log(e);});
-   var gmPlayChannelID = await getPlayChannel(msg);
+   let lastFoundFileID = -1;
+   addHourglass(msg);
+   let gmPlayChannelID = await getPlayChannel(msg);
 
    await ensureTriplet(msg);
-   var content = args.join(" ");
-   var filename = "gmNPCInit"
-   var auth = global.auth;
-   var drive = google.drive({version: 'v3', auth});
+   let content = args.join(" ");
+   let filename = "gmNPCInit"
+   let auth = global.auth;
+   let drive = google.drive({version: 'v3', auth});
 
-   var userFolderID = await findUserDBIDFromMsg(msg, true);
+   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
 
    // ensure the file
@@ -1139,19 +1139,19 @@
    });
    // get the file's id
 
-   var gmNPCFileID = lastFoundFileID;
+   let gmNPCFileID = lastFoundFileID;
    // get and parse the contents
-   var oldContentString = await getStringContents(gmNPCFileID);
+   let oldContentString = await getStringContent(gmNPCFileID);
 
-   var contentArray = null;
+   let contentArray = null;
    if (oldContentString == '') contentArray = [];
    else contentArray = oldContentString.split(",");
-   var newContentArray = [];
+   let newContentArray = [];
    // parse the args entries and delete the requested entries
-   var removedIndex = [];
-   for (var y = 0; y < contentArray.length; y++) {
-     for (var x = 0; x < args.length; x++) {
-       var remove = `${args[x]} ${args[x+1]} ${args[x+2]}`;
+   let removedIndex = [];
+   for (let y = 0; y < contentArray.length; y++) {
+     for (let x = 0; x < args.length; x++) {
+       let remove = `${args[x]} ${args[x+1]} ${args[x+2]}`;
        if (contentArray[y] == remove) {
          // don't keep it
          removedIndex[removedIndex.length] = y;
@@ -1166,17 +1166,17 @@
      }
    }
    // now rebuild it better
-   for (var y = 0; y < contentArray.length; y++) {
+   for (let y = 0; y < contentArray.length; y++) {
      if (removedIndex.indexOf(y) == -1)
        newContentArray[newContentArray.length] = contentArray[y];
    }
    // save, notify, remove hourglass
-   var newContentString = newContentArray.join(",");
+   let newContentString = newContentArray.join(",");
    setStringByNameAndParent(msg, filename, userFolderID, newContentString);
    removeHourglass(msg);
    msg.reply(addMaintenanceStatusMessage(` you removed ${removedIndex.length} NPC's. `
    + `You now have ${newContentArray.length} NPC's in channel <#${gmPlayChannelID}>.`))
-   .catch((e) => {console.log(e);});
+   .catch((e) => { logError(e); });
    logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
  }
  async function handleListNPCInitCommand(msg, cmd, args, user) {
@@ -1186,27 +1186,27 @@
      return;
    }
    logWrite('\x1b[32m [ ==================== handleListNPCInitCommand ================ ]\x1b[0m');
-   await msg.react('⏳').catch((e) => {console.log(e);});
-   var gmPlayChannel = await getPlayChannel(msg);
+   addHourglass(msg);
+   let gmPlayChannel = await getPlayChannel(msg);
 
    await ensureTriplet(msg);
-   var filename = 'gmNPCInit';
+   let filename = 'gmNPCInit';
 
-   var parentFolderID = await findUserDBIDFromMsg(msg, true);
-   var gmNPCFileID = await findStringIDByName(filename, parentFolderID, msg.channel.id);
+   let parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
+   let gmNPCFileID = await findStringIDByName(filename, parentFolderID, msg.channel.id);
 
    if (gmNPCFileID == -1) {
      // file doesn't exist
-     var output = " you have no NPC's configured in this channel yet.";
+     let output = " you have no NPC's configured in this channel yet.";
    } else {
      // file exists
 
-     var contentString = await getStringContents(gmNPCFileID);
+     let contentString = await getStringContent(gmNPCFileID);
 
 
-     var contentArray = contentString.split(",");
+     let contentArray = contentString.split(",");
      // clean any blank entries
-     var tmpArr = [];
+     let tmpArr = [];
      contentArray.map((content)=> {
        if (content.length > 0) tmpArr[tmpArr.length] = content;
      });
@@ -1214,17 +1214,17 @@
      // determine/build output
      if (contentArray.length > 0) {
        // file exists and has NPC's in it
-       var output = " your NPC's inits in this channel are:";
-       for (var x = 0; x < contentArray.length; x++) {
-         var [dice,mod,label] = contentArray[x].split(" ");
+       let output = " your NPC's inits in this channel are:";
+       for (let x = 0; x < contentArray.length; x++) {
+         let [dice,mod,label] = contentArray[x].split(" ");
          output += `\n:arrow_right: ${dice}d6 +${mod} :label: ${label}`
        }
      } else {
        // file exists but was blank
-       var output = " you have no NPC's in this channel yet.";
+       let output = " you have no NPC's in this channel yet.";
      }
    }
-   msg.reply(addMaintenanceStatusMessage(output)).catch((e) => {console.log(e);});
+   msg.reply(addMaintenanceStatusMessage(output)).catch((e) => { logError(e); });
    logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannel})/${msg.author.id}`);
    removeHourglass(msg);
  }
@@ -1265,15 +1265,15 @@
      return;
    }
    logWrite('\x1b[32m [ ==================== handleClearNPCInitCommand =============== ]\x1b[0m');
-   await msg.react('⏳').catch((e) => {console.log(e);});
-   var gmPlayChannelID = await getPlayChannel(msg);
+   addHourglass(msg);
+   let gmPlayChannelID = await getPlayChannel(msg);
 
    await ensureTriplet(msg);
-   var auth = global.auth;
-   var drive = google.drive({version: 'v3', auth});
-   var filename = 'gmNPCInit';
+   let auth = global.auth;
+   let drive = google.drive({version: 'v3', auth});
+   let filename = 'gmNPCInit';
 
-   var parentFolderID = await findUserDBIDFromMsg(msg, true);
+   let parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
 
    drive.files.list(
@@ -1281,7 +1281,7 @@
      fields: 'nextPageToken, files(id, name, parents)'},
      async (err, res) => {
        // see also _clearNPCDrivePayload()
-       var gmPlayChannelID = await getPlayChannel(msg);
+       let gmPlayChannelID = await getPlayChannel(msg);
 
 
        if (err) {
@@ -1314,7 +1314,7 @@
    // remove reaction
    removeHourglass(msg);
    msg.reply(addMaintenanceStatusMessage(' you cleared your NPC initiative formulas for this channel.'))
-   .catch((e) => {console.log(e);});
+   .catch((e) => { logError(e); });
    logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
  }
  module.exports = {

@@ -13,9 +13,9 @@ async function handleAmmoAddGunSubcommand(msg, cmd, args, user) {
     return;
   }
   logWrite('\x1b[32m [ ==================== handleAmmoAddGunSubcommand =============== ]\x1b[0m');
-  await msg.react('⏳').catch((e) => {console.log(e);});
-  var output = '';
-  var gun = {
+  addHourglass(msg);
+  let output = '';
+  let gun = {
     name: args[1],
     maxROF: args[2],
     ammoContainerType: args[3],
@@ -26,18 +26,18 @@ async function handleAmmoAddGunSubcommand(msg, cmd, args, user) {
   gun.ammoTypes = args;
   gun.ammoTypes.splice(0,5);
   gun.ammoTypes = gun.ammoTypes.join(' ');
-  var gunData = `${gun.name},${gun.maxROF},`
+  let gunData = `${gun.name},${gun.maxROF},`
     + `${gun.ammoContainerType},${gun.ammoCapacity},${gun.ammoTypeLoaded},`
     + `${gun.ammoQtyLoaded},${gun.ammoTypes}`;
   logSpam(`handleAmmoAddGunSubcommand: ${gunData}`);
-  var playChannelID = await getPlayChannel(msg);
+  let playChannelID = await getPlayChannel(msg);
 
   await ensureTriplet(msg);
 
-  var parentFolderID = await findUserDBIDFromMsg(msg, true);
+  let parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
-  var filename = 'gunList';
-  var fileID = await findStringIDByName(filename, parentFolderID, playChannelID);
+  let filename = 'gunList';
+  let fileID = await findStringIDByName(filename, parentFolderID, playChannelID);
 
   if (fileID === -1) {
     // create file
@@ -47,11 +47,11 @@ async function handleAmmoAddGunSubcommand(msg, cmd, args, user) {
   }
   else {
     // update file
-    var content = await getStringContents(fileID, playChannelID);
+    let content = await getStringContent(fileID, playChannelID);
 
     // ensure the name is unique
-    var guns = content.split('\n');
-    var unique = true;
+    let guns = content.split('\n');
+    let unique = true;
     guns.map((g) => {
       gunArr = g.split(',');
       if (gunArr[0] === gun.name) unique = false;
@@ -59,7 +59,7 @@ async function handleAmmoAddGunSubcommand(msg, cmd, args, user) {
     if (unique) {
       if (content === '') content = gunData;
       else content = `${content}\n${gunData}`;
-      var count = content.split('\n').length
+      let count = content.split('\n').length
       await setStringByNameAndParent(msg, filename, parentFolderID, content);
 
       output = ` gun added; you now have ${count} guns in channel <#${playChannelID}>.`;
@@ -80,20 +80,20 @@ async function handleAmmoDelGunSubcommand(msg, cmd, args, user) {
     return;
   }
   logWrite('\x1b[32m [ ==================== handleAmmoDelGunSubcommand =============== ]\x1b[0m');
-  await msg.react('⏳').catch((e) => {console.log(e);});
-  var output = '';
-  var gun = {
+  addHourglass(msg);
+  let output = '';
+  let gun = {
     name: args[1],
   };
   logSpam(`handleAmmoDelGunSubcommand: ${gun.name}`);
-  var playChannelID = await getPlayChannel(msg);
+  let playChannelID = await getPlayChannel(msg);
 
   await ensureTriplet(msg);
 
-  var parentFolderID = await findUserDBIDFromMsg(msg, true);
+  let parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
-  var filename = 'gunList';
-  var fileID = await findStringIDByName(filename, parentFolderID, playChannelID);
+  let filename = 'gunList';
+  let fileID = await findStringIDByName(filename, parentFolderID, playChannelID);
 
   if (fileID === -1) {
     // create file
@@ -103,17 +103,17 @@ async function handleAmmoDelGunSubcommand(msg, cmd, args, user) {
   }
   else {
     // update file
-    var content = await getStringContents(fileID, playChannelID);
+    let content = await getStringContent(fileID, playChannelID);
 
     if (content === '') {
       output = ` you have no guns to remove in channel <#${playChannelID}>.`;
     }
     else {
 
-      var guns = content.split('\n');
-      var output = '';
+      let guns = content.split('\n');
+      let output = '';
       guns.map((g) => {
-        var gArr = g.split(',');
+        let gArr = g.split(',');
         if (gArr[0] !== gun.name) {
           if (output !== '') output += '\n';
           output += gArr.join(',');
@@ -121,7 +121,7 @@ async function handleAmmoDelGunSubcommand(msg, cmd, args, user) {
       });
       await setStringByNameAndParent(msg, filename, parentFolderID, output);
 
-      var count = 0;
+      let count = 0;
       if (output === '') count = 0;
       else count = output.split('\n').length
       output = ` gun removed; you now have ${count} guns in channel <#${playChannelID}>.`;
@@ -132,10 +132,10 @@ async function handleAmmoDelGunSubcommand(msg, cmd, args, user) {
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 function _ammoContentAsObject(oldAmmosContent) {
-  var oldAmmosArray = [];
-  var oldAmmos = [];
-  var oldAmmosLines = oldAmmosContent.split('\n');
-  for (var x = 0; x < oldAmmosLines.length; x++) {
+  let oldAmmosArray = [];
+  let oldAmmos = [];
+  let oldAmmosLines = oldAmmosContent.split('\n');
+  for (let x = 0; x < oldAmmosLines.length; x++) {
     if (oldAmmosLines[x] !== '') {
       oldAmmosArray[x] = oldAmmosLines[x].split(',');
       oldAmmos[x] = {
@@ -150,11 +150,11 @@ function _ammoContentAsObject(oldAmmosContent) {
   return oldAmmos;
 }
 function _mergeNewAmmo(oldAmmosContent, newAmmo) {
-  var oldAmmosArray = [];
-  var oldAmmos = _ammoContentAsObject(oldAmmosContent);
+  let oldAmmosArray = [];
+  let oldAmmos = _ammoContentAsObject(oldAmmosContent);
   logSpam(`_mergeNewAmmo converted content into ${oldAmmos.length} elements`);
-  var foundMatch = false;
-  for (var x = 0; x < oldAmmos.length; x++) {
+  let foundMatch = false;
+  for (let x = 0; x < oldAmmos.length; x++) {
     if (
         foundMatch === false
         && oldAmmos[x].containerType === newAmmo.containerType
@@ -177,7 +177,7 @@ function _mergeNewAmmo(oldAmmosContent, newAmmo) {
   return oldAmmos;
 }
 function _makeAmmoSaveString(ammos) {
-  var saveString = '';
+  let saveString = '';
   ammos.map((ammo) => {
     if (
       Number(ammo.qtyContainers) > 0
@@ -201,29 +201,29 @@ async function handleAmmoAddAmmoSubcommand(msg, cmd, args, user) {
     return;
   }
   logWrite('\x1b[32m [ ==================== handleAmmoAddAmmoSubcommand =============== ]\x1b[0m');
-  await msg.react('⏳').catch((e) => {console.log(e);});
-  var output = '';
-  var ammo = {
+  addHourglass(msg);
+  let output = '';
+  let ammo = {
     qtyContainers: args[1],
     containerType: args[2],
     qtyRounds: args[3],
     roundType: args[4],
     maxRounds: args[5]
   };
-  var filename = 'ammoList';
-  var ammoData = `${ammo.qtyContainers},${ammo.containerType},${ammo.qtyRounds},`
+  let filename = 'ammoList';
+  let ammoData = `${ammo.qtyContainers},${ammo.containerType},${ammo.qtyRounds},`
     + `${ammo.roundType},${ammo.maxRounds}`;
-  var playChannelID = await getPlayChannel(msg);
+  let playChannelID = await getPlayChannel(msg);
 
   await ensureTriplet(msg);
 
-  var parentFolderID = await findUserDBIDFromMsg(msg, true);
+  let parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
-  var fileID = await findStringIDByName(filename, parentFolderID, playChannelID);
+  let fileID = await findStringIDByName(filename, parentFolderID, playChannelID);
 
   // create file
   if (fileID === -1) {
-    var content = _makeAmmoSaveString([ammo]);
+    let content = _makeAmmoSaveString([ammo]);
     await setStringByNameAndParent(msg, filename, parentFolderID, content);
 
     output = ` you added ${ammo.qtyContainers} ${ammo.containerType}s `
@@ -232,10 +232,10 @@ async function handleAmmoAddAmmoSubcommand(msg, cmd, args, user) {
   }
   // update file
   else {
-    var content = await getStringContents(fileID, playChannelID);
+    let content = await getStringContent(fileID, playChannelID);
 
-    var ammos = _mergeNewAmmo(content, ammo);
-    var content = _makeAmmoSaveString(ammos);
+    let ammos = _mergeNewAmmo(content, ammo);
+    let content = _makeAmmoSaveString(ammos);
     await setStringByNameAndParent(msg, filename, parentFolderID, content);
 
     output = ` you added ${ammo.qtyContainers} ${ammo.containerType}s `
@@ -253,34 +253,34 @@ async function handleAmmoDelAmmoSubcommand(msg, cmd, args, user) {
     return;
   }
   logWrite('\x1b[32m [ ==================== handleAmmoDelAmmoSubcommand =============== ]\x1b[0m');
-  await msg.react('⏳').catch((e) => {console.log(e);});
-  var output = '';
-  var delAmmo = {
+  addHourglass(msg);
+  let output = '';
+  let delAmmo = {
     qtyContainers: args[1],
     containerType: args[2],
     qtyRounds: args[3],
     roundType: args[4],
     maxRounds: args[5]
   };
-  var filename = 'ammoList';
-  var playChannelID = await getPlayChannel(msg);
+  let filename = 'ammoList';
+  let playChannelID = await getPlayChannel(msg);
 
   await ensureTriplet(msg);
 
-  var parentFolderID = await findUserDBIDFromMsg(msg, true);
+  let parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
-  var fileID = await findStringIDByName(filename, parentFolderID, playChannelID);
+  let fileID = await findStringIDByName(filename, parentFolderID, playChannelID);
 
   if (fileID === -1) {
     // no ammo to delete
     output = ` you have no ammo to delete in channel <#${playChannelID}>.`;
   }
   else {
-    var content = await getStringContents(fileID, playChannelID);
+    let content = await getStringContent(fileID, playChannelID);
 
-    var oldAmmos = _ammoContentAsObject(content);
-    var foundMatch = false;
-    for (var x = 0; x < oldAmmos.length; x++) {
+    let oldAmmos = _ammoContentAsObject(content);
+    let foundMatch = false;
+    for (let x = 0; x < oldAmmos.length; x++) {
       if (
           foundMatch === false
           && oldAmmos[x].containerType === delAmmo.containerType
@@ -291,7 +291,7 @@ async function handleAmmoDelAmmoSubcommand(msg, cmd, args, user) {
       {
         logSpam(`handleAmmoDelAmmoSubcommand found a match`);
         foundMatch = true;
-        var hadQty = oldAmmos[x].qtyContainers;
+        let hadQty = oldAmmos[x].qtyContainers;
         oldAmmos[x].qtyContainers =
           Number(oldAmmos[x].qtyContainers) - Number(delAmmo.qtyContainers);
         if (oldAmmos[x].qtyContainers < 0) {
@@ -304,7 +304,7 @@ async function handleAmmoDelAmmoSubcommand(msg, cmd, args, user) {
             + ` ${delAmmo.roundType} (qty ${delAmmo.qtyRounds}/${delAmmo.maxRounds}`
             + ` max) were removed from channel <#${playChannelID}>.`;
         }
-        var saveString = _makeAmmoSaveString(oldAmmos);
+        let saveString = _makeAmmoSaveString(oldAmmos);
         await setStringByNameAndParent(msg, filename, parentFolderID, saveString);
 
       }
@@ -315,10 +315,10 @@ async function handleAmmoDelAmmoSubcommand(msg, cmd, args, user) {
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 function _gunsContentAsObject(content) {
-  var gunsLines = content.split('\n');
-  var gunsArr = [];
+  let gunsLines = content.split('\n');
+  let gunsArr = [];
   if (content !== '') {
-    for (var x = 0; x < gunsLines.length; x++) {
+    for (let x = 0; x < gunsLines.length; x++) {
       g = gunsLines[x].split(',');
       gunsArr[x] = {
         name: g[0],
@@ -340,37 +340,37 @@ async function handleAmmoListSubcommand(msg, cmd, args, user) {
     return;
   }
   logWrite('\x1b[32m [ ==================== handleAmmoListSubcommand =============== ]\x1b[0m');
-  await msg.react('⏳').catch((e) => {console.log(e);});
-  var filename = 'ammoList';
-  var playChannelID = await getPlayChannel(msg);
+  addHourglass(msg);
+  let filename = 'ammoList';
+  let playChannelID = await getPlayChannel(msg);
 
   await ensureTriplet(msg);
 
-  var parentFolderID = await findUserDBIDFromMsg(msg, true);
+  let parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
-  var fileID = await findStringIDByName(filename, parentFolderID, playChannelID);
+  let fileID = await findStringIDByName(filename, parentFolderID, playChannelID);
 
-  var ammos = [];
+  let ammos = [];
   if (fileID !== -1) {
-    var content = await getStringContents(fileID, playChannelID);
+    let content = await getStringContent(fileID, playChannelID);
 
     ammos = _ammoContentAsObject(content);
   }
   filename = 'gunList';
   fileID = await findStringIDByName(filename, parentFolderID, playChannelID);
 
-  var guns = [];
+  let guns = [];
   if (fileID !== -1) {
-    var content = await getStringContents(fileID, playChannelID);
+    let content = await getStringContent(fileID, playChannelID);
 
     guns = _gunsContentAsObject(content);
   }
-  var output = '\n***==[ GUNS ]==***\n';
+  let output = '\n***==[ GUNS ]==***\n';
   if (guns.length === 0) {
     output += `You have no guns setup yet in channel <#${playChannelID}>.\n`;
   }
   else {
-    for (var x = 0; x < guns.length; x++) {
+    for (let x = 0; x < guns.length; x++) {
       output += `:arrow_right: **${guns[x].name}** ${guns[x].ammoContainerType} `
         + `(${guns[x].ammoCapacity}), ROF: ${guns[x].maxROF}, Ammo type(s): `
         + `${guns[x].ammoTypes.split(' ').join('/')}, `;
@@ -387,8 +387,8 @@ async function handleAmmoListSubcommand(msg, cmd, args, user) {
     output += `You have no ammo setup yet in channel <#${playChannelID}>.\n`;
   }
   else {
-    var hasAmmo = false;
-    for (var x = 0; x < ammos.length; x++) {
+    let hasAmmo = false;
+    for (let x = 0; x < ammos.length; x++) {
       if (
         Number(ammos[x].qtyContainers) > 0
         && Number(ammos[x].qtyRounds) > 0
@@ -407,9 +407,9 @@ async function handleAmmoListSubcommand(msg, cmd, args, user) {
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 function _makeGunSaveString(guns) {
-  var gunData = '';
-  for (var x = 0; x < guns.length; x++) {
-    var gun = guns[x];
+  let gunData = '';
+  for (let x = 0; x < guns.length; x++) {
+    let gun = guns[x];
     if (gunData !== '') gunData += '\n';
     gunData += `${gun.name},${gun.maxROF},`
       + `${gun.ammoContainerType},${gun.ammoCapacity},${gun.ammoTypeLoaded},`
@@ -425,29 +425,29 @@ async function handleAmmoFireSubcommand(msg, cmd, args, user) {
     return;
   }
   logWrite('\x1b[32m [ ==================== handleAmmoFireSubcommand =============== ]\x1b[0m');
-  await msg.react('⏳').catch((e) => {console.log(e);});
-  var output = '';
-  var gunFired = args[1];
-  var nbrShots = args[2];
-  var filename = 'gunList';
-  var guns = [];
-  var gun = {}; // contains a match from guns, if any; the gun being fired
-  var playChannelID = await getPlayChannel(msg);
+  addHourglass(msg);
+  let output = '';
+  let gunFired = args[1];
+  let nbrShots = args[2];
+  let filename = 'gunList';
+  let guns = [];
+  let gun = {}; // contains a match from guns, if any; the gun being fired
+  let playChannelID = await getPlayChannel(msg);
 
   await ensureTriplet(msg);
 
-  var parentFolderID = await findUserDBIDFromMsg(msg, true);
+  let parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
-  var fileID = await findStringIDByName(filename, parentFolderID, playChannelID);
+  let fileID = await findStringIDByName(filename, parentFolderID, playChannelID);
 
   if (fileID === -1) {
     output = ` you have no guns setup yet in channel <#${playChannelID}>.`;
   }
   else {
-    var content = await getStringContents(fileID, playChannelID);
+    let content = await getStringContent(fileID, playChannelID);
 
     guns = _gunsContentAsObject(content);
-    for (var x = 0; x < guns.length; x++) {
+    for (let x = 0; x < guns.length; x++) {
       if (guns[x].name === gunFired) gun = guns[x];
     }
     if (gun === {}) {
@@ -474,10 +474,10 @@ async function handleAmmoFireSubcommand(msg, cmd, args, user) {
         gun.ammoQtyLoaded = Number(gun.ammoQtyLoaded) - Number(nbrShots);
       }
       // save the gunList now that some ammo has been removed
-      for (var x = 0; x < guns.length; x++) {
+      for (let x = 0; x < guns.length; x++) {
         if (guns[x].name === gunFired) guns[x] = gun;
       }
-      var saveString = _makeGunSaveString(guns);
+      let saveString = _makeGunSaveString(guns);
       await setStringByNameAndParent(msg, filename, parentFolderID, saveString);
 
     }
@@ -493,8 +493,8 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
     return;
   }
   logWrite('\x1b[32m [ ==================== handleAmmoReloadSubcommand =============== ]\x1b[0m');
-  await msg.react('⏳').catch((e) => {console.log(e);});
-  var output = '';
+  addHourglass(msg);
+  let output = '';
   if (args[1] === undefined || args.length === 1) {
     output = ` you need to specify a weapon to reload.`
     msg.reply(addMaintenanceStatusMessage(output)).catch((e)=>{console.error(e);});
@@ -502,32 +502,32 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
     logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
     return;
   }
-  var gunReloading = args[1];
-  var ammoReloading = (args.length === 3) ? args[2] : undefined;
-  var filename = 'ammoList';
-  var ammoPartial = {};
-  var gun = {};
-  var playChannelID = await getPlayChannel(msg);
+  let gunReloading = args[1];
+  let ammoReloading = (args.length === 3) ? args[2] : undefined;
+  let filename = 'ammoList';
+  let ammoPartial = {};
+  let gun = {};
+  let playChannelID = await getPlayChannel(msg);
 
   await ensureTriplet(msg);
 
-  var parentFolderID = await findUserDBIDFromMsg(msg, true);
+  let parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
-  var fileID = await findStringIDByName(filename, parentFolderID, playChannelID);
+  let fileID = await findStringIDByName(filename, parentFolderID, playChannelID);
 
-  var ammos = [];
+  let ammos = [];
   if (fileID !== -1) {
-    var content = await getStringContents(fileID, playChannelID);
+    let content = await getStringContent(fileID, playChannelID);
 
     ammos = _ammoContentAsObject(content);
   }
   filename = 'gunList';
   fileID = await findStringIDByName(filename, parentFolderID, playChannelID);
 
-  var guns = [];
+  let guns = [];
   if (fileID !== -1) {
     logSpam(`Loading guns content`);
-    var content = await getStringContents(fileID, playChannelID);
+    let content = await getStringContent(fileID, playChannelID);
 
     guns = _gunsContentAsObject(content);
   }
@@ -540,7 +540,7 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
   else {
     gun = {}; // will contain the match from guns
     logSpam(`Seeking gun match`);
-    for (var x = 0; x < guns.length; x++) {
+    for (let x = 0; x < guns.length; x++) {
       if (guns[x].name.toLowerCase() === gunReloading.toLowerCase()) {
         logSpam(`Gun match found`);
         gun = guns[x];
@@ -552,9 +552,9 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
     }
     else {
       // we have a gun match; try to match ammo
-      var ammoMatches = []; // multiple matches
-      var ammo = {}; // single match
-      for (var x = 0; x < ammos.length; x++) {
+      let ammoMatches = []; // multiple matches
+      let ammo = {}; // single match
+      for (let x = 0; x < ammos.length; x++) {
         if (
           ammos[x].containerType === gun.ammoContainerType
           && ammos[x].maxRounds === gun.ammoCapacity
@@ -573,9 +573,9 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
       }
       else if (ammoMatches.length > 1 && ammoReloading === undefined) {
         // first determine if the ammo types are all the same
-        var multiTypes = false;
-        var firstType = '';
-        for (var x = 0; x < ammoMatches.length; x++) {
+        let multiTypes = false;
+        let firstType = '';
+        for (let x = 0; x < ammoMatches.length; x++) {
           if (firstType === '') { firstType = ammoMatches[x].roundType; }
           else if (ammoMatches[x].roundType !== firstType) { multiTypes = true; }
         }
@@ -587,7 +587,7 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
         }
         else {
           // if they are all the same ammo type, use the most full container
-          for (var x = 0; x < ammoMatches.length; x++) {
+          for (let x = 0; x < ammoMatches.length; x++) {
             if (ammo === {}) ammo = ammoMatches[x];
             else if (Number(ammo.qtyRounds) < Number(ammoMatches[x].qtyRounds)) {
               ammo = ammoMatches[x];
@@ -603,16 +603,16 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
       }
       else if (ammoReloading !== undefined) {
         // make sure there's a match with the ammo type in ammoReloading
-        for (var x = 0; x < ammoMatches.length; x++) {
+        for (let x = 0; x < ammoMatches.length; x++) {
           // use the compatible container with the most rounds in it
           if (ammoMatches[x].roundType === ammoReloading) {
             logSpam(`Trying specific type of round: ${ammoReloading}`);
             if (ammo === {} || ammo.roundType === undefined) {
-              logSpam('Setting ammo var because it is empty');
+              logSpam('Setting ammo let because it is empty');
               ammo = ammoMatches[x];
             }
             else if (Number(ammo.qtyRounds < Number(ammoMatches[x].qtyRounds))) {
-              logSpam('Setting ammo var because we found a more-full container');
+              logSpam('Setting ammo let because we found a more-full container');
               ammo = ammoMatches[x];
             }
           }
@@ -622,8 +622,8 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
       if (ammo !== {} && ammo.roundType !== undefined) {
         logSpam(`Proceeding with singular ammo match`);
         // deplete the 1 container being injected into the gun from the ammo list
-        var foundMatch = false;
-        for (var x = 0; x < ammos.length; x++) {
+        let foundMatch = false;
+        for (let x = 0; x < ammos.length; x++) {
           if (
             foundMatch === false
             && ammos[x].containerType === ammo.containerType
@@ -649,13 +649,13 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
           ammoContentString = _makeAmmoSaveString(ammos);
           ammos = _mergeNewAmmo(ammoContentString, ammoPartial);
         }
-        var ammoSaveString = _makeAmmoSaveString(ammos);
+        let ammoSaveString = _makeAmmoSaveString(ammos);
         await setStringByNameAndParent(msg, 'ammoList', parentFolderID, ammoSaveString);
 
         // reload the weapon
         gun.ammoQtyLoaded = ammo.qtyRounds;
         gun.ammoTypeLoaded = ammo.roundType;
-        for (var x = 0; x < guns.length; x++) {
+        for (let x = 0; x < guns.length; x++) {
           if (guns[x].name === gun.name) {
             guns[x] = gun;
           }
@@ -663,7 +663,7 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
         // save the ammo list and the gun list
         logSpam(`Attempting to save gunList`);
         filename = 'gunList';
-        var saveString = _makeGunSaveString(guns);
+        let saveString = _makeGunSaveString(guns);
         logSpam(`saveString\n${saveString}`);
         await setStringByNameAndParent(msg, filename, parentFolderID, saveString);
         while (isDiskLockedForChannel(playChannelID)) { sleep(15); }
@@ -682,7 +682,7 @@ async function handleAmmoReloadSubcommand(msg, cmd, args, user) {
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleAmmoCommand(msg, cmd, args, user) {
-    var sub = args[0];
+    let sub = args[0];
     switch (sub.toLowerCase()) {
       case 'addgun':
         handleAmmoAddGunSubcommand(msg, cmd, args, user);

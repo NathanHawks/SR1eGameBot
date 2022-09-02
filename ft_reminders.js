@@ -13,25 +13,25 @@ async function handleListRemindersCommand(msg, cmd, args, user) {
     .catch((e)=>{error.log(e);});
     return;
   }
-  await msg.react('⏳').catch((e) => {console.log(e);});
+  addHourglass(msg);
   logWrite('\x1b[32m [ ==================== handleListRemindersCommand ======================= ]\x1b[0m');
-  var playChannelID = await getPlayChannel(msg);
+  let playChannelID = await getPlayChannel(msg);
 
-  var userFolderID = await findUserDBIDFromMsg(msg, true);
+  let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
-  var reminders = await getUserReminders(userFolderID, playChannelID);
+  let reminders = await getUserReminders(userFolderID, playChannelID);
 
   if (reminders.length > 0) {
-    var output = '\n';
-    for (var x = 0; x < reminders.length; x++) {
+    let output = '\n';
+    for (let x = 0; x < reminders.length; x++) {
       if (reminders[x].playersString !== undefined) {
         if (x > 0) output += '\n\n';
         output += `**ID:** ${reminders[x].smallID}\n`
         + `**Reminder Time/Date:** ${reminders[x].dateTime}\n`
         + `**Session Time/Date:** ${new Date(reminders[x].sessionTimeDateF)}\n`
         + `**Players to Remind:** `;
-        var players = reminders[x].playersString.split(' ');
-        for (var y = 0; y < players.length; y++) {
+        let players = reminders[x].playersString.split(' ');
+        for (let y = 0; y < players.length; y++) {
           if (y > 0) output += ', '
           output += `<@${players[y]}>`;
         }
@@ -41,8 +41,8 @@ async function handleListRemindersCommand(msg, cmd, args, user) {
     else {
       if (output.length < 1900) msg.reply(output).catch((err)=>{console.error(err);});
       else {
-        var items = output.split('\n\n');
-        for (var x = 0; x < items.length; x++) {
+        let items = output.split('\n\n');
+        for (let x = 0; x < items.length; x++) {
           msg.reply(`\n${items[x]}\n\n`).catch((err)=>{console.error(err);});
         }
       }
@@ -61,16 +61,16 @@ async function handleAddReminderCommand(msg, cmd, args, user) {
     .catch((e)=>{error.log(e);});
     return;
   }
-  await msg.react('⏳').catch((e) => {console.log(e);});
+  addHourglass(msg);
   logWrite('\x1b[32m [ ==================== handleAddReminderCommand ======================= ]\x1b[0m');
-  var sessionTimeDateF = args[0];
-  var sessionTimestamp = undefined;
+  let sessionTimeDateF = args[0];
+  let sessionTimestamp = undefined;
   args.splice(0, 1);
-  var reminders = []; // list of reminder objects (below)
+  let reminders = []; // list of reminder objects (below)
   // .shortID, .id, .sessionTimeDateF, .dateTime, .timeStamp, .playersString,
   // .MilliSecondsFromNow, gmID, userFolderID, playChannelID
-  var timings = [...args]; // post-splice contains only list of timing strings
-  var timing = ''; // a time string e.g. 15m, 1d, etc
+  let timings = [...args]; // post-splice contains only list of timing strings
+  let timing = ''; // a time string e.g. 15m, 1d, etc
   // parse sessionTimeDateF string
   sessionTimestamp = new Date(sessionTimeDateF);
   logSpam(`Timestamp compare: ${Date.now()} is now, ${sessionTimestamp.valueOf()} is target`);
@@ -81,15 +81,15 @@ async function handleAddReminderCommand(msg, cmd, args, user) {
     return;
   }
   // get play folder
-  var playChannelID = await getPlayChannel(msg);
+  let playChannelID = await getPlayChannel(msg);
 
   // get player list
-  var userFolderID = await findUserDBIDFromMsg(msg, true);
+  let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
-  var filename = 'gmPlayers';
+  let filename = 'gmPlayers';
   playersFileID = await findStringIDByName(filename, userFolderID, playChannelID);
 
-  var playersString = await getStringContents(playersFileID, playChannelID);
+  let playersString = await getStringContent(playersFileID, playChannelID);
 
   if (playersString.length === 0) {
     await msg.reply(` you have no players in channel <#${playChannelID}> yet to send reminders to.`)
@@ -97,30 +97,30 @@ async function handleAddReminderCommand(msg, cmd, args, user) {
     return;
   }
   // parse list of timings
-  for (var x = 0; x < timings.length; x++) {
+  for (let x = 0; x < timings.length; x++) {
     timing = timings[x];
-    var timingUnit = timing.substring(timing.length-1);
-    var timingNumber = timing.substring(0, timing.length-1);
-    var asSeconds = timingNumber*1000;
+    let timingUnit = timing.substring(timing.length-1);
+    let timingNumber = timing.substring(0, timing.length-1);
+    let asSeconds = timingNumber*1000;
     logSpam(`unit ${timingUnit}, number ${timingNumber}`);
-    var timestampMinus = 0;
+    let timestampMinus = 0;
     switch (timingUnit.toLowerCase()) {
       case "d":
         logSpam(`${timingNumber} days reminder`);
-        var asMinutes = asSeconds*60;
-        var asHours = asMinutes*60;
-        var asDays = asHours*24;
+        let asMinutes = asSeconds*60;
+        let asHours = asMinutes*60;
+        let asDays = asHours*24;
         timestampMinus = asDays;
       break;
       case "h":
         logSpam(`${timingNumber} hours reminder`);
-        var asMinutes = asSeconds*60;
-        var asHours = asMinutes*60;
+        let asMinutes = asSeconds*60;
+        let asHours = asMinutes*60;
         timestampMinus = asHours;
       break;
       case "m":
         logSpam(`${timingNumber} minutes reminder`);
-        var asMinutes = asSeconds*60;
+        let asMinutes = asSeconds*60;
         timestampMinus = asMinutes;
       break;
       default:
@@ -128,9 +128,9 @@ async function handleAddReminderCommand(msg, cmd, args, user) {
       break;
     }
     logSpam(`timestampMinus ${timestampMinus}`);
-    var targetTimestamp = sessionTimestamp.valueOf() - timestampMinus;
+    let targetTimestamp = sessionTimestamp.valueOf() - timestampMinus;
     // set minimum delay to 15 seconds in case reminder is instant
-    var msFromNow = targetTimestamp - Date.now();
+    let msFromNow = targetTimestamp - Date.now();
     if (msFromNow < 15000) msFromNow = 15000;
     // start reminder object
     reminders[reminders.length] = {
@@ -156,10 +156,10 @@ async function handleCancelReminderCommand(msg, cmd, args, user) {
     .catch((e)=>{error.log(e);});
     return;
   }
-  await msg.react('⏳').catch((e) => {console.log(e);});
+  addHourglass(msg);
   logWrite('\x1b[32m [ ==================== handleCancelReminderCommand ======================= ]\x1b[0m');
   // parse args
-  var shortIDs = [...args];
+  let shortIDs = [...args];
   logSpam(shortIDs);
   if (shortIDs.length === 0) {
     msg.reply(` this command needs one or more ID's. You'll find the ID's by using \`!listreminders\`.`)
@@ -167,9 +167,9 @@ async function handleCancelReminderCommand(msg, cmd, args, user) {
     return;
   }
   // loop thru shortIDs
-  for (var x = 0; x < shortIDs.length; x++) {
+  for (let x = 0; x < shortIDs.length; x++) {
     // find reminder in global.reminders
-    for (var y = 0; y < global.reminders.length; y++) {
+    for (let y = 0; y < global.reminders.length; y++) {
       if (global.reminders[y].shortID === shortIDs[x]) {
         // clearTimeout
         clearTimeout(global.reminders[y].timeoutID);
@@ -182,19 +182,19 @@ async function handleCancelReminderCommand(msg, cmd, args, user) {
   }
   // update files from what's left of global.reminders
   // system folder first
-  var saveString = '';
-  for (var x = 0; x < global.reminders.length; x++) {
+  let saveString = '';
+  for (let x = 0; x < global.reminders.length; x++) {
     if (saveString !== '') saveString += '\n';
     saveString += _makeReminderSaveString(global.reminders[x]);
   }
-  var filename = 'activeReminders';
+  let filename = 'activeReminders';
   await setStringByNameAndParent({channel: {id: 'system'}}, filename, global.folderID.reminders, saveString);
 
   // user folder last
   saveString = '';
-  var playChannelID = await getPlayChannel(msg);
+  let playChannelID = await getPlayChannel(msg);
 
-  for (var x = 0; x < global.reminders.length; x++) {
+  for (let x = 0; x < global.reminders.length; x++) {
     if (saveString !== '') saveString += '\n';
     if (global.reminders[x].gmID === msg.author.id
       && global.reminders[x].playChannelID == playChannelID)
@@ -203,7 +203,7 @@ async function handleCancelReminderCommand(msg, cmd, args, user) {
     }
   }
   filename = 'gmReminders';
-  var userFolderID = await findUserDBIDFromMsg(msg, true);
+  let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
 
   await setStringByNameAndParent({channel: {id: playChannelID}}, filename, userFolderID, saveString);
 

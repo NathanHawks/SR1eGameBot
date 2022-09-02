@@ -14,14 +14,14 @@ async function handleCheckChannelCommand(msg, cmd, args, user) {
     return;
   }
   logWrite('\x1b[32m [ ==================== handleCheckChannelCommand =============== ]\x1b[0m');
-  await msg.react('⏳').catch((e) => {console.log(e);});
+  addHourglass(msg);
 
   await ensureTriplet(msg);
 
-  var gmPlayChannelID = await getPlayChannel(msg);
+  let gmPlayChannelID = await getPlayChannel(msg);
 
   msg.reply(addMaintenanceStatusMessage(` your current play channel is set to <#${gmPlayChannelID}>.`))
-  .catch((e) => {console.log(e);});
+  .catch((e) => { logError(e); });
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
 }
@@ -34,14 +34,14 @@ async function handleSetChannelCommand(msg, cmd, args, user) {
     return;
   }
   logWrite('\x1b[32m [ ==================== handleSetChannelCommand ================= ]\x1b[0m');
-  await msg.react('⏳').catch((e) => {console.log(e);});
+  addHourglass(msg);
   if (args.length === 1) {
     if (args[0].substring(0,2) === '<#') {
-      var gmPlayChannelID = args[0].substring(2, args[0].length-1);
+      let gmPlayChannelID = args[0].substring(2, args[0].length-1);
       await ensureTriplet(msg);
-      var filename = 'gmPlayChannel';
+      let filename = 'gmPlayChannel';
 
-      var gmSecretFolderID = await findUserDBIDFromMsg(msg);
+      let gmSecretFolderID = await findUserFolderDBIDFromMsg(msg);
 
       await setStringByNameAndParent(msg, filename, gmSecretFolderID, gmPlayChannelID);
 
@@ -54,16 +54,16 @@ async function handleSetChannelCommand(msg, cmd, args, user) {
       msg.reply(addMaintenanceStatusMessage(` play channel is now set to `
         + `<#${gmPlayChannelID}>. You can now issue commands for initiative and `
         + `scenes in this channel, and they will be saved to <#${gmPlayChannelID}>.`))
-        .catch((e) => {console.log(e);});
+        .catch((e) => { logError(e); });
     }
     else {
       msg.reply(addMaintenanceStatusMessage(' error: make sure this command is followed only by a link to a channel.'))
-      .catch((e) => {console.log(e);});
+      .catch((e) => { logError(e); });
     }
   }
   else {
     msg.reply(addMaintenanceStatusMessage(' this command requires one (and only one) argument, a channel link.'))
-    .catch((e) => {console.log(e);});
+    .catch((e) => { logError(e); });
   }
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);

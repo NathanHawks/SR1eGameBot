@@ -7,7 +7,7 @@
  * Released as-is with no warranty or claim of usability for any purpose.
  */
  function handleHelpCommand(msg, cmd, args, user) {
-   var whatToShow = 'main';
+   let whatToShow = 'main';
    // legacy help commands
    if (args.length && args[0] == 2 || cmd === 'inithelp') {
      whatToShow = 'init';
@@ -33,7 +33,7 @@
    else {
      whatToShow = 'index';
    }
-   var index1 = '\nHelp Topics:\n'
+   let index1 = '\nHelp Topics:\n'
      + '`main        ` - Dice rolls, Rule of 6, Target Numbers, Opposed Tests\n'
      + '`init        ` - Initiative for Shadowrun 1e-3e\n'
      + '`scene       ` - Prepare text and music for deploying later :new:\n'
@@ -45,7 +45,7 @@
      + '\n'
      + 'Example: type `!help main` for the main help.\n'
    ;
-   var main1 = '\nMain Help:\n'
+   let main1 = '\nMain Help:\n'
      + '**====== Plain Old d6\'s ======**\n'
      + '!***X***         Roll ***X***d6 *without* Rule of 6'
      + '  ***example:*** !5        rolls 5d6 *without* Rule of 6\n'
@@ -75,7 +75,7 @@
      + ' messages. Just separate the commands with semicolons.\n'
      + '***example:*** !1 (grenade scatter direction);'
      + ' 2t (max non-aero grenade scatter distance)\n';
-     var main2 =
+     let main2 =
      '\n**====== Notes ======**\n'
      + 'Notes are OK, and your options can be in the middle of the note.\n'
      + 'examples:\n'
@@ -90,7 +90,7 @@
      + '\n'
      + 'Patreon: <https://patreon.com/nathanhawks> | <@360086569778020352>'
    ;
-   var init1 =
+   let init1 =
        '\n:boom: **Initiative System** :boom:\n'
      + '\n'
      + 'Player setup:\n:one: **!setgm @someone**\n:two: **!setinit X Y**\n'
@@ -124,7 +124,7 @@
        + ':arrow_right: To play in two games *at the same time,* you\'ll need two channels.\n'
        + '\n'
      ;
-     var init2 = '\n\n:boom: **Initiative System** continued :boom:\n'
+     let init2 = '\n\n:boom: **Initiative System** continued :boom:\n'
      + '\n'
      + ':nerd: **Other initiative commands** :nerd:\n```'
        + 'Shortcut  Full command    [Required] options\n'
@@ -160,7 +160,7 @@
      + '\n'
      + 'Patreon: <https://patreon.com/nathanhawks> | <@360086569778020352>'
    ;
-   var scene1 = '\n:blue_book: **Prepared Scenes with (or without) Music** :blue_book:\n'
+   let scene1 = '\n:blue_book: **Prepared Scenes with (or without) Music** :blue_book:\n'
      + '\n'
      + '**It is strongly recommended** that you also read `!help gmscreen` so you can do your prep in secret!\n'
      + '\n'
@@ -185,7 +185,7 @@
      + '\n'
      + 'Patreon: <https://patreon.com/nathanhawks> | <@360086569778020352>';
    ;
-   var macros1 = '\n:scroll: **Macros (Saved Rolls)** :scroll:\n'
+   let macros1 = '\n:scroll: **Macros (Saved Rolls)** :scroll:\n'
      + '\n'
      + 'These commands allow you to manage named dice rolls and use them any time just by typing a quick command.\n'
      + '\n'
@@ -205,7 +205,7 @@
      + '\n'
      + 'Patreon: <https://patreon.com/nathanhawks> | <@360086569778020352>'
    ;
-   var gmscreen1 = '\n:ninja: **Virtual GM Screen** :ninja:\n\n'
+   let gmscreen1 = '\n:ninja: **Virtual GM Screen** :ninja:\n\n'
      + 'Using this feature, **reminders**, **initiative** and **scene** commands can be done in a hidden channel.\n'
      + '\n'
      + 'Players still need to **!setgm** and **!setinit** in the play channel.\n'
@@ -228,7 +228,7 @@
      + '\n'
      + 'Patreon: <https://patreon.com/nathanhawks> | <@360086569778020352>'
    ;
-   var reminders1 = '\n:alarm_clock: **Reminders** :alarm_clock:\n\n'
+   let reminders1 = '\n:alarm_clock: **Reminders** :alarm_clock:\n\n'
      + 'The bot can DM reminders of your upcoming game sessions to your players.\n\n'
      + '**!addreminder** sessionDate&Time timer1 timer2 etc\n'
      + '*sessionDate&Time* needs the format **YYYY-MM-DD*T*HH:MM** *(note the "T" separating date from time)*\n'
@@ -248,7 +248,7 @@
      + '\n'
      + 'Patreon: <https://patreon.com/nathanhawks> | <@360086569778020352>'
    ;
-   var ammo1 = '\n:gun: **Ammo Tracking** :gun:\n\n'
+   let ammo1 = '\n:gun: **Ammo Tracking** :gun:\n\n'
      + 'GameBot can track ammo during combat, enforcing max ROF and weapon capacity.\n\n'
      + '**!ammo addgun** name maxROF ammoContainerType ammoCapacity ammoTypes\n'
      + 'Adds a weapon for ammo tracking purposes. The name must not have any spaces or commas.\n'
@@ -265,7 +265,7 @@
      + '**Example:** `!ammo addammo 10 clip 16 slug 16`\n'
      + 'Adds 10 clips that are fully loaded with 16 slugs each. This matches the uzi3.\n\n'
    ;
-   var ammo2 = '\n:gun: **Ammo Tracking** continued :gun:\n'
+   let ammo2 = '\n:gun: **Ammo Tracking** continued :gun:\n'
      + '**!ammo delammo** qtyContainers containerType qtyRounds roundType maxRounds\n'
      + '**Example:** `!ammo delammo 4 clip 16 slug 16`\n'
      + 'Removes 4 of those clips for your uzi3 from your inventory.\n\n'
@@ -283,7 +283,7 @@
      + '\n'
      + 'Patreon: <https://patreon.com/nathanhawks> | <@360086569778020352>'
    ;
-   var troubleshoot1 = '\n:fire_extinguisher: **Troubleshooting** :fire_extinguisher:\n\n'
+   let troubleshoot1 = '\n:fire_extinguisher: **Troubleshooting** :fire_extinguisher:\n\n'
      + 'GameBot has a few bugs, plus Google Drive API can occasionally drop a request.\n\n'
      + '**IMPORTANT:** The bot needs the following channel permissions to work: View Channel, Send Messages, and Add Reactions. '
      + '**Make sure you\'re giving these permissions to the bot, and not everyone!**\n'
@@ -309,29 +309,29 @@
    switch (whatToShow) {
      case 'index':
        index1 = addMaintenanceStatusMessage(index1);
-       msg.reply(index1).catch((e) => {console.log(e);});
+       msg.reply(index1).catch((e) => { logError(e); });
      break;
      case 'main':
        main2 = addMaintenanceStatusMessage(main2);
-       msg.reply(main1).catch((e) => {console.log(e);});
-       msg.reply(main2, {embed: null}).catch((e) => {console.log(e);});
+       msg.reply(main1).catch((e) => { logError(e); });
+       msg.reply(main2, {embed: null}).catch((e) => { logError(e); });
      break;
      case 'init':
        init2 = addMaintenanceStatusMessage(init2);
-       msg.reply(init1).catch((e) => {console.log(e);});
-       msg.reply(init2, {embed: null}).catch((e) => {console.log(e);});
+       msg.reply(init1).catch((e) => { logError(e); });
+       msg.reply(init2, {embed: null}).catch((e) => { logError(e); });
      break;
      case 'scene':
        scene1 = addMaintenanceStatusMessage(scene1);
-       msg.reply(scene1, {embed: null}).catch((e) => {console.log(e);});
+       msg.reply(scene1, {embed: null}).catch((e) => { logError(e); });
      break;
      case 'macros':
        macros1 = addMaintenanceStatusMessage(macros1);
-       msg.reply(macros1, {embed: null}).catch((e) => {console.log(e);});
+       msg.reply(macros1, {embed: null}).catch((e) => { logError(e); });
      break;
      case 'gmscreen':
        gmscreen1 = addMaintenanceStatusMessage(gmscreen1);
-       msg.reply(gmscreen1, {embed: null}).catch((e) => {console.log(e);});
+       msg.reply(gmscreen1, {embed: null}).catch((e) => { logError(e); });
      break;
      case 'reminders':
        reminders1 = addMaintenanceStatusMessage(reminders1);

@@ -6,66 +6,53 @@
  * Released under the terms of the UnLicense. This work is in the public domain.
  * Released as-is with no warranty or claim of usability for any purpose.
  */
+const { logSpam, logWrite } = require('./log');
+const {
+  findFolderByName, _addRemindersSetTimeoutPayload, getActiveReminders
+} = require('./api');
+// Checked 9/1/22
 async function initAll() {
-  // init disk locking for system
-  initInitiative(auth);
+  await initInitiative();
   await initReminders();
 }
-// Init the Initiative system. See also callbackInitInitiative, immediately below
-function initInitiative(auth) {
+// Checked 9/1/22
+async function initInitiative() {
   // initial startup payload depends on whether UserData folder exists
-  findFolderByName('UserData', 'root', (err, res) => {
-    callbackInitInitiative(err, res);
-  });
-}
-// Startup payload
-async function callbackInitInitiative(err, res) {
-  if (err)
-    return console.log('Google Drive API returned an error: ' + err);
-  // currently global.folderID only holds one element, UserData; I expect others
-  // e.g configs, helptexts, etc
-  var findAndSetFolderID = function (files, folderName) {
-    files.map((file) => {
-      if (file.name == folderName) { global.folderID[folderName] = file.id; }
-    });
+  const folderName = 'UserData';
+  const c = await findFolderByName(folderName);
+  const findAndSetFolderID = function (c, folderName) {
+    if (c.name === folderName) global.folderID[folderName] = c._id.toString();
   }
   // INSTALL/SETUP determine if we've already been installed; if not, do install
-  const files = res.data.files;
-  if (files.length) {
+  if (c) {
     // SETUP =======================================================
-    var folderName = 'UserData';
-    findAndSetFolderID(files, folderName);
-
+    findAndSetFolderID(c, folderName);
   } else {
     // INSTALL =====================================================
-    var folderName = 'UserData';
-    console.log(`Installing ${folderName} folder.`);
-    createFolder(folderName, null, (err, file) => {
-        if (err) return console.error(err);
+    logWrite(`Installing ${folderName} folder.`);
+    createFolder(folderName, null, () => {
         // fetch ID of new folder
-        findFolderByName(folderName, null, (err, res) => {
-
-            const files = res.data.files;
-            if (files.length) { findAndSetFolderID(files, folderName); }
+        findFolderByName(folderName, null, (folder) => {
+            if (folder) { findAndSetFolderID(folder, folderName); }
           }
         );
       }
     );
   }
 }
-// Init reminders
+// Checked 9/1/22
 async function initReminders() {
-  var userDataFolderID = await findFolderByName('UserData', 'root');
+  let userDataFolder = await findFolderByName('UserData');
+  await ensureFolderByName('reminders', userDataFolder._id.toString());
+  let reminderFolder = await findFolderByName(
+    'reminders', userDataFolder._id.toString()
+  );
 
-  await ensureFolderByName('reminders', userDataFolderID);
-
-  var reminderFolderID = await findFolderByName('reminders', userDataFolderID);
-
-  global.folderID.reminders = reminderFolderID;
+  global.folderID.reminders = reminderFolder._id.toString();
   global.reminders = await getActiveReminders();
 
   if (global.reminders.length > 0) {
-    for (var x = 0; x < global.reminders.length; x++) {
+    for (let x = 0; x < global.reminders.length; x++) {
       global.reminders[x].MilliSecondsFromNow =
         new Date(global.reminders[x].dateTime).valueOf() - Date.now();
       if (global.reminders[x].playersString !== undefined) {
@@ -81,5 +68,5 @@ async function initReminders() {
   }
 }
 module.exports = {
-  initAll, initInitiative, callbackInitInitiative, initReminders
+  initAll, initInitiative, initReminders
 };

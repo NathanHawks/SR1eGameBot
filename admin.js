@@ -7,17 +7,17 @@
  * Released as-is with no warranty or claim of usability for any purpose.
  */
 async function openFile(msg, args) {
-  var output = await getStringContents(args[0], 'system');
+  let output = await getStringContent(args[0], 'system');
 
-  msg.channel.send("```\n" + output + "```").catch((e) => {console.log(e);});
+  msg.channel.send("```\n" + output + "```").catch((e) => { logError(e); });
 }
 async function listAllFiles(msg) {
-  var nextPageToken = undefined;
-  var output = '--- [filename] ---------   ------------ googleID ------------- ------------ parentID -------------\n';
-  var finalout = '';
+  let nextPageToken = undefined;
+  let output = '--- [filename] ---------   ------------ dbID ------------- ------------ parentID -------------\n';
+  let finalout = '';
   const drive = google.drive({version: 'v3', auth: global.auth});
-  var iteratePage = async function (nextPageToken=undefined, level=0) {
-    var q = { fields: 'nextPageToken, files(id, name, parents)' };
+  let iteratePage = async function (nextPageToken=undefined, level=0) {
+    let q = { fields: 'nextPageToken, files(id, name, parents)' };
     if (nextPageToken !== undefined) q.pageToken = nextPageToken;
     logSpam('Querying GDrive for a list');
 
@@ -38,10 +38,10 @@ async function listAllFiles(msg) {
         }
       }
       logSpam('No significant error returned');
-      var files = res.data.files;
+      let files = res.data.files;
       if (files.length) {
         logSpam(res.data.nextPageToken);
-        var x = 0;
+        let x = 0;
         for (x = 0; x < files.length; x++) {
           global.filesFound[global.filesFound.length] = files[x];
         }
@@ -58,24 +58,24 @@ async function listAllFiles(msg) {
         iteratePage(nextPageToken, level+1);
       }
       else {
-        var x;
+        let x;
         for (x = 0; x < global.filesFound.length; x++) {
           // temporary / fallback (old version)
-          var file = global.filesFound[x];
+          let file = global.filesFound[x];
           output += `${file.name.padEnd(26)} (${file.id}) [${file.parents}]\n`;
         }
         if (msg !== undefined && output.length < 1994)
           msg.channel.send(`\`\`\`${output}\`\`\``)
-          .catch((e) => {console.log(e);});
+          .catch((e) => { logError(e); });
         else if (msg !== undefined) {
-          var outArr = output.split("\n");
+          let outArr = output.split("\n");
           output = '';
-          for (var x = 0; x < outArr.length; x++) {
+          for (let x = 0; x < outArr.length; x++) {
             output += outArr[x] + "\n";
             if (output !== '\n') {
               if (x%20 === 0) {
                 msg.channel.send('```\n' + output + '```')
-                .catch((e) => {console.log(e);});
+                .catch((e) => { logError(e); });
                 output = '';
               } else if (outArr.length - x < 20) {
                 finalout = output;
@@ -84,7 +84,7 @@ async function listAllFiles(msg) {
           }
           if (finalout !== '\n') {
             msg.channel.send('```\n' + finalout + '```')
-            .catch((e) => {console.log(e);});
+            .catch((e) => { logError(e); });
           }
         }
         else console.log(output);
@@ -100,83 +100,83 @@ function deleteFile(msg, args) {
   if (args && args[0]) {
     deleteStringByID(args[0], (err, res) => {
       msg.channel.send("```" + args[0] + ' deleted.```')
-      .catch((e) => {console.log(e);});
+      .catch((e) => { logError(e); });
     });
   }
 }
 function showCache(msg) {
-  var output = '\nGeneral\n[CacheID]  - name/discordID - ------------ googleID ----------- ----------- parentID ------------\n';
-  var finalout = '';
-  var cxArr = ['server', 'channel', 'userInChannel', 'file'];
-  var foundCache = false;
+  let output = '\nGeneral\n[CacheID]  - name/discordID - ------------ dbID ----------- ----------- parentID ------------\n';
+  let finalout = '';
+  let cxArr = ['server', 'channel', 'userInChannel', 'file'];
+  let foundCache = false;
   cxArr.map((cx) => {
-    for (var x = 0; x < global.cache[cx].length; x++) {
+    for (let x = 0; x < global.cache[cx].length; x++) {
       if (!global.cache[cx][x]) continue;
       foundCache = true;
-      var id = `${cx.substring(0,4)}${x}`;
+      let id = `${cx.substring(0,4)}${x}`;
       id = id.padEnd(10, " ");
-      var did = (global.cache[cx][x].hasOwnProperty('discordID'))
+      let did = (global.cache[cx][x].hasOwnProperty('discordID'))
         ? global.cache[cx][x].discordID.padEnd(18, " ")
         : " ".padEnd(18, " ");
-      var gid = global.cache[cx][x].googleID;
-      var par = global.cache[cx][x].parentID;
+      let gid = global.cache[cx][x].dbID;
+      let par = global.cache[cx][x].parentID;
       if (par === undefined) par = "[UserData]".padStart(11, " ");
       output += `${id} ${did} ${gid} ${par}\n`
     }
   });
   if (foundCache === false) output += " Cache empty\n";
-  var x = 0;
-  output += '\nFile Contents\n[CacheID] ------------------- ------------ googleID ----------- ------------ content ------------\n';
+  let x = 0;
+  output += '\nFile Contents\n[CacheID] ------------------- ------------ dbID ----------- ------------ content ------------\n';
   global.cache.fileContent.map((c) => {
-    var id = `fcon${x}`.padEnd(10, " ");
-    var spa = " ".padEnd(18, " ");
-    var gid = c.googleID;
+    let id = `fcon${x}`.padEnd(10, " ");
+    let spa = " ".padEnd(18, " ");
+    let gid = c.dbID;
     if (c.content === undefined) c.content = "";
-    var con = c.content.substring(0, 33);
+    let con = c.content.substring(0, 33);
     con = con.replace(/\n/g, " ");
     output += `${id} ${spa} ${gid} ${con}\n`;
     x++;
   });
   if (x === 0) output += " Cache empty\n";
-  var pcx = 0;
+  let pcx = 0;
   output += '\nPlay Channels\n[CacheID]  ----- server ----- ----- channel ---- ------ user ------ ----- playChannel -----\n';
   global.cache.playChannel.map((pc) => {
-    var id = `play${pcx}`.padEnd(10, " ");
-    var s = pc.server;
-    var c = pc.channel;
-    var u = pc.user;
-    var p = pc.playChannel;
+    let id = `play${pcx}`.padEnd(10, " ");
+    let s = pc.server;
+    let c = pc.channel;
+    let u = pc.user;
+    let p = pc.playChannel;
     output += `${id} ${s} ${c} ${u} ${p}\n`;
     pcx++;
   });
   if (pcx === 0) output += " Cache empty\n";
-  var ftx = 0;
-  output += '\nFolder Triplets\n[CacheID]  ----- server ----- ----- channel ---- ------ user ------ ----- googleID -----\n';
+  let ftx = 0;
+  output += '\nFolder Triplets\n[CacheID]  ----- server ----- ----- channel ---- ------ user ------ ----- dbID -----\n';
   global.cache.triplet.map((ft) => {
-    var id = `trip${ftx}`.padEnd(10, " ");
-    var s = ft.server;
-    var c = ft.channel;
-    var u = ft.user;
-    var t = ft.googleID;
+    let id = `trip${ftx}`.padEnd(10, " ");
+    let s = ft.server;
+    let c = ft.channel;
+    let u = ft.user;
+    let t = ft.dbID;
     output += `${id} ${s} ${c} ${u} ${t}\n`;
     ftx++;
   });
   if (ftx === 0) output += " Cache empty\n";
   // 2000 or fewer characters please
-  var outArr = output.split("\n");
+  let outArr = output.split("\n");
   output = '';
-  for (var i = 0; i < outArr.length; i++) {
+  for (let i = 0; i < outArr.length; i++) {
     output += outArr[i] + "\n";
     if (i%15===0 && i != 0) {
       msg.channel.send('```' + output + '```')
-      .catch((e) => {console.log(e);});
+      .catch((e) => { logError(e); });
       output = '';
     } else if (outArr.length - i < 15) {
       finalout = output;
     }
   }
   if (finalout) msg.channel.send('```' + finalout + '```')
-  .catch((e) => {console.log(e);});
+  .catch((e) => { logError(e); });
 }
 function clearCache(msg) {
   resetCache();
@@ -184,20 +184,20 @@ function clearCache(msg) {
 }
 // unlock global.lock for a specific channel
 function adminUnlock(msg, args) {
-  var channel = -1;
+  let channel = -1;
   if (msg && msg.channel && args.length === 0) {
     channel = msg.channel.id
   } else { channel = args[0]; }
   global.lock[channel] = false;
 }
 function adminUnlockAll(msg) {
-  var i;
+  let i;
   for (i = 0; i < global.lock.length; i++) {
     global.lock[i] = false;
   };
 }
 function deleteAllFiles() {
-  var auth = global.auth;
+  let auth = global.auth;
   const drive = google.drive({version: 'v3', auth});
   drive.files.list({
     fields: 'nextPageToken, files(id, name)',

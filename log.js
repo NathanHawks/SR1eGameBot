@@ -7,11 +7,11 @@
  * Released as-is with no warranty or claim of usability for any purpose.
  */
 function getCurrentDateNY() {
-  var d = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
+  let d = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
   return d;
 }
 function getColorCurrentDateNY() {
-  var d = getCurrentDateNY();
+  let d = getCurrentDateNY();
   return `\x1b[1m\x1b[34m${d}\x1b[0m`;
 }
 function getCyanString(msg) {
@@ -28,9 +28,9 @@ async function logWrite(msg) {
   Error.prepareStackTrace = orig;
   //process.stdout.write(`${path.relative(process.cwd(), callee.getFileName())}:${callee.getLineNumber()}: ${s}\n`);
 
-  var d = getColorCurrentDateNY().padEnd(36, ' ');
-  var line = callee.getLineNumber();
-  var file = callee.getFileName();
+  let d = getColorCurrentDateNY().padEnd(36, ' ');
+  let line = callee.getLineNumber();
+  let file = callee.getFileName();
   file = file.split('\\');
   file = file[file.length-1].padEnd(25, ' ');
   line = new String(line);
@@ -50,9 +50,9 @@ async function logSpam(msg) {
   Error.prepareStackTrace = orig;
   //process.stdout.write(`${path.relative(process.cwd(), callee.getFileName())}:${callee.getLineNumber()}: ${s}\n`);
 
-  var d = getColorCurrentDateNY().padEnd(36, ' ');
-  var line = callee.getLineNumber();
-  var file = callee.getFileName();
+  let d = getColorCurrentDateNY().padEnd(36, ' ');
+  let line = callee.getLineNumber();
+  let file = callee.getFileName();
   file = file.split('\\');
   file = file[file.length-1].padEnd(25, ' ');
   line = new String(line);
@@ -73,9 +73,9 @@ async function logError(msg) {
   Error.prepareStackTrace = orig;
   //process.stdout.write(`${path.relative(process.cwd(), callee.getFileName())}:${callee.getLineNumber()}: ${s}\n`);
 
-  var d = getColorCurrentDateNY().padEnd(36, ' ');
-  var line = callee.getLineNumber();
-  var file = callee.getFileName();
+  let d = getColorCurrentDateNY().padEnd(36, ' ');
+  let line = callee.getLineNumber();
+  let file = callee.getFileName();
   file = file.split('\\');
   file = file[file.length-1].padEnd(25, ' ');
   line = new String(line);
