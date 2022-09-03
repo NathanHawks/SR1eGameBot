@@ -10,7 +10,8 @@ const { logError, logSpam, logWrite } = require('./log');
 const {
   getPlayChannel, getSceneList, findUserFolderDBIDFromMsg, sleep,
   setStringByNameAndParent, findStringIDByName, updateSceneList,
-  addMaintenanceStatusMessage, addHourglass, removeHourglass, ensureTriplet
+  addMaintenanceStatusMessage, addHourglass, removeHourglass, ensureTriplet,
+  getStringContent, deleteStringByID, delFromCache, deleteSceneFromList
 } = require('./api');
 async function handleSetSceneCommand(msg, args) {
   if (msg.channel.guild === undefined) {
@@ -105,12 +106,16 @@ async function handleGetSceneCommand(msg, args) {
     const filename = `gmScene_${args[0]}`;
     const fileID = await findStringIDByName(filename, userFolderID);
     const content = await getStringContent(fileID);
+    if (!content || content === '')
+      return msg.reply(addMaintenanceStatusMessage(
+        `That scene wasn't found.`
+      )).catch((e) => { logError(e); })
     const contentArray = content.split("\n|||\n");
     const scene = {};
     scene.name = contentArray[0];
     scene.music = contentArray[1];
     scene.text = contentArray[2];
-    const playChannel = await bot.channels.get(gmPlayChannelID);
+    const playChannel = await bot.channels.cache.get(gmPlayChannelID);
     let musicText = '';
     if (scene.music && scene.music.length > 0) {
       musicText = `\n\nSoundtrack:\n${scene.music}`;

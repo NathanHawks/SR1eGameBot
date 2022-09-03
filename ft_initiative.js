@@ -9,7 +9,10 @@
 const {logError, logWrite, logSpam} = require('./log');
 const {
   addHourglass, getPlayChannel, ensureTriplet, doNothing, modifyNPCInput,
-  validateNPCInput
+  validateNPCInput, findUserFolderDBIDFromMsg, findStringIDByName,
+  getStringContent, findUserDBIDFromDiscordID, addMaintenanceStatusMessage,
+  removeHourglass, rollDice, sortReaction, sortInitPass, sort1ETiebreaker,
+  sortCPRTiebreaker, rollD10s
 } = require('./api');
 async function handleInitCommand(msg, cmd, user) {
   if (msg.channel.guild === undefined) {
@@ -529,7 +532,7 @@ async function handleSetGMCommand(msg, args, user) {
   await ensureTriplet(msg);
   // now get the folderID of the user folder in this channel
   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
-  await setStringByNameAndParent(msg, 'gmWhoIsGM', userFolderID, targetID);
+  await setStringByNameAndParent('gmWhoIsGM', userFolderID, targetID);
   removeHourglass(msg);
   if (targetID == msg.author.id)
     msg.reply(addMaintenanceStatusMessage(
@@ -559,7 +562,7 @@ async function handleSetPlayersCommand(msg, args) {
   }
   const content = args.join(",");
   const userFolderID = await findUserFolderDBIDFromMsg(msg, true);
-  await setStringByNameAndParent(msg, 'gmPlayers', userFolderID, content);
+  await setStringByNameAndParent('gmPlayers', userFolderID, content);
   // remove reaction
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(` your group in channel <#${gmPlayChannelID}> is now ${args.length} players.`)).catch((e) => { logError(e); });
@@ -610,7 +613,7 @@ async function handleAddPlayersCommand(msg, args) {
       // format for output/saving
       content = newPlayersArr.join(",");
       // save the new player list
-      await setStringByNameAndParent(msg, filename, userFolderID, content);
+      await setStringByNameAndParent(filename, userFolderID, content);
       msg.reply(addMaintenanceStatusMessage(` you added ${args.length} players `
       + ` to your group in channel <#${gmPlayChannelID}>;`
       + ` now there are ${newPlayersCount}.`)).catch((e) => { logError(e); });
@@ -691,7 +694,7 @@ async function handleRemovePlayersCommand(msg, args) {
   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
   fileID = await findStringIDByName(filename, userFolderID);
   if (fileID === -1)
-    await setStringByNameAndParent(msg, filename, userFolderID, '');
+    await setStringByNameAndParent(filename, userFolderID, '');
   // now the file surely exists -- redo the find, get the file id
   fileID = await findStringIDByName(filename, userFolderID);
   // get the file's id
@@ -725,7 +728,7 @@ async function handleRemovePlayersCommand(msg, args) {
   }
   // save, notify, remove hourglass
   let newContentString = newContentArray.join(",");
-  await setStringByNameAndParent(msg, filename, userFolderID, newContentString);
+  await setStringByNameAndParent(filename, userFolderID, newContentString);
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(
     `You removed ${removedIndex.length} players. `
@@ -814,7 +817,7 @@ async function handleSetInitCommand(msg, args) {
   await ensureTriplet(msg);
   // now get the folderID of the user folder in this channel
   const userFolderID = await findUserFolderDBIDFromMsg(msg);
-  await setStringByNameAndParent(msg, 'playerInit', userFolderID, content);
+  await setStringByNameAndParent('playerInit', userFolderID, content);
   // reformat for output (better user feedback)
   tmpArr = content.split(" ");
   let output = `${tmpArr[0]}d6 +${tmpArr[1]}`;
@@ -847,7 +850,7 @@ async function handleSetNPCInitCommand(msg, args) {
     x = x + 2;
   }
   let content = contentArray.join(",");
-  await setStringByNameAndParent(msg, 'gmNPCInit', userFolderID, content);
+  await setStringByNameAndParent('gmNPCInit', userFolderID, content);
   // remove reaction
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(
@@ -877,7 +880,7 @@ async function handleAddNPCInitCommand(msg, args) {
   // don't get attached to the id just yet
   if (gmNPCFileID === -1) {
     // create if nonexistent
-    await setStringByNameAndParent(msg, filename, userFolderID, '');
+    await setStringByNameAndParent(filename, userFolderID, '');
   }
   // if it didn't exist the first time, repeat the find
   if (gmNPCFileID === -1)
@@ -896,7 +899,7 @@ async function handleAddNPCInitCommand(msg, args) {
   }
   // save, notify, remove hourglass
   let newContentString = contentArray.join(",");
-  setStringByNameAndParent(msg, filename, userFolderID, newContentString);
+  setStringByNameAndParent(filename, userFolderID, newContentString);
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(
     `You now have ${contentArray.length} NPC's in channel <#${gmPlayChannelID}>.`
@@ -953,7 +956,7 @@ async function handleRemoveNPCInitCommand(msg, args) {
   }
   // save, notify, remove hourglass
   const newContentString = newContentArray.join(",");
-  setStringByNameAndParent(msg, filename, userFolderID, newContentString);
+  setStringByNameAndParent(filename, userFolderID, newContentString);
   removeHourglass(msg);
   msg.reply(addMaintenanceStatusMessage(
     `You removed ${removedIndex.length} NPC's. `

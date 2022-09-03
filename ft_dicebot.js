@@ -12,6 +12,7 @@ const {
 } = require('./api');
 const {logError, logWrite} = require('./log');
 function handleRollCommand(msg, cmd, args, user, override=null) {
+  let numDiceInt = 0;
   // allow multiple roll commands separated by semicolon
   let cmdArr = null;
   if (override !== null) cmdArr = override.split(";");
@@ -29,7 +30,6 @@ function handleRollCommand(msg, cmd, args, user, override=null) {
     // SETUP: how many dice, and do we explode?
     let isTestBool = false;
     let isTotalBool = false;
-    let numDiceInt = 0;
     let lastchar = lastChar(cmd);
     let modifier = 0;
     if (lastchar == '!') {
@@ -93,7 +93,7 @@ function handleRollCommand(msg, cmd, args, user, override=null) {
       if (successesInt > 0) {
         successesFormattedString = successesInt + ' successes ';
       }
-      output += user + ', you rolled ' + successesFormattedString
+      output += `${user}` + ', you rolled ' + successesFormattedString
       + '(' +rollsIntArr+ ') ' + note;
     }
     // end of for cmdArr loop

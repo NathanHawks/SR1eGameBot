@@ -31,7 +31,8 @@ const {initAll} = require('./init');
 global.isMaintenanceModeBool = true;
 // set status message to send as warning when isMaintenanceModeBool is true
 global.maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
-+ 'See `!help` for **new features!** See `!help troubleshoot` if you suspect a bug.'
+//+ 'See `!help` for **new features!** See `!help troubleshoot` if you suspect a bug.'
++ `Testing a new version! Nothing works except basic dice rolls at the moment, sorry!`
 ;
 // internal setup
 // for reminders
@@ -76,6 +77,8 @@ global.bot = new Discord.Client({
     Discord.GatewayIntentBits.Guilds,
     Discord.GatewayIntentBits.GuildMessages,
     Discord.GatewayIntentBits.GuildMessageReactions,
+    Discord.GatewayIntentBits.DirectMessages,
+    Discord.GatewayIntentBits.MessageContent
   ]
 });
 try {

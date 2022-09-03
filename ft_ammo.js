@@ -43,7 +43,7 @@ async function handleAmmoAddGunSubcommand(msg, args) {
   const fileID = await findStringIDByName(filename, parentFolderID);
   if (fileID === -1) {
     // create file
-    await setStringByNameAndParent(msg, filename, parentFolderID, gunData);
+    await setStringByNameAndParent(filename, parentFolderID, gunData);
     output = `Gun added; you now have 1 gun in channel <#${playChannelID}>.`;
   }
   else {
@@ -60,7 +60,7 @@ async function handleAmmoAddGunSubcommand(msg, args) {
       if (content === '') content = gunData;
       else content = `${content}\n${gunData}`;
       let count = content.split('\n').length
-      await setStringByNameAndParent(msg, filename, parentFolderID, content);
+      await setStringByNameAndParent(filename, parentFolderID, content);
       output = `Gun added; you now have ${count} guns in channel <#${playChannelID}>.`;
     }
     else {
@@ -92,7 +92,7 @@ async function handleAmmoDelGunSubcommand(msg, args) {
   const fileID = await findStringIDByName(filename, parentFolderID);
   if (fileID === -1) {
     // create file
-    await setStringByNameAndParent(msg, filename, parentFolderID, '');
+    await setStringByNameAndParent(filename, parentFolderID, '');
     output = `You have no guns to remove in channel <#${playChannelID}>.`;
   }
   else {
@@ -111,7 +111,7 @@ async function handleAmmoDelGunSubcommand(msg, args) {
           output += gArr.join(',');
         }
       });
-      await setStringByNameAndParent(msg, filename, parentFolderID, output);
+      await setStringByNameAndParent(filename, parentFolderID, output);
       let count = 0;
       if (output === '') count = 0;
       else count = output.split('\n').length
@@ -211,7 +211,7 @@ async function handleAmmoAddAmmoSubcommand(msg, args) {
   // create file
   if (fileID === -1) {
     content = _makeAmmoSaveString([ammo]);
-    await setStringByNameAndParent(msg, filename, parentFolderID, content);
+    await setStringByNameAndParent(filename, parentFolderID, content);
     output = `You added ${ammo.qtyContainers} ${ammo.containerType}s `
       + `(${ammo.qtyRounds}/${ammo.maxRounds} ${ammo.roundType}s) in channel `
       + `<#${playChannelID}>.`;
@@ -221,7 +221,7 @@ async function handleAmmoAddAmmoSubcommand(msg, args) {
     content = await getStringContent(fileID, playChannelID);
     const ammos = _mergeNewAmmo(content, ammo);
     content = _makeAmmoSaveString(ammos);
-    await setStringByNameAndParent(msg, filename, parentFolderID, content);
+    await setStringByNameAndParent(filename, parentFolderID, content);
     output = ` you added ${ammo.qtyContainers} ${ammo.containerType}s `
       + `(${ammo.qtyRounds}/${ammo.maxRounds} ${ammo.roundType}s) in channel `
       + `<#${playChannelID}>.`;
@@ -284,7 +284,7 @@ async function handleAmmoDelAmmoSubcommand(msg, args) {
             + ` max) were removed from channel <#${playChannelID}>.`;
         }
         const saveString = _makeAmmoSaveString(oldAmmos);
-        await setStringByNameAndParent(msg, filename, parentFolderID, saveString);
+        await setStringByNameAndParent(filename, parentFolderID, saveString);
       }
     }
   }
@@ -444,7 +444,7 @@ async function handleAmmoFireSubcommand(msg, args) {
         if (guns[x].name === gunFired) guns[x] = gun;
       }
       const saveString = _makeGunSaveString(guns);
-      await setStringByNameAndParent(msg, filename, parentFolderID, saveString);
+      await setStringByNameAndParent(filename, parentFolderID, saveString);
     }
   }
   msg.reply(addMaintenanceStatusMessage(output)).catch((e)=>{console.error(e);});
@@ -624,12 +624,12 @@ async function handleAmmoReloadSubcommand(msg, args) {
         filename = 'gunList';
         let saveString = _makeGunSaveString(guns);
         logSpam(`saveString\n${saveString}`);
-        await setStringByNameAndParent(msg, filename, parentFolderID, saveString);
+        await setStringByNameAndParent(filename, parentFolderID, saveString);
         logSpam(`Attempting to save ammoList`);
         filename = 'ammoList';
         saveString = _makeAmmoSaveString(ammos);
         logSpam(`saveString\n${saveString}`);
-        await setStringByNameAndParent(msg, filename, parentFolderID, saveString);
+        await setStringByNameAndParent(filename, parentFolderID, saveString);
         output = `Your weapon was reloaded.`;
       }
     }

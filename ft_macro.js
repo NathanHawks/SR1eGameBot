@@ -7,11 +7,12 @@
 * Released as-is with no warranty or claim of usability for any purpose.
 */
 const {logWrite, logError, logSpam} = require('./log');
+const {handleRollCommand} = require('./ft_dicebot');
 const {
-  handleRollCommand, addMaintenanceStatusMessage, addHourglass, ensureTriplet,
+  addMaintenanceStatusMessage, addHourglass, ensureTriplet,
   findUserFolderDBIDFromMsg, findStringIDByName, getStringContent,
-  setStringByNameAndParent
-} = require('./ft_dicebot');
+  setStringByNameAndParent, removeHourglass
+} = require('./api');
 async function handleSaveMacroCommand(msg, args) {
   if (msg.channel.guild === undefined) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
@@ -85,7 +86,7 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
   // hat tip https://stackoverflow.com/questions/43564985/regex-for-dice-rolling-system-and-capturing-using-javascript
   let argsString = args.join(' ');
   let argsStringMatches = argsString.match(/(\d*)(D\d*)((?:[+*-](?:\d+|\([A-Z]*\)))*)(?:\+(D\d*))?/i);
-  if (!argsStringMatches && argsStringMatches.length > 0) {
+  if (argsStringMatches && argsStringMatches.length > 0) {
     logSpam(`Coexisting with Dice Maiden (by ignoring !roll ${argsString})`);
     return;
   }

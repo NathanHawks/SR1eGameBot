@@ -176,9 +176,10 @@ async function ensureTriplet(msg) {
     try {
       await ensureFolderByName(serverDiscordID, userDataFolderID);
       serverFolderID = await findFolderByName(serverDiscordID, userDataFolderID);
+      serverFolderID = serverFolderID._id.toString();
       if (serverFolderID)
         addToCache(
-          {name: msg.channel.guild.id, dbID: serverFolderID}, 'server'
+          {name: msg.channel.guild.id, id: serverFolderID}, 'server'
         );
     } catch (e) { logError(e); }
   }
@@ -188,11 +189,12 @@ async function ensureTriplet(msg) {
     channelFolderID = getFromCache(q, 'channel').dbID;
   } else {
     try {
-      await ensureFolderByName(gmPlayChannelID, serverFolderID, gmPlayChannelID);
+      await ensureFolderByName(gmPlayChannelID, serverFolderID);
       channelFolderID = await findFolderByName(gmPlayChannelID, serverFolderID);
+      channelFolderID = channelFolderID._id.toString();
       if (channelFolderID)
         addToCache(
-          {name: msg.channel.id, dbID: channelFolderID}, 'channel'
+          {name: msg.channel.id, id: channelFolderID, parents: [serverFolderID]}, 'channel'
         );
     } catch (e) { console.log(e); }
   }
@@ -207,7 +209,7 @@ async function ensureTriplet(msg) {
       await ensureFolderByName(msg.author.id, channelFolderID);
       const userFolder = await findFolderByName(msg.author.id, channelFolderID);
       addToCache({
-        name: userFolder._id.toString(), parent: userFolder.parent.toString()
+        name: msg.author.id, parents: [userFolder.parent.toString()], id: userFolder._id.toString()
       }, 'userInChannel');
       addToCache({
         server: msg.channel.guild.id,
@@ -234,11 +236,11 @@ async function findUserFolderDBIDFromMsg(msg, usePlayChannel=false) {
     s = getFromCache(q, 'server').dbID;
     logSpam(`findUserFolderDBIDFromMsg found server in cache: ${s}`);
     q = {name: discordChannelID, parents: [s]};
-    if (cacheHas(q, 'channel')) {
+    if (s && cacheHas(q, 'channel')) {
       let c = getFromCache(q, 'channel').dbID;
       logSpam(`findUserFolderDBIDFromMsg found channel in cache: ${c}`);
       q = {name: msg.author.id, parents: [c]};
-      if (cacheHas(q, 'userInChannel')) {
+      if (c && cacheHas(q, 'userInChannel')) {
         r = getFromCache(q, 'userInChannel').dbID;
         logSpam("findUserFolderDBIDFromMsg found user folder at " + s + "/" + c + "/" + r);
         return r;
@@ -250,7 +252,7 @@ async function findUserFolderDBIDFromMsg(msg, usePlayChannel=false) {
   serverFolder = await findFolderByName(
     msg.channel.guild.id, global.folderID.UserData
   );
-  logSpam("Seek sID: " + serverFolder._id);
+  logSpam("Seek sID: " + serverFolder._id.toString());
   if (!serverFolder) {
     msg.reply(' :man_facepalming: Something went wrong. Please try your command '
       + 'again. :man_facepalming:')
@@ -323,7 +325,7 @@ async function findUserDBIDFromDiscordID(msg, userID, usePlayChannel=false) {
 // Rewritten 9/1/22
 async function ensureFolderByName(name, parentID=null) {
   const folder = await findFolderByName(name, parentID);
-  if (!folder) createFolder(name, parentID);
+  if (!folder && folder !== -1) createFolder(name, parentID);
 }
 // Rewritten 9/1/22
 async function findFolderByName(
@@ -337,8 +339,8 @@ async function findFolderByName(
     return -1;
   }
   const query = { $and: [{name: folderName}] };
-  if (parentID !== null) query.$and.push({parent: ObjectId(parentID)});
   try {
+    if (parentID !== null) query.$and.push({parent: ObjectId(parentID)});
     const c = await Database.getTable("folders").findOne(query);
     callback(c);
     return c;
@@ -371,7 +373,7 @@ async function findStringIDByName(filename, parentID) {
     });
     if (c) {
       addToCache({
-        id: c._id.toString(), name: c.name, parents: [ c.parent._id.toString() ]
+        id: c._id.toString(), name: c.name, parents: [ c.parent.toString() ]
       }, 'file');
       return c._id.toString();
     }
@@ -381,6 +383,7 @@ async function findStringIDByName(filename, parentID) {
 }
 // Rewritten 9/1/22
 async function getStringContent(fileID) {
+  if (fileID === -1) return "";
   let fileContents = '';
   let q = {id: fileID};
   if (cacheHas(q, 'fileContent')) {
@@ -391,10 +394,9 @@ async function getStringContent(fileID) {
     }
   }
   try {
-    const c = await Database.getTable("strings").findOne({ id: ObjectId(fileID) });
-    if (c && c.content) {
-      // Legacy: deal with a weird Google API error
-      fileContents=c.content.substring(0,c.content.length-2);
+    const c = await Database.getTable("strings").findOne({ _id: ObjectId(fileID) });
+    if (c && c.content && c.content !== '') {
+      fileContents=c.content;
       addToCache({id: fileID, content: fileContents}, 'fileContent');
     }
     return fileContents;
@@ -409,29 +411,31 @@ async function setStringByNameAndParent(filename, parentFolderID, contents) {
       {$set: { content: contents, name: filename, parent: ObjectId(parentFolderID) }},
       {upsert: true}
     );
-    // TODO: update cache
-    // delFromCache()
-    // addToCache()
+    const id = await findStringIDByName(filename, parentFolderID);
+    delFromCache(id, 'fileContent');
+    addToCache({id: id, content: contents}, 'fileContent');
   }
   catch (e) { logError(e); }
 }
 // Rewritten 9/1/22
 async function deleteStringByID(fileId, callback=doNothing) {
   try {
-    await Database.getTable("strings").deleteOne({id: ObjectId(fileId)});
+    await Database.getTable("strings").deleteOne({_id: ObjectId(fileId)});
     callback();
   }
   catch (e) { logError(e); }
 }
 // Added 9/1/22
 async function addHourglass(msg) {
+  return;
   await msg.react('⏳').catch((e) => { logError(e); });
 }
 // Checked 9/1/22
 function removeHourglass(msg) {
-  msg.reactions.forEach((reaction) => {
+  return;
+  msg.reactions.cache.forEach((reaction) => {
     if (reaction.emoji.name == '⏳') {
-      reaction.remove().catch((e) => {
+      reaction.remove(global.bot.user).catch((e) => {
         console.log(e);
         logError('Seems I don\'t have permission to do reactions in this channel.');
         msg.channel.send('Seems I don\'t have permission to do reactions in this channel.');
@@ -1018,7 +1022,7 @@ async function saveSceneList(msg, sceneList) {
       content += `${scene.name}\n|||\n${scene.dbID}\n|||||\n`;
     }
   });
-  await setStringByNameAndParent(msg, filename, userFolderID, content);
+  await setStringByNameAndParent(filename, userFolderID, content);
 }
 // conditionally add warning message
 function addMaintenanceStatusMessage(output) {

@@ -5,7 +5,6 @@ const {logWrite, logError} = require('./log');
 const zip = new StreamZip({file: './UserData.zip'});
 /* =================================================== LEGACY CODE ========== */
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-global.folderID = {UserData: null}
 /* ================================================== MICGRATION CODE ======= */
 async function _subObjects(a, i=0, fullPath=null, isFile=false) {
   const r = {};
@@ -36,7 +35,6 @@ async function parseZipData() {
       files[root].push( await _subObjects(a, 0, e.name, true) );
     }
   }
-  zip.close();
   return {folders, files};
 }
 async function makePath(e, p) {
@@ -114,7 +112,6 @@ async function migrate() {
     await createFolder('UserData');
     userDataFolder = await findFolderByName('UserData');
   }
-  global.folderID.UserData = userDataFolder._id.toString();
   // Import folders first
   let u = folders.UserData;
   logWrite(`Folder count: ${u.length}`);
@@ -134,5 +131,6 @@ async function migrate() {
 }
 zip.on('ready', async () => {
   await migrate();
+  zip.close();
   process.exit();
 });

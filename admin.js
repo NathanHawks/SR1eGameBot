@@ -6,6 +6,7 @@
  * Released under the terms of the UnLicense. This work is in the public domain.
  * Released as-is with no warranty or claim of usability for any purpose.
  */
+const {resetCache} = require('./api');
 async function openFile(msg, args) {
   let output = await getStringContent(args[0], 'system');
 
@@ -13,7 +14,7 @@ async function openFile(msg, args) {
 }
 async function listAllFiles(msg) {
   let nextPageToken = undefined;
-  let output = '--- [filename] ---------   ------------ dbID ------------- ------------ parentID -------------\n';
+  let output = '--- [filename] ---------   ---------- dbID ---------- ---------- parentID ----------\n';
   let finalout = '';
   const drive = google.drive({version: 'v3', auth: global.auth});
   let iteratePage = async function (nextPageToken=undefined, level=0) {
@@ -105,7 +106,7 @@ function deleteFile(msg, args) {
   }
 }
 function showCache(msg) {
-  let output = '\nGeneral\n[CacheID]  - name/discordID - ------------ dbID ----------- ----------- parentID ------------\n';
+  let output = '\nGeneral\n[CacheID]  - name/discordID - ---------- dbID -------- --------- parentID ---------\n';
   let finalout = '';
   let cxArr = ['server', 'channel', 'userInChannel', 'file'];
   let foundCache = false;
@@ -126,7 +127,7 @@ function showCache(msg) {
   });
   if (foundCache === false) output += " Cache empty\n";
   let x = 0;
-  output += '\nFile Contents\n[CacheID] ------------------- ------------ dbID ----------- ------------ content ------------\n';
+  output += '\nFile Contents\n[CacheID] ------------------- ---------- dbID -------- ------------ content ------------\n';
   global.cache.fileContent.map((c) => {
     let id = `fcon${x}`.padEnd(10, " ");
     let spa = " ".padEnd(18, " ");
@@ -151,7 +152,7 @@ function showCache(msg) {
   });
   if (pcx === 0) output += " Cache empty\n";
   let ftx = 0;
-  output += '\nFolder Triplets\n[CacheID]  ----- server ----- ----- channel ---- ------ user ------ ----- dbID -----\n';
+  output += '\nFolder Triplets\n[CacheID]  ----- server ----- ---- channel ----- ------ user ------ ----- dbID -----\n';
   global.cache.triplet.map((ft) => {
     let id = `trip${ftx}`.padEnd(10, " ");
     let s = ft.server;
