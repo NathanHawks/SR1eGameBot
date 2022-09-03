@@ -7,7 +7,7 @@
  * Released as-is with no warranty or claim of usability for any purpose.
  */
 // checks the current play channel and replies with a channel link
-const {logError} = require('./log');
+const {logError, logWrite} = require('./log');
 const {
   addHourglass, removeHourglass, addMaintenanceStatusMessage, ensureTriplet,
   getPlayChannel, findUserFolderDBIDFromMsg, setStringByNameAndParent,
@@ -46,7 +46,7 @@ async function handleSetChannelCommand(msg, args) {
       const filename = 'gmPlayChannel';
       const gmSecretFolderID = await findUserFolderDBIDFromMsg(msg);
       await setStringByNameAndParent(
-        msg, filename, gmSecretFolderID, gmPlayChannelID
+        filename, gmSecretFolderID, gmPlayChannelID
       );
       addToCache({
         server: msg.channel.guild.id,

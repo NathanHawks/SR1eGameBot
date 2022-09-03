@@ -166,7 +166,7 @@ async function handleRemoveMacroCommand(msg, args) {
       savedRollsArr = savedRollsStr.split("\n");
       // get an index of name per line
       savedRollsArr.forEach((macro)=>{
-        savedRollsNames[savedRollsNames.length] = macro.split(" ");
+        savedRollsNames[savedRollsNames.length] = macro.split(" ")[0];
       });
       const i = savedRollsNames.indexOf(inputName);
       if (i !== -1) {

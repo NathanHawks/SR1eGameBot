@@ -103,7 +103,7 @@ async function handleAmmoDelGunSubcommand(msg, args) {
     }
     else {
       const guns = content.split('\n');
-      let output = '';
+      output = '';
       guns.forEach((g) => {
         let gArr = g.split(',');
         if (gArr[0] !== gun.name) {
@@ -222,7 +222,7 @@ async function handleAmmoAddAmmoSubcommand(msg, args) {
     const ammos = _mergeNewAmmo(content, ammo);
     content = _makeAmmoSaveString(ammos);
     await setStringByNameAndParent(filename, parentFolderID, content);
-    output = ` you added ${ammo.qtyContainers} ${ammo.containerType}s `
+    output = `You added ${ammo.qtyContainers} ${ammo.containerType}s `
       + `(${ammo.qtyRounds}/${ammo.maxRounds} ${ammo.roundType}s) in channel `
       + `<#${playChannelID}>.`;
   }
@@ -319,11 +319,11 @@ async function handleAmmoListSubcommand(msg) {
   }
   logWrite('\x1b[32m [ ==================== handleAmmoListSubcommand =============== ]\x1b[0m');
   addHourglass(msg);
-  const filename = 'ammoList';
+  let filename = 'ammoList';
   const playChannelID = await getPlayChannel(msg);
   await ensureTriplet(msg);
   const parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
-  const fileID = await findStringIDByName(filename, parentFolderID);
+  let fileID = await findStringIDByName(filename, parentFolderID);
   let ammos = [];
   if (fileID !== -1) {
     let content = await getStringContent(fileID);
@@ -609,7 +609,7 @@ async function handleAmmoReloadSubcommand(msg, args) {
         }
         let ammoSaveString = _makeAmmoSaveString(ammos);
         await setStringByNameAndParent(
-          msg, 'ammoList', parentFolderID, ammoSaveString
+          'ammoList', parentFolderID, ammoSaveString
         );
         // reload the weapon
         gun.ammoQtyLoaded = ammo.qtyRounds;

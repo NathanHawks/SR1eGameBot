@@ -12,7 +12,7 @@ const {
   validateNPCInput, findUserFolderDBIDFromMsg, findStringIDByName,
   getStringContent, findUserDBIDFromDiscordID, addMaintenanceStatusMessage,
   removeHourglass, rollDice, sortReaction, sortInitPass, sort1ETiebreaker,
-  sortCPRTiebreaker, rollD10s
+  sortCPRTiebreaker, rollD10s, setStringByNameAndParent
 } = require('./api');
 async function handleInitCommand(msg, cmd, user) {
   if (msg.channel.guild === undefined) {

@@ -10,7 +10,7 @@ const {logWrite, logSpam, logError} = require('./log');
 const {
   getPlayChannel, addHourglass, findUserFolderDBIDFromMsg, getUserReminders,
   removeHourglass, findStringIDByName, getStringContent, addReminders,
-  _makeReminderSaveString
+  _makeReminderSaveString, setStringByNameAndParent
 } = require('./api');
 async function handleListRemindersCommand(msg) {
   if (msg.channel.guild === undefined) {
@@ -99,6 +99,7 @@ async function handleAddReminderCommand(msg, args) {
     return;
   }
   // parse list of timings
+  let count = 0;
   for (let x = 0; x < timings.length; x++) {
     timing = timings[x];
     const timingUnit = timing.substring(timing.length-1);
@@ -133,7 +134,7 @@ async function handleAddReminderCommand(msg, args) {
     logSpam(`timestampMinus ${timestampMinus}`);
     const targetTimestamp = sessionTimestamp.valueOf() - timestampMinus;
     // set minimum delay to 15 seconds in case reminder is instant
-    const msFromNow = targetTimestamp - Date.now();
+    let msFromNow = targetTimestamp - Date.now();
     if (msFromNow < 15000) msFromNow = 15000;
     // start reminder object
     reminders[reminders.length] = {
@@ -146,9 +147,10 @@ async function handleAddReminderCommand(msg, args) {
       userFolderID: userFolderID,
       playChannelID: playChannelID
     };
+    count++
   }
   await addReminders(msg, reminders);
-  msg.reply(` ${x} reminders added.`)
+  msg.reply(` ${count} reminders added.`)
   .catch((err)=>{console.error(err);});
   removeHourglass(msg);
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
@@ -190,7 +192,7 @@ async function handleCancelReminderCommand(msg, args) {
     if (saveString !== '') saveString += '\n';
     saveString += _makeReminderSaveString(global.reminders[x]);
   }
-  const filename = 'activeReminders';
+  let filename = 'activeReminders';
   await setStringByNameAndParent(filename, global.folderID.reminders, saveString);
   // user folder last
   saveString = '';

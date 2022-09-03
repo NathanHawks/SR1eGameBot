@@ -902,8 +902,8 @@ async function _addRemindersSetTimeoutPayload(reminder) {
   const users = reminder.playersString.split(' ');
   for (let x = 0; x < users.length; x++) {
     logSpam(`Reminder ID: ${reminder.id} sending to ${users[x]}`);
-    const user = await global.bot.fetchUser(users[x]);
-    const gm = await global.bot.fetchUser(reminder.gmID);
+    const user = await global.bot.users.fetch(users[x]);
+    const gm = await global.bot.users.fetch(reminder.gmID);
     const gmName = gm.tag.split("#")[0];
     user.send(`This is a reminder of your upcoming game`
       + ` at ${d} with GM **${gmName}**.`)
@@ -930,7 +930,6 @@ async function addReminders(msg, reminders) {
       reminders[i]
     );
     global.reminders.push(reminders[i]);
-    logSpam(`reminder = ${JSON.stringify(reminders[i])}`);
   }
   // save to GM's play folder
   await _saveGMReminders(userFolderID, reminders);
