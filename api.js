@@ -406,7 +406,7 @@ async function setStringByNameAndParent(filename, parentFolderID, contents) {
   try {
     await Database.getTable("strings").updateOne(
       {$and: [ {name: filename, parent: ObjectId(parentFolderID)} ]},
-      {$set: [ {content: contents}, {name: filename}, {parent: ObjectId(parentFolderID)} ]},
+      {$set: { content: contents, name: filename, parent: ObjectId(parentFolderID) }},
       {upsert: true}
     );
     // TODO: update cache
