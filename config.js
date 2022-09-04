@@ -5,4 +5,4 @@ class SiteConfig {
   }
 }
 const config = new SiteConfig();
-module.exports = config;
+module.exports = {config};
