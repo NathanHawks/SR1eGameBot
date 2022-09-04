@@ -7,8 +7,7 @@
  * Released as-is with no warranty or claim of usability for any purpose.
  */
 const { resetCache } = require('./api');
-const { openFile, listAllFiles, deleteFile, showCache, clearCache, adminUnlock,
-  adminUnlockAll, deleteAllFiles } = require('./admin');
+const { openFile, showCache, clearCache } = require('./admin');
 const { logSpam, logWrite, logError } = require('./log');
 const {handleAmmoCommand} = require('./ft_ammo');
 const {handleRollCommand} = require('./ft_dicebot');
