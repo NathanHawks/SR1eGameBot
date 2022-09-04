@@ -25,25 +25,57 @@ Instructions on using the bot are below, after the self-hosting instructions.
 
 1. Install node.js and test that it's working. You'll need this in order to set up the bot.
 
-2a. Get your Discord auth token via the *New Application* button at http://discordapp.com/developers/applications/me and put the auth token in a `discordauth.json` file, in the same directory as main.js. The format:
+2. Get your Discord auth token via the *New Application* button at http://discordapp.com/developers/applications/me and put the auth token in a `discordauth.json` file, in the same directory as main.js. The format:
 ```
 {
-"token": "your auth token string from the New Application button at http://discordapp.com/developers/applications/me"
+"token": "your auth token goes here"
 }
 ```
-2b. Get credentials for the Google side of the app by creating a new project at https://console.cloud.google.com/getting-started using the "Select a Project" button in the upper-left. (Choose "External" and "Desktop Application".) From here you will be able to export the JSON-formatted data for your Google Drive API login. Save this in the same directory as main.js under the filename `googlecredentials.json`.
 
-3. Run GameBot locally by going to its directory and running `node .` (with the period). Follow the instructions to authorize the bot as a Google app. *By the time you're done you'll have authorized the bot to use its own private slice of your Google Drive (for storing settings like initiative and macros).* When you paste the authorization code into the bot's console input, it will create and populate the file ***googletoken.json,*** in the same directory as main.js.
-  * If you plan on self-hosting at home or pushing files to the web via FTP, you can skip to step #8.
+**IMPORTANT:** If you're using git, make sure you add `discordauth.json` to your `.gitignore` file before your next commit.
+
+3a. [Install MongoDB](https://www.mongodb.com/try/download/community) and test that it's working (for example by connecting to it with [MongoDB Compass](https://www.mongodb.com/try/download/compass)); and then create a database called `sr1egamebot`. (If you're using Compass, you'll need to also create a collection in that database; in that case, create the collection `folders`.)
+
+3b. From the bot's source, open `config.js` in your code editor and fill in your MongoDB connection string. It has the format:
+
+```
+mongodb://USERNAME:PASSWORD@HOST:PORT/DB
+```
+For example:
+```
+mongodb://my-db-user:my-db-password@127.0.0.1:27017/sr1egamebot
+```
+If you use a strong password with symbols, you might need to encode the password, like this:
+```
+mongodb://my-db-user:${encodeURIComponent('my-db-pass')}@127.0.0.1:27017/sr1egamebot
+```
+
+3c. If you used a previous version of the bot, you'll need to migrate your data away from Google Drive, using the provided script `migrate.js`: see the section **Data Migration**, below.
+
+3d. For the sake of security, configure MongoDB for password authentication. I also strongly recommend: a) hosting MongoDB on the same server that the bot runs from; b) setting the firewall to reject connections to MongoDB from outside; c) leaving MongoDB on its default configuration to only accept connections from the same computer.
+
+[Here's how to enable password authentication for MongoDB](https://www.mongodb.com/docs/manual/tutorial/configure-scram-client-authentication/).
+
+
+4. Run GameBot locally by going to its directory and running `node .` (with the period).
+  * If you plan on self-hosting at home or pushing files to the web via FTP, you can skip to step #9.
   * If you plan on hosting via Heroku and deploying via GitHub, continue with the following steps:
-4. On your deployment server, create 3 environment variables:
-  * ***GOOGLE_CREDENTIALS*** should have the contents of the ***googlecredentials.json*** file.
-  * ***GOOGLE_TOKEN*** should have the contents of the ***googletoken.json*** file.
+5. On your deployment server, create an environment variable:
   * ***TOKEN*** should have the contents of the ***discordauth.json*** file.
-5. Publish your copy of the bot to your repo under the master branch.
-6. Link Heroku to your GitHub repo, and tell Heroku to auto-deploy when you push to master.
-7. In Heroku, under "Configure Dynos", use the "worker dyno", not the "web dyno".
-8. Invite the bot to your server! Replace the XX's in the following link with your bot's ID number: discordapp.com/oauth2/authorize?client_id=XXXXXXXXXXX&scope=bot&permissions=0
+6. Publish your copy of the bot to your repo under the master branch.
+7. Link Heroku to your GitHub repo, and tell Heroku to auto-deploy when you push to master.
+8. In Heroku, under "Configure Dynos", use the "worker dyno", not the "web dyno".
+9. Invite the bot to your server! Replace the XX's in the following link with your bot's ID number: discordapp.com/oauth2/authorize?client_id=XXXXXXXXXXX&scope=bot&permissions=3136
+
+### Data Migration
+
+To migrate the data, first make sure MongoDB is installed and running. Make sure `config.js` is set up with the proper `this.dbUrl` value including MongoDB user credentials if you've turned on MongoDB's password authentication. Then go to Google Drive and right-click your `UserData` folder, and choose Download. Then rename the downloaded file to simply `UserData.zip` and place it in the same folder with the bot's code files. Then run `node ./migrate.js` from the bot's folder.
+
+After migrating, you will have more entries in the `folders` collection than were reported in the `migrate.js` output. This is normal; it happens because `node-stream-zip` only reports folder endpoints: `UserData/serverID/channelID/userID` gets reported as one folder, when actually it's four folders nested in each other.
+
+### Hosting the Bot Elsewhere
+
+Unfortunately, this is beyond the scope of these instructions.
 
 ### Gaining access to admin commands:
 
@@ -258,8 +290,6 @@ The second form allows you to specify which type of round you want to load, for 
 **Example:** `!ammo reload enfield shot`
 
 ## Misc ##
-
-  With the exception of non-macro dice rolls, all commands are a little slow (due to communication with Google Drive). Thanks to caching, they get much faster over time. The :hourglass_flowing_sand: reaction means it's working on your request.
 
   Commands are not case-sensitive. Go WiLd WitH tHaT.
 
