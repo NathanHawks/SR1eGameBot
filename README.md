@@ -291,8 +291,6 @@ The second form allows you to specify which type of round you want to load, for 
 
 ## Misc ##
 
-  With the exception of non-macro dice rolls, all commands are a little slow (due to communication with Google Drive). Thanks to caching, they get much faster over time. The :hourglass_flowing_sand: reaction means it's working on your request.
-
   Commands are not case-sensitive. Go WiLd WitH tHaT.
 
   You can find my Patreon at https://patreon.com/nathanhawks if this bot helps you game.
