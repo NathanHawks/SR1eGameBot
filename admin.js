@@ -8,102 +8,8 @@
  */
 const {resetCache} = require('./api');
 async function openFile(msg, args) {
-  let output = await getStringContent(args[0], 'system');
-
+  let output = await getStringContent(args[0]);
   msg.channel.send("```\n" + output + "```").catch((e) => { logError(e); });
-}
-async function listAllFiles(msg) {
-  let nextPageToken = undefined;
-  let output = '--- [filename] ---------   ---------- dbID ---------- ---------- parentID ----------\n';
-  let finalout = '';
-  const drive = google.drive({version: 'v3', auth: global.auth});
-  let iteratePage = async function (nextPageToken=undefined, level=0) {
-    let q = { fields: 'nextPageToken, files(id, name, parents)' };
-    if (nextPageToken !== undefined) q.pageToken = nextPageToken;
-    logSpam('Querying GDrive for a list');
-
-    drive.files.list(q, async (err, res) => {
-
-      if (res.data.files) {
-        logSpam(`res.data.files got ${res.data.files.length}`);
-      }
-      else {
-        logSpam('res.data.files got nothing');
-      }
-      if (err) {
-        if (err.hasOwnProperty('code') && err.code === 500) {
-          console.error(err);
-          logWrite('Trying again in 2 seconds');
-          await sleep(2000);
-          await iteratePage(nextPageToken, level);
-        }
-      }
-      logSpam('No significant error returned');
-      let files = res.data.files;
-      if (files.length) {
-        logSpam(res.data.nextPageToken);
-        let x = 0;
-        for (x = 0; x < files.length; x++) {
-          global.filesFound[global.filesFound.length] = files[x];
-        }
-        nextPageToken = res.data.nextPageToken;
-        logSpam('nextPageToken = ' + nextPageToken);
-      } else if (res.data.nextPageToken === 'undefined' || res.data.nextPageToken === undefined) {
-        nextPageToken = undefined;
-      } else {
-        nextPageToken = undefined;
-        output += 'No files found.';
-      }
-      logSpam(`Finishing callback with ${global.filesFound.length} files found on level ${level}`);
-      if (nextPageToken !== undefined) {
-        iteratePage(nextPageToken, level+1);
-      }
-      else {
-        let x;
-        for (x = 0; x < global.filesFound.length; x++) {
-          // temporary / fallback (old version)
-          let file = global.filesFound[x];
-          output += `${file.name.padEnd(26)} (${file.id}) [${file.parents}]\n`;
-        }
-        if (msg !== undefined && output.length < 1994)
-          msg.channel.send(`\`\`\`${output}\`\`\``)
-          .catch((e) => { logError(e); });
-        else if (msg !== undefined) {
-          let outArr = output.split("\n");
-          output = '';
-          for (let x = 0; x < outArr.length; x++) {
-            output += outArr[x] + "\n";
-            if (output !== '\n') {
-              if (x%20 === 0) {
-                msg.channel.send('```\n' + output + '```')
-                .catch((e) => { logError(e); });
-                output = '';
-              } else if (outArr.length - x < 20) {
-                finalout = output;
-              }
-            }
-          }
-          if (finalout !== '\n') {
-            msg.channel.send('```\n' + finalout + '```')
-            .catch((e) => { logError(e); });
-          }
-        }
-        else console.log(output);
-        global.filesFound = [];
-      }
-    });
-  }
-  while(isDiskLockedForChannel('system')) { sleep(15); }
-  iteratePage();
-  logSpam('Disk unlocked');
-}
-function deleteFile(msg, args) {
-  if (args && args[0]) {
-    deleteStringByID(args[0], (err, res) => {
-      msg.channel.send("```" + args[0] + ' deleted.```')
-      .catch((e) => { logError(e); });
-    });
-  }
 }
 function showCache(msg) {
   let output = '\nGeneral\n[CacheID]  - name/discordID - ---------- dbID -------- --------- parentID ---------\n';
@@ -183,48 +89,6 @@ function clearCache(msg) {
   resetCache();
   showCache(msg);
 }
-// unlock global.lock for a specific channel
-function adminUnlock(msg, args) {
-  let channel = -1;
-  if (msg && msg.channel && args.length === 0) {
-    channel = msg.channel.id
-  } else { channel = args[0]; }
-  global.lock[channel] = false;
-}
-function adminUnlockAll(msg) {
-  let i;
-  for (i = 0; i < global.lock.length; i++) {
-    global.lock[i] = false;
-  };
-}
-function deleteAllFiles() {
-  let auth = global.auth;
-  const drive = google.drive({version: 'v3', auth});
-  drive.files.list({
-    fields: 'nextPageToken, files(id, name)',
-  }, async (err, res) => {
-    if (err && err.hasOwnProperty('code') && err.code === 500) {
-      console.error(err);
-      logWrite('Trying again in 2 seconds...');
-      await sleep(2000);
-      return deleteAllFiles();
-    }
-    else if (err) {
-      return console.error(err);
-    }
-    const files = res.data.files;
-    if (files.length) {
-      console.log(`DX: Deleting ${files.length} files...`);
-      files.map((file) => {
-        deleteStringByID(file.id, doNothing);
-      });
-      logWrite("DX: All commands sent.")
-    } else {
-      logWrite('No files found.');
-    }
-  });
-}
 module.exports = {
-  openFile, listAllFiles, deleteFile, showCache, clearCache, adminUnlock,
-  adminUnlockAll, deleteAllFiles
+  openFile, showCache, clearCache
 };
