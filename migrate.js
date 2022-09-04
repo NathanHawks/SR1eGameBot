@@ -82,7 +82,7 @@ async function findFolderByName(
 ) {
   if (parentID === -1) {
     logWrite(`findFolderByName: parentID was -1, `
-      + `folderName was ${folderName}, channel was ${channelID}`);
+      + `folderName was ${folderName}`);
     return -1;
   }
   const query = { $and: [{name: folderName}] };

@@ -96,15 +96,20 @@ catch (e) {
   }
 }
 
-bot.on('ready', () => {
-    logWrite('Connected as ['+ bot.user.tag + ']');
-    global.bot.user.setPresence({game:{name:'!help for help'}});
+global.bot.on('ready', () => {
+  logWrite('Connected to Discord as ['+ bot.user.tag + ']');
+  global.bot.user.setPresence({
+    activities: [{
+      type: `LISTENING`,
+      name: `!help`
+    }]
+  });
 });
 
 // Setup reaction handler (when 🎲 UI for triggering re-roll is clicked)
-bot.on('messageReactionAdd', (reaction, user) => {
-  if ((reaction.emoji == '🎲' || reaction.emoji == 'game_die' ||
-        reaction.emoji == ':game_die:') && user.username !== 'GameBot') {
+global.bot.on('messageReactionAdd', (reaction, user) => {
+  if ((reaction.emoji.name == '🎲' || reaction.emoji.name == 'game_die' ||
+        reaction.emoji.name == ':game_die:') && user.username !== 'GameBot') {
     handleMessage(reaction.message, user);
   }
 });

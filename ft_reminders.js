@@ -78,23 +78,19 @@ async function handleAddReminderCommand(msg, args) {
   logSpam(`Timestamp compare: ${Date.now()} is now, ${sessionTimestamp.valueOf()} is target`);
   logSpam(`sessionTimestamp ${sessionTimestamp}`);
   if (isNaN(Date.parse(sessionTimestamp))) {
-    msg.reply(` the session date & time you entered was invalid. Check it carefully and try again.`)
+    msg.reply(`The session date & time you entered was invalid. Check it carefully and try again.`)
     .catch((err)=>{console.error(err);});
     return;
   }
   // get play folder
   let playChannelID = await getPlayChannel(msg);
-
   // get player list
   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
-
   let filename = 'gmPlayers';
   playersFileID = await findStringIDByName(filename, userFolderID, playChannelID);
-
   let playersString = await getStringContent(playersFileID, playChannelID);
-
   if (playersString.length === 0) {
-    await msg.reply(` you have no players in channel <#${playChannelID}> yet to send reminders to.`)
+    await msg.reply(`You have no players in channel <#${playChannelID}> yet to send reminders to.`)
     .catch((err) => {console.error(err)});
     return;
   }
@@ -167,7 +163,7 @@ async function handleCancelReminderCommand(msg, args) {
   const shortIDs = [...args];
   logSpam(shortIDs);
   if (shortIDs.length === 0) {
-    msg.reply(` this command needs one or more ID's. You'll find the ID's by using \`!listreminders\`.`)
+    msg.reply(`This command needs one or more ID's. You'll find the ID's by using \`!listreminders\`.`)
     .catch((err)=>{console.error(err);});
     return;
   }
@@ -207,9 +203,7 @@ async function handleCancelReminderCommand(msg, args) {
   }
   filename = 'gmReminders';
   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
-
   await setStringByNameAndParent(filename, userFolderID, saveString);
-
   // user feedback
   msg.reply(`${shortIDs.length} reminder cancellations were requested.`)
   .catch((err) => {console.error(err);});

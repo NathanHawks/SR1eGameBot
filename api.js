@@ -325,7 +325,7 @@ async function findUserDBIDFromDiscordID(msg, userID, usePlayChannel=false) {
 // Rewritten 9/1/22
 async function ensureFolderByName(name, parentID=null) {
   const folder = await findFolderByName(name, parentID);
-  if (!folder && folder !== -1) createFolder(name, parentID);
+  if ((!folder || folder === -1) && parentID !== -1) createFolder(name, parentID);
 }
 // Rewritten 9/1/22
 async function findFolderByName(
@@ -335,7 +335,7 @@ async function findFolderByName(
 ) {
   if (parentID === -1) {
     logWrite(`findFolderByName: parentID was -1, `
-      + `folderName was ${folderName}, channel was ${channelID}`);
+      + `folderName was ${folderName}`);
     return -1;
   }
   const query = { $and: [{name: folderName}] };
@@ -425,23 +425,16 @@ async function deleteStringByID(fileId, callback=doNothing) {
   }
   catch (e) { logError(e); }
 }
-// Added 9/1/22
+// Legacy: hourglass is no longer needed (and the bot appears to need special
+// permissions to remove its own reaction)
 async function addHourglass(msg) {
+  msg; // for linter
   return;
-  await msg.react('⏳').catch((e) => { logError(e); });
 }
-// Checked 9/1/22
+// see note above
 function removeHourglass(msg) {
+  msg; // for linter
   return;
-  msg.reactions.cache.forEach((reaction) => {
-    if (reaction.emoji.name == '⏳') {
-      reaction.remove(global.bot.user).catch((e) => {
-        console.log(e);
-        logError('Seems I don\'t have permission to do reactions in this channel.');
-        msg.channel.send('Seems I don\'t have permission to do reactions in this channel.');
-      });
-    }
-  });
 }
 function d6(explode=false) {
     let roll = Math.floor(Math.random() * 6 + 1);
