@@ -19,7 +19,7 @@ Instructions on using the bot are below, after the self-hosting instructions.
 
 ## How to Install
 
-[Click here to deploy the bot on your server](https://discordapp.com/oauth2/authorize?client_id=609274260007026689&scope=bot&permissions=0).
+[Click here to deploy the bot on your server](https://discordapp.com/oauth2/authorize?client_id=609274260007026689&scope=bot&permissions=3136).
 
 ### To self-host:
 
