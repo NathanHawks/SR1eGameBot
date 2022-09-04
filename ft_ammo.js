@@ -6,7 +6,7 @@
  * Released under the terms of the UnLicense. This work is in the public domain.
  * Released as-is with no warranty or claim of usability for any purpose.
  */
-const {logWrite, logSpam} = require('./log');
+const {logWrite, logSpam, logError} = require('./log');
 const {
   addHourglass, getPlayChannel, ensureTriplet, findUserFolderDBIDFromMsg,
   findStringIDByName, setStringByNameAndParent, getStringContent,
@@ -15,7 +15,12 @@ const {
 async function handleAmmoAddGunSubcommand(msg, args) {
   if (msg.channel.guild === undefined) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
-    .catch((e)=>{error.log(e);});
+    .catch((e)=>{logError(e);});
+    return;
+  }
+  if (args.length < 5) {
+    msg.reply(`Please see \`!help ammo\` for correct syntax.`)
+    .catch((e)=>{logError(e);})
     return;
   }
   logWrite('\x1b[32m [ ==================== handleAmmoAddGunSubcommand =============== ]\x1b[0m');
@@ -36,9 +41,10 @@ async function handleAmmoAddGunSubcommand(msg, args) {
     + `${gun.ammoContainerType},${gun.ammoCapacity},${gun.ammoTypeLoaded},`
     + `${gun.ammoQtyLoaded},${gun.ammoTypes}`;
   logSpam(`handleAmmoAddGunSubcommand: ${gunData}`);
-  const playChannelID = await getPlayChannel(msg);
   await ensureTriplet(msg);
+  const playChannelID = await getPlayChannel(msg);
   const parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (parentFolderID === -1) return -1;
   const filename = 'gunList';
   const fileID = await findStringIDByName(filename, parentFolderID);
   if (fileID === -1) {
@@ -85,9 +91,10 @@ async function handleAmmoDelGunSubcommand(msg, args) {
     name: args[1],
   };
   logSpam(`handleAmmoDelGunSubcommand: ${gun.name}`);
-  const playChannelID = await getPlayChannel(msg);
   await ensureTriplet(msg);
+  const playChannelID = await getPlayChannel(msg);
   const parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (parentFolderID === -1) return -1;
   const filename = 'gunList';
   const fileID = await findStringIDByName(filename, parentFolderID);
   if (fileID === -1) {
@@ -203,9 +210,10 @@ async function handleAmmoAddAmmoSubcommand(msg, args) {
   const filename = 'ammoList';
   // const ammoData = `${ammo.qtyContainers},${ammo.containerType},${ammo.qtyRounds},`
   //   + `${ammo.roundType},${ammo.maxRounds}`;
-  const playChannelID = await getPlayChannel(msg);
   await ensureTriplet(msg);
+  const playChannelID = await getPlayChannel(msg);
   const parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (parentFolderID === -1) return -1;
   const fileID = await findStringIDByName(filename, parentFolderID);
   let content = '';
   // create file
@@ -247,9 +255,10 @@ async function handleAmmoDelAmmoSubcommand(msg, args) {
     maxRounds: args[5]
   };
   const filename = 'ammoList';
-  const playChannelID = await getPlayChannel(msg);
   await ensureTriplet(msg);
+  const playChannelID = await getPlayChannel(msg);
   const parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (parentFolderID === -1) return -1;
   const fileID = await findStringIDByName(filename, parentFolderID);
   if (fileID === -1) {
     // no ammo to delete
@@ -320,9 +329,10 @@ async function handleAmmoListSubcommand(msg) {
   logWrite('\x1b[32m [ ==================== handleAmmoListSubcommand =============== ]\x1b[0m');
   addHourglass(msg);
   let filename = 'ammoList';
-  const playChannelID = await getPlayChannel(msg);
   await ensureTriplet(msg);
+  const playChannelID = await getPlayChannel(msg);
   const parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (parentFolderID === -1) return -1;
   let fileID = await findStringIDByName(filename, parentFolderID);
   let ammos = [];
   if (fileID !== -1) {
@@ -403,9 +413,10 @@ async function handleAmmoFireSubcommand(msg, args) {
   const filename = 'gunList';
   let guns = [];
   let gun = {}; // contains a match from guns, if any; the gun being fired
-  const playChannelID = await getPlayChannel(msg);
   await ensureTriplet(msg);
+  const playChannelID = await getPlayChannel(msg);
   const parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (parentFolderID === -1) return -1;
   const fileID = await findStringIDByName(filename, parentFolderID);
   if (fileID === -1) {
     output = `You have no guns setup yet in channel <#${playChannelID}>.`;
@@ -472,9 +483,10 @@ async function handleAmmoReloadSubcommand(msg, args) {
   let filename = 'ammoList';
   let ammoPartial = {};
   let gun = {};
-  const playChannelID = await getPlayChannel(msg);
   await ensureTriplet(msg);
+  const playChannelID = await getPlayChannel(msg);
   const parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (parentFolderID === -1) return -1;
   let fileID = await findStringIDByName(filename, parentFolderID);
   let ammos = [];
   if (fileID !== -1) {

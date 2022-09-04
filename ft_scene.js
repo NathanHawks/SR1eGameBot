@@ -24,6 +24,7 @@ async function handleSetSceneCommand(msg, args) {
   await ensureTriplet(msg);
   let gmPlayChannelID = await getPlayChannel(msg);
   const userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (userFolderID === -1) return -1;
   const newScene = {};
   newScene.name = args[0];
   if (args[1].substring(0,4).toLowerCase() === 'http') {
@@ -58,6 +59,7 @@ async function handleDelSceneCommand(msg, args) {
   await ensureTriplet(msg);
   const gmPlayChannelID = await getPlayChannel(msg);
   const userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (userFolderID === -1) return -1;
   if (args.length > 0) {
     let waitForAsync = true;
     args.forEach(async (arg) => {
@@ -103,6 +105,7 @@ async function handleGetSceneCommand(msg, args) {
   const gmPlayChannelID = await getPlayChannel(msg);
   if (args.length === 1) {
     const userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+    if (userFolderID === -1) return -1;
     const filename = `gmScene_${args[0]}`;
     const fileID = await findStringIDByName(filename, userFolderID);
     const content = await getStringContent(fileID);

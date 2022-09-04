@@ -10,7 +10,7 @@ const {logWrite, logSpam, logError} = require('./log');
 const {
   getPlayChannel, addHourglass, findUserFolderDBIDFromMsg, getUserReminders,
   removeHourglass, findStringIDByName, getStringContent, addReminders,
-  _makeReminderSaveString, setStringByNameAndParent
+  _makeReminderSaveString, setStringByNameAndParent, ensureTriplet
 } = require('./api');
 async function handleListRemindersCommand(msg) {
   if (msg.channel.guild === undefined) {
@@ -20,8 +20,10 @@ async function handleListRemindersCommand(msg) {
   }
   addHourglass(msg);
   logWrite('\x1b[32m [ ==================== handleListRemindersCommand ======================= ]\x1b[0m');
+  await ensureTriplet();
   const playChannelID = await getPlayChannel(msg);
   const userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (userFolderID === -1) return -1;
   const reminders = await getUserReminders(userFolderID, playChannelID);
   if (reminders.length > 0) {
     let output = '\n';
@@ -83,9 +85,11 @@ async function handleAddReminderCommand(msg, args) {
     return;
   }
   // get play folder
+  await ensureTriplet();
   let playChannelID = await getPlayChannel(msg);
   // get player list
   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (userFolderID === -1) return -1;
   let filename = 'gmPlayers';
   playersFileID = await findStringIDByName(filename, userFolderID, playChannelID);
   let playersString = await getStringContent(playersFileID, playChannelID);
@@ -192,6 +196,7 @@ async function handleCancelReminderCommand(msg, args) {
   await setStringByNameAndParent(filename, global.folderID.reminders, saveString);
   // user folder last
   saveString = '';
+  await ensureTriplet();
   const playChannelID = await getPlayChannel(msg);
   for (let x = 0; x < global.reminders.length; x++) {
     if (saveString !== '') saveString += '\n';
@@ -203,6 +208,7 @@ async function handleCancelReminderCommand(msg, args) {
   }
   filename = 'gmReminders';
   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (userFolderID === -1) return -1;
   await setStringByNameAndParent(filename, userFolderID, saveString);
   // user feedback
   msg.reply(`${shortIDs.length} reminder cancellations were requested.`)

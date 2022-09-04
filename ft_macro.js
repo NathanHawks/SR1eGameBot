@@ -38,6 +38,7 @@ async function handleSaveMacroCommand(msg, args) {
   inputRoll = inputRoll.join(" ");
   const formattedEntry = `${inputName} ${inputRoll}`;
   parentFolderID = await findUserFolderDBIDFromMsg(msg);
+  if (parentFolderID === -1) return -1;
   savedRollsFileID = await findStringIDByName(filename, parentFolderID);
   if (savedRollsFileID !== -1) {
     // get existing file content
@@ -99,6 +100,7 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
   await ensureTriplet(msg);
   const filename = 'savedRolls';
   const parentFolderID = await findUserFolderDBIDFromMsg(msg);
+  if (parentFolderID === -1) return -1;
   const savedRollsFileID = await findStringIDByName(filename, parentFolderID);
   let savedRollsStr = '';
   let savedRollsArr = [];
@@ -154,6 +156,7 @@ async function handleRemoveMacroCommand(msg, args) {
   await ensureTriplet(msg);
   const filename = 'savedRolls';
   const parentFolderID = await findUserFolderDBIDFromMsg(msg);
+  if (parentFolderID === -1) return -1;
   const savedRollsFileID = await findStringIDByName(filename, parentFolderID);
   let savedRollsStr = '';
   let savedRollsArr = [];
@@ -211,6 +214,7 @@ async function handleListMacrosCommand(msg) {
   await ensureTriplet(msg);
   const filename = 'savedRolls';
   const parentFolderID = await findUserFolderDBIDFromMsg(msg);
+  if (parentFolderID === -1) return -1;
   const savedRollsFileID = await findStringIDByName(filename, parentFolderID);
   let savedRollsStr = '';
   let savedRollsArr = [];

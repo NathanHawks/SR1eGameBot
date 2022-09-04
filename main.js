@@ -139,164 +139,174 @@ function handleMessage(msg, user=msg.author) {
   // check if message starts with `!`
   let message = msg.content;
   if (message.substring(0, 1) === '!') {
-      let args = message.substring(1).split(' ');
-      let cmd = args[0];
-      args = args.splice(1);
-      cmd = cmd.toLowerCase();
-      switch(cmd) {
-          case 'help':
-          case 'inithelp':
-            handleHelpCommand(msg, cmd, args);
-          break;
-          case 'list':
-            if (user.id == '360086569778020352') listAllFiles(msg);
-          break;
-          // case 'delall':
-          //   if (user.id == '360086569778020352') deleteAllFiles();
-          // break;
-          case 'del':
-            if (user.id == '360086569778020352') deleteFile(msg, args);
-          break;
-          case 'open':
-            if (user.id == '360086569778020352') openFile(msg, args);
-          break;
-          case 'showcache':
-            if (user.id == '360086569778020352') showCache(msg);
-          break;
-          case 'clearcache':
-            if (user.id == '360086569778020352') clearCache(msg);
-          break;
-          case 'unlock':
-            adminUnlock(msg, args);
-          break;
-          case 'unlockall':
-            if (user.id == '360086569778020352') adminUnlockAll(msg);
-          break;
-          case 'init':
-          case 'init2':
-          case 'init3':
-          case 'initflip':
-          case 'init2flip':
-          case 'init3flip':
-          case 'initcp':
-          case 'initcpr':
-            handleInitCommand(msg, cmd, user);
-          break;
-          case 'setgm':
-            handleSetGMCommand(msg, args, user);
-          break;
-          case 'setp':
-          case 'setplayers':
-          case 'setplayer':
-            handleSetPlayersCommand(msg, args);
-          break;
-          case 'addp':
-          case 'addplayers':
-          case 'addplayer':
-            handleAddPlayersCommand(msg, args);
-          break;
-          case 'lp':
-          case 'listplayers':
-            handleListPlayersCommand(msg);
-          break;
-          case 'rmp':
-          case 'removeplayer':
-          case 'removeplayers':
-            handleRemovePlayersCommand(msg, args);
-          break;
-          case 'clrp':
-          case 'clearplayers':
-            handleClearPlayersCommand(msg);
-          break;
-          case 'si':
-          case 'seti':
-          case 'setinit':
-            handleSetInitCommand(msg, args);
-          break;
-          case 'setn':
-          case 'setnpc':
-          case 'setnpcs':
-          case 'setnpcinits':
-          case 'setnpcinit':
-            handleSetNPCInitCommand(msg, args);
-          break;
-          case 'addn':
-          case 'addnpc':
-          case 'addnpcs':
-          case 'addnpcinits':
-          case 'addnpcinit':
-            handleAddNPCInitCommand(msg, args);
-          break;
-          case 'ln':
-          case 'listnpcs':
-          case 'listnpcinits':
-          case 'listnpcinit':
-            handleListNPCInitCommand(msg);
-          break;
-          case 'rmn':
-          case 'rmnpc':
-          case 'rmnpcs':
-          case 'removenpc':
-          case 'removenpcs':
-          case 'removenpcinit':
-          case 'removenpcinits':
-            handleRemoveNPCInitCommand(msg, args);
-          break;
-          case 'clrn':
-          case 'clearnpcinits':
-          case 'clearnpcinit':
-            handleClearNPCInitCommand(msg);
-          break;
-          case 'save':
-            handleSaveMacroCommand(msg, args);
-          break;
-          case 'roll':
-            handleRollMacroCommand(msg, cmd, args, user);
-          break;
-          case 'removemacro':
-          case 'rmm':
-            handleRemoveMacroCommand(msg, args);
-          break;
-          case 'lm':
-          case 'listmacros':
-            handleListMacrosCommand(msg);
-          break;
-          case 'checkchannel':
-            handleCheckChannelCommand(msg);
-          break;
-          case 'setchannel':
-            handleSetChannelCommand(msg, args);
-          break;
-          case 'setscene':
-            handleSetSceneCommand(msg, args);
-          break;
-          case 'delscene':
-            handleDelSceneCommand(msg, args);
-          break;
-          case 'getscene':
-            handleGetSceneCommand(msg, args);
-          break;
-          case 'listscenes':
-            handleListScenesCommand(msg);
-          break;
-          case 'listreminders':
-            handleListRemindersCommand(msg);
-          break;
-          case 'addreminder':
-            handleAddReminderCommand(msg, args);
-          break;
-          case 'cancelreminder':
-            handleCancelReminderCommand(msg, args);
-          break;
-          case 'ammo':
-            handleAmmoCommand(msg, args);
-          break;
-          default:
-            handleRollCommand(msg, cmd, args, user);
-          break;
-       }
-   }
-   // no return
+    let args = message.substring(1).split(' ');
+    let cmd = args[0];
+    args = args.splice(1);
+    cmd = cmd.toLowerCase();
+    let handlerStatus;
+    switch(cmd) {
+      case 'help':
+      case 'inithelp':
+        handleHelpCommand(msg, cmd, args);
+      break;
+      case 'list':
+        if (user.id == '360086569778020352') listAllFiles(msg);
+      break;
+      // case 'delall':
+      //   if (user.id == '360086569778020352') deleteAllFiles();
+      // break;
+      case 'del':
+        if (user.id == '360086569778020352') deleteFile(msg, args);
+      break;
+      case 'open':
+        if (user.id == '360086569778020352') openFile(msg, args);
+      break;
+      case 'showcache':
+        if (user.id == '360086569778020352') showCache(msg);
+      break;
+      case 'clearcache':
+        if (user.id == '360086569778020352') clearCache(msg);
+      break;
+      case 'unlock':
+        adminUnlock(msg, args);
+      break;
+      case 'unlockall':
+        if (user.id == '360086569778020352') adminUnlockAll(msg);
+      break;
+      case 'init':
+      case 'init2':
+      case 'init3':
+      case 'initflip':
+      case 'init2flip':
+      case 'init3flip':
+      case 'initcp':
+      case 'initcpr':
+        handlerStatus = handleInitCommand(msg, cmd, user);
+      break;
+      case 'setgm':
+        handlerStatus = handleSetGMCommand(msg, args, user);
+      break;
+      case 'setp':
+      case 'setplayers':
+      case 'setplayer':
+        handlerStatus = handleSetPlayersCommand(msg, args);
+      break;
+      case 'addp':
+      case 'addplayers':
+      case 'addplayer':
+        handlerStatus = handleAddPlayersCommand(msg, args);
+      break;
+      case 'lp':
+      case 'listplayers':
+        handlerStatus = handleListPlayersCommand(msg);
+      break;
+      case 'rmp':
+      case 'removeplayer':
+      case 'removeplayers':
+        handlerStatus = handleRemovePlayersCommand(msg, args);
+      break;
+      case 'clrp':
+      case 'clearplayers':
+        handlerStatus = handleClearPlayersCommand(msg);
+      break;
+      case 'si':
+      case 'seti':
+      case 'setinit':
+        handlerStatus = handleSetInitCommand(msg, args);
+      break;
+      case 'setn':
+      case 'setnpc':
+      case 'setnpcs':
+      case 'setnpcinits':
+      case 'setnpcinit':
+        handlerStatus = handleSetNPCInitCommand(msg, args);
+      break;
+      case 'addn':
+      case 'addnpc':
+      case 'addnpcs':
+      case 'addnpcinits':
+      case 'addnpcinit':
+        handlerStatus = handleAddNPCInitCommand(msg, args);
+      break;
+      case 'ln':
+      case 'listnpcs':
+      case 'listnpcinits':
+      case 'listnpcinit':
+        handlerStatus = handleListNPCInitCommand(msg);
+      break;
+      case 'rmn':
+      case 'rmnpc':
+      case 'rmnpcs':
+      case 'removenpc':
+      case 'removenpcs':
+      case 'removenpcinit':
+      case 'removenpcinits':
+        handlerStatus = handleRemoveNPCInitCommand(msg, args);
+      break;
+      case 'clrn':
+      case 'clearnpcinits':
+      case 'clearnpcinit':
+        handlerStatus = handleClearNPCInitCommand(msg);
+      break;
+      case 'save':
+        handlerStatus = handleSaveMacroCommand(msg, args);
+      break;
+      case 'roll':
+        handlerStatus = handleRollMacroCommand(msg, cmd, args, user);
+      break;
+      case 'removemacro':
+      case 'rmm':
+        handlerStatus = handleRemoveMacroCommand(msg, args);
+      break;
+      case 'lm':
+      case 'listmacros':
+        handlerStatus = handleListMacrosCommand(msg);
+      break;
+      case 'checkchannel':
+        handlerStatus = handleCheckChannelCommand(msg);
+      break;
+      case 'setchannel':
+        handlerStatus = handleSetChannelCommand(msg, args);
+      break;
+      case 'setscene':
+        handlerStatus = handleSetSceneCommand(msg, args);
+      break;
+      case 'delscene':
+        handlerStatus = handleDelSceneCommand(msg, args);
+      break;
+      case 'getscene':
+        handlerStatus = handleGetSceneCommand(msg, args);
+      break;
+      case 'listscenes':
+        handlerStatus = handleListScenesCommand(msg);
+      break;
+      case 'listreminders':
+        handlerStatus = handleListRemindersCommand(msg);
+      break;
+      case 'addreminder':
+        handlerStatus = handleAddReminderCommand(msg, args);
+      break;
+      case 'cancelreminder':
+        handlerStatus = handleCancelReminderCommand(msg, args);
+      break;
+      case 'ammo':
+        handlerStatus = handleAmmoCommand(msg, args);
+      break;
+      default:
+        handlerStatus = handleRollCommand(msg, cmd, args, user);
+      break;
+    }
+    if (handlerStatus === -1) {
+      msg.reply(
+        `Something went wrong. Please report it at `
+        + `<https://github.com/NathanHawks/SR1eGameBot/issues>\n`
+        + `Include the following in your report:\n\n`
+        + `\`\`\`\ncmd:${cmd}\nargs:${args}\`\`\`\n`
+      )
+      .catch((e) => { logError(e); });
+      logError(`Something went wrong; asking for a bug report.`)
+    }
+  }
 }
 
 // Hook the handler

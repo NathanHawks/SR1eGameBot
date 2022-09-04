@@ -45,6 +45,7 @@ async function handleSetChannelCommand(msg, args) {
       await ensureTriplet(msg);
       const filename = 'gmPlayChannel';
       const gmSecretFolderID = await findUserFolderDBIDFromMsg(msg);
+      if (gmSecretFolderID === -1) return -1;
       await setStringByNameAndParent(
         filename, gmSecretFolderID, gmPlayChannelID
       );

@@ -48,6 +48,7 @@ async function handleInitCommand(msg, cmd, user) {
   let playerPhases = [];
   // get author's userFolderID for play channel
   userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (userFolderID === -1) return -1;
   // get file ID of gm's (msg.author's) gmPlayers file, if any
   filename = 'gmPlayers';
   gmPlayersFileID = await findStringIDByName(filename, userFolderID);
@@ -532,6 +533,7 @@ async function handleSetGMCommand(msg, args, user) {
   await ensureTriplet(msg);
   // now get the folderID of the user folder in this channel
   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (userFolderID === -1) return -1;
   await setStringByNameAndParent('gmWhoIsGM', userFolderID, targetID);
   removeHourglass(msg);
   if (targetID == msg.author.id)
@@ -562,6 +564,7 @@ async function handleSetPlayersCommand(msg, args) {
   }
   const content = args.join(",");
   const userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (userFolderID === -1) return -1;
   await setStringByNameAndParent('gmPlayers', userFolderID, content);
   // remove reaction
   removeHourglass(msg);
@@ -589,6 +592,7 @@ async function handleAddPlayersCommand(msg, args) {
   await ensureTriplet(msg);
   let filename = 'gmPlayers';
   const userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (userFolderID === -1) return -1;
   // see if the gmPlayers file already exists
   const gmPlayersFileID = await findStringIDByName(filename, userFolderID);
   // get and parse the contents of the file
@@ -640,6 +644,7 @@ async function handleListPlayersCommand(msg) {
   await ensureTriplet(msg);
   const filename = 'gmPlayers';
   const userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (userFolderID === -1) return -1;
   fileID = await findStringIDByName(filename, userFolderID);
   if (fileID === -1) {
     msg.reply(addMaintenanceStatusMessage(
@@ -692,6 +697,7 @@ async function handleRemovePlayersCommand(msg, args) {
   await ensureTriplet(msg);
   const filename = "gmPlayers"
   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (userFolderID === -1) return -1;
   fileID = await findStringIDByName(filename, userFolderID);
   if (fileID === -1)
     await setStringByNameAndParent(filename, userFolderID, '');
@@ -749,6 +755,7 @@ async function handleClearPlayersCommand(msg) {
   await ensureTriplet(msg);
   const filename = 'gmPlayers';
   const parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (parentFolderID === -1) return -1;
   const fileID = await findStringIDByName(filename, parentFolderID);
   deleteStringByID(fileID);
   addToCache({id: fileID, content: ''}, 'fileContent');
@@ -817,6 +824,7 @@ async function handleSetInitCommand(msg, args) {
   await ensureTriplet(msg);
   // now get the folderID of the user folder in this channel
   const userFolderID = await findUserFolderDBIDFromMsg(msg);
+  if (userFolderID === -1) return -1;
   await setStringByNameAndParent('playerInit', userFolderID, content);
   // reformat for output (better user feedback)
   tmpArr = content.split(" ");
@@ -844,6 +852,7 @@ async function handleSetNPCInitCommand(msg, args) {
   let gmPlayChannelID = await getPlayChannel(msg);
   await ensureTriplet(msg);
   const userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (userFolderID === -1) return -1;
   let contentArray = [];
   for (let x = 0; x < args.length; x++) {
     contentArray[contentArray.length] = `${args[x]} ${args[x+1]} ${args[x+2]}`;
@@ -875,6 +884,7 @@ async function handleAddNPCInitCommand(msg, args) {
   await ensureTriplet(msg);
   const filename = "gmNPCInit"
   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (userFolderID === -1) return -1;
   // find the file
   let gmNPCFileID = await findStringIDByName(filename, userFolderID);
   // don't get attached to the id just yet
@@ -919,6 +929,7 @@ async function handleRemoveNPCInitCommand(msg, args) {
   await ensureTriplet(msg);
   const filename = "gmNPCInit"
   const userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (userFolderID === -1) return -1;
   fileID = await findStringIDByName(filename, userFolderID);
   // ensure the file
   if (fileID === -1) {
@@ -977,6 +988,7 @@ async function handleListNPCInitCommand(msg) {
   await ensureTriplet(msg);
   const filename = 'gmNPCInit';
   const parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (parentFolderID === -1) return -1;
   const gmNPCFileID = await findStringIDByName(filename, parentFolderID);
   let output;
   if (gmNPCFileID == -1) {
@@ -1021,6 +1033,7 @@ async function handleClearNPCInitCommand(msg) {
   await ensureTriplet(msg);
   const filename = 'gmNPCInit';
   const parentFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (parentFolderID === -1) return -1;
   const fileID = await findStringIDByName(filename, parentFolderID);
   if (fileID === -1) return;
   // delete it

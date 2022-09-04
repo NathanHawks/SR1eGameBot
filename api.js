@@ -252,16 +252,23 @@ async function findUserFolderDBIDFromMsg(msg, usePlayChannel=false) {
   serverFolder = await findFolderByName(
     msg.channel.guild.id, global.folderID.UserData
   );
-  logSpam("Seek sID: " + serverFolder._id.toString());
+  if (serverFolder) logSpam("Seek sID: " + serverFolder._id.toString());
   if (!serverFolder) {
-    msg.reply(' :man_facepalming: Something went wrong. Please try your command '
+    msg.reply(':man_facepalming: Something went wrong. Please try your command '
       + 'again. :man_facepalming:')
     .catch((e) => { logError(e); });
+    return -1;
   }
   let channelFolder = await findFolderByName(
     discordChannelID, serverFolder._id.toString()
   );
-  logSpam("Seek cID: " + channelFolder._id.toString());
+  if (channelFolder) logSpam("Seek cID: " + channelFolder._id.toString());
+  if (!channelFolder) {
+    msg.reply(':man_facepalming: Something went wrong. Please try your command '
+      + 'again. :man_facepalming:')
+    .catch((e) => { logError(e); });
+    return -1;
+  }
   // return the file ID
   r = await findFolderByName(msg.author.id, channelFolder._id.toString());
   logSpam("Seek uID: " + r._id.toString());
@@ -723,6 +730,7 @@ async function getPlayChannel(msg) {
     return r.playChannel;
   }
   const userFolderID = await findUserFolderDBIDFromMsg(msg);
+  if (userFolderID === -1) return -1;
   const filename = 'gmPlayChannel';
   const playChannelDBID = await findStringIDByName(filename, userFolderID);
   try {
@@ -911,6 +919,7 @@ async function _addRemindersSetTimeoutPayload(reminder) {
 async function addReminders(msg, reminders) {
   // user folder (or play channel per 2nd argument)
   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (userFolderID === -1) return -1;
   // loop reminders
   for (let i = 0; i < reminders.length; i++) {
     // make id's
@@ -934,6 +943,7 @@ async function addReminders(msg, reminders) {
 async function getSceneList(msg) {
   const filename = 'gmSceneList';
   const userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (userFolderID === -1) return -1;
   const fileID = await findStringIDByName(filename, userFolderID);
   if (fileID !== -1) {
     const content = await getStringContent(fileID);
@@ -1008,6 +1018,7 @@ async function deleteSceneFromList(msg, sceneName) {
 async function saveSceneList(msg, sceneList) {
   const filename = 'gmSceneList';
   const userFolderID = await findUserFolderDBIDFromMsg(msg, true);
+  if (userFolderID === -1) return -1;
   let content = '';
   sceneList.forEach((scene) => {
     if (scene.dbID && scene.name) {
