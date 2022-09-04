@@ -5,8 +5,9 @@ googletoken.json
 lastlog.txt
 errlog.txt
 bot.bat
+config.js
 config.bak.js
 dbinfo.txt
+UserData.zip
 tmp.js
 main.bak.js
-UserData.zip
