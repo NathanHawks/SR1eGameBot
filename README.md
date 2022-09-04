@@ -36,7 +36,11 @@ Instructions on using the bot are below, after the self-hosting instructions.
 
 3a. [Install MongoDB](https://www.mongodb.com/try/download/community) and test that it's working (for example by connecting to it with [MongoDB Compass](https://www.mongodb.com/try/download/compass)); and then create a database called `sr1egamebot`. (If you're using Compass, you'll need to also create a collection in that database; in that case, create the collection `folders`.)
 
-3b. From the bot's source, open `config.js` in your code editor and fill in your MongoDB connection string. It has the format:
+3b. From the bot's source, copy `config.example.js` to `config.js`.
+
+**IMPORTANT:** If you're using git, make sure you add `config.js` to your `.gitignore` file before your next commit.
+
+Open `config.js` in your code editor and fill in your MongoDB connection string. It has the format:
 
 ```
 mongodb://USERNAME:PASSWORD@HOST:PORT/DB
