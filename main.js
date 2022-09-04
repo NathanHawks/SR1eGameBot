@@ -85,14 +85,14 @@ try {
   global.bot.login(token);
 }
 catch (e) {
-  console.error(e);
+  logError(e);
   logWrite('Trying to connect again in 15 seconds...');
   sleep(15000);
   try {
     global.bot.login(token);
   }
   catch (e) {
-    logWrite('Couldn\'t connect.');
+    logError('Couldn\'t connect to Discord.');
   }
 }
 
@@ -149,15 +149,6 @@ function handleMessage(msg, user=msg.author) {
       case 'inithelp':
         handleHelpCommand(msg, cmd, args);
       break;
-      case 'list':
-        if (user.id == '360086569778020352') listAllFiles(msg);
-      break;
-      // case 'delall':
-      //   if (user.id == '360086569778020352') deleteAllFiles();
-      // break;
-      case 'del':
-        if (user.id == '360086569778020352') deleteFile(msg, args);
-      break;
       case 'open':
         if (user.id == '360086569778020352') openFile(msg, args);
       break;
@@ -166,12 +157,6 @@ function handleMessage(msg, user=msg.author) {
       break;
       case 'clearcache':
         if (user.id == '360086569778020352') clearCache(msg);
-      break;
-      case 'unlock':
-        adminUnlock(msg, args);
-      break;
-      case 'unlockall':
-        if (user.id == '360086569778020352') adminUnlockAll(msg);
       break;
       case 'init':
       case 'init2':
