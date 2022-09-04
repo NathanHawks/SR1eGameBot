@@ -42,7 +42,7 @@
      + '`gmscreen    ` - Doing initiative and/or scene prep in a hidden channel :new:\n'
      + '`reminders   ` - Automatically DM your players on timers of your choosing :new:\n'
      + '`ammo        ` - Track ammo during combat :new:\n'
-     + '`troubleshoot` - Command stuck? Bot not responding in a channel? Try this\n'
+     + '`troubleshoot` - Did the bot not respond correctly? Try this\n'
      + '\n'
      + 'Example: type `!help main` for the main help.\n'
    ;
