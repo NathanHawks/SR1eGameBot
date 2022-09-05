@@ -98,9 +98,8 @@ catch (e) {
 global.bot.on('ready', () => {
   logWrite('Connected to Discord as ['+ bot.user.tag + ']');
   global.bot.user.setPresence({
-    activities: [{
-      type: `LISTENING`,
-      name: `!help`
+    activity: [{
+      name: `Listening to !help`
     }]
   });
 });
