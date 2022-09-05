@@ -500,7 +500,7 @@ async function handleInitCommand(msg, cmd, user) {
     output += "========================\n";
   }
   // report
-  msg.reply(addMaintenanceStatusMessage(output)).catch((e) => { logError(e); });
+  msg.reply(addMaintenanceStatusMessage(msg, output)).catch((e) => { logError(e); });
 
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
@@ -518,7 +518,7 @@ async function handleSetGMCommand(msg, args, user) {
   let targetID = "";
   if (args.length) {
     if (args[0].substring(0,2) !== '<@') {
-      msg.reply(addMaintenanceStatusMessage(
+      msg.reply(addMaintenanceStatusMessage(msg, 
         'This command requires you to "@" people correctly.'
       )).catch((e) => { logError(e); });
       return;
@@ -537,11 +537,11 @@ async function handleSetGMCommand(msg, args, user) {
   await setStringByNameAndParent('gmWhoIsGM', userFolderID, targetID);
   removeHourglass(msg);
   if (targetID == msg.author.id)
-    msg.reply(addMaintenanceStatusMessage(
+    msg.reply(addMaintenanceStatusMessage(msg, 
       `You are now a GM in channel <#${gmPlayChannelID}>.`
     )).catch((e) => { logError(e); });
   else
-    msg.reply(addMaintenanceStatusMessage(
+    msg.reply(addMaintenanceStatusMessage(msg, 
       `Your GM is now <@${targetID}> in this channel.`
     )).catch((e) => { logError(e); });
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
@@ -568,7 +568,7 @@ async function handleSetPlayersCommand(msg, args) {
   await setStringByNameAndParent('gmPlayers', userFolderID, content);
   // remove reaction
   removeHourglass(msg);
-  msg.reply(addMaintenanceStatusMessage(` your group in channel <#${gmPlayChannelID}> is now ${args.length} players.`)).catch((e) => { logError(e); });
+  msg.reply(addMaintenanceStatusMessage(msg, ` your group in channel <#${gmPlayChannelID}> is now ${args.length} players.`)).catch((e) => { logError(e); });
   // listAllFiles();
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
@@ -580,7 +580,7 @@ async function handleAddPlayersCommand(msg, args) {
   }
   if (args.length) {
     if (args[0].substring(0,2) !== '<@') {
-      msg.reply(addMaintenanceStatusMessage(
+      msg.reply(addMaintenanceStatusMessage(msg, 
         'This command requires you to "@" people correctly.'
       )).catch((e) => { logError(e); });
       return;
@@ -618,7 +618,7 @@ async function handleAddPlayersCommand(msg, args) {
       content = newPlayersArr.join(",");
       // save the new player list
       await setStringByNameAndParent(filename, userFolderID, content);
-      msg.reply(addMaintenanceStatusMessage(` you added ${args.length} players `
+      msg.reply(addMaintenanceStatusMessage(msg, ` you added ${args.length} players `
       + ` to your group in channel <#${gmPlayChannelID}>;`
       + ` now there are ${newPlayersCount}.`)).catch((e) => { logError(e); });
       removeHourglass(msg);
@@ -647,7 +647,7 @@ async function handleListPlayersCommand(msg) {
   if (userFolderID === -1) return -1;
   fileID = await findStringIDByName(filename, userFolderID);
   if (fileID === -1) {
-    msg.reply(addMaintenanceStatusMessage(
+    msg.reply(addMaintenanceStatusMessage(msg, 
       `You currently have no group in channel <#${gmPlayChannelID}>.`
     )).catch((e) => { logError(e); });
     removeHourglass(msg);
@@ -671,11 +671,11 @@ async function handleListPlayersCommand(msg) {
     }
   });
   if (playersArr.length == 0)
-    msg.reply(addMaintenanceStatusMessage(
+    msg.reply(addMaintenanceStatusMessage(msg, 
       `You don\'t have a group in channel <#${gmPlayChannelID}> yet.`
     )).catch((e) => { logError(e); });
   else
-    msg.reply(addMaintenanceStatusMessage(
+    msg.reply(addMaintenanceStatusMessage(msg, 
       `Your group in channel <#${gmPlayChannelID}> is ${playersArr.length} `
       + `players strong: ${output}`
     )).catch((e) => { logError(e); });
@@ -736,7 +736,7 @@ async function handleRemovePlayersCommand(msg, args) {
   let newContentString = newContentArray.join(",");
   await setStringByNameAndParent(filename, userFolderID, newContentString);
   removeHourglass(msg);
-  msg.reply(addMaintenanceStatusMessage(
+  msg.reply(addMaintenanceStatusMessage(msg, 
     `You removed ${removedIndex.length} players. `
     + `You now have ${newContentArray.length} players in channel `
     + `<#${gmPlayChannelID}>.`
@@ -761,7 +761,7 @@ async function handleClearPlayersCommand(msg) {
   addToCache({id: fileID, content: ''}, 'fileContent');
   // remove reaction
   removeHourglass(msg);
-  msg.reply(addMaintenanceStatusMessage(
+  msg.reply(addMaintenanceStatusMessage(msg, 
     `Your group for channel <#${gmPlayChannelID}> was reset to 0 players.`
   )).catch((e) => { logError(e); });
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
@@ -812,7 +812,7 @@ async function handleSetInitCommand(msg, args) {
     }
   // abort if any errors
   if (errOutput !== '') {
-    msg.reply(addMaintenanceStatusMessage(`There was a problem.\n${errOutput}`))
+    msg.reply(addMaintenanceStatusMessage(msg, `There was a problem.\n${errOutput}`))
     .catch((e) => { logError(e); });
     return;
   }
@@ -831,7 +831,7 @@ async function handleSetInitCommand(msg, args) {
   let output = `${tmpArr[0]}d6 +${tmpArr[1]}`;
   // remove reaction
   removeHourglass(msg);
-  msg.reply(addMaintenanceStatusMessage(
+  msg.reply(addMaintenanceStatusMessage(msg, 
     `Your initiative formula (in this channel) is now ${output}.`
   )).catch((e)=>{ logError(e); });
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
@@ -862,7 +862,7 @@ async function handleSetNPCInitCommand(msg, args) {
   await setStringByNameAndParent('gmNPCInit', userFolderID, content);
   // remove reaction
   removeHourglass(msg);
-  msg.reply(addMaintenanceStatusMessage(
+  msg.reply(addMaintenanceStatusMessage(msg, 
     `Your NPC's for this channel were reset, `
     + `and you added ${contentArray.length} NPC's.`
   )).catch((e) => { logError(e); });
@@ -911,7 +911,7 @@ async function handleAddNPCInitCommand(msg, args) {
   let newContentString = contentArray.join(",");
   setStringByNameAndParent(filename, userFolderID, newContentString);
   removeHourglass(msg);
-  msg.reply(addMaintenanceStatusMessage(
+  msg.reply(addMaintenanceStatusMessage(msg, 
     `You now have ${contentArray.length} NPC's in channel <#${gmPlayChannelID}>.`
   )).catch((e) => { logError(e); });
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
@@ -969,7 +969,7 @@ async function handleRemoveNPCInitCommand(msg, args) {
   const newContentString = newContentArray.join(",");
   setStringByNameAndParent(filename, userFolderID, newContentString);
   removeHourglass(msg);
-  msg.reply(addMaintenanceStatusMessage(
+  msg.reply(addMaintenanceStatusMessage(msg, 
     `You removed ${removedIndex.length} NPC's. `
     + `You now have ${newContentArray.length} NPC's in channel `
     + `<#${gmPlayChannelID}>.`
@@ -1017,7 +1017,7 @@ async function handleListNPCInitCommand(msg) {
       output = "You have no NPC's in this channel yet.";
     }
   }
-  msg.reply(addMaintenanceStatusMessage(output)).catch((e) => { logError(e); });
+  msg.reply(addMaintenanceStatusMessage(msg, output)).catch((e) => { logError(e); });
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannel})/${msg.author.id}`);
   removeHourglass(msg);
 }
@@ -1041,7 +1041,7 @@ async function handleClearNPCInitCommand(msg) {
   addToCache({id: fileID, content: ''}, 'fileContent');
   // remove reaction
   removeHourglass(msg);
-  msg.reply(addMaintenanceStatusMessage(
+  msg.reply(addMaintenanceStatusMessage(msg, 
     'You cleared your NPC initiative formulas for this channel.'
   )).catch((e) => { logError(e); });
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);

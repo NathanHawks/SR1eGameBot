@@ -55,7 +55,7 @@ function handleRollCommand(msg, cmd, args, user, override=null) {
     let opponentTNInt = retarr[2];
     let isOpposedTestBool = retarr[3];
     if (isOpposedTestBool === true && opponentTNInt === -1) {
-      msg.reply(addMaintenanceStatusMessage(":no_entry_sign: you ordered an opposed test without an "
+      msg.reply(addMaintenanceStatusMessage(msg, ":no_entry_sign: you ordered an opposed test without an "
       + "opponent TN (the **otn** option).\nExample: **!6! tn4 vs5! *otn4***"))
       .catch((e) => { logError(e); });
       return;
@@ -101,7 +101,7 @@ function handleRollCommand(msg, cmd, args, user, override=null) {
   // avoid false positives e.g. when chatting about Astral Tabeltop dice formats
   if (numDiceInt > 0) {
     // modify output for maintenance mode status
-    output = addMaintenanceStatusMessage(output);
+    output = addMaintenanceStatusMessage(msg, output);
     // post results
     msg.channel.send(output).catch((e) => { logError(e); });
     // log activity

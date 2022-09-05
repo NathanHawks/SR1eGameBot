@@ -25,6 +25,7 @@ const {handleListRemindersCommand, handleAddReminderCommand,
   handleCancelReminderCommand} = require('./ft_reminders');
 const {handleSetSceneCommand, handleDelSceneCommand, handleGetSceneCommand,
   handleListScenesCommand} = require('./ft_scene');
+const {handleSkipStatusCommand} = require('./ft_misc');
 const {initAll} = require('./init');
 // set true to activate warning messages
 global.isMaintenanceModeBool = true;
@@ -272,6 +273,9 @@ function handleMessage(msg, user=msg.author) {
       break;
       case 'ammo':
         handlerStatus = handleAmmoCommand(msg, args);
+      break;
+      case 'skipstatus':
+        handlerStatus = handleSkipStatusCommand(msg);
       break;
       default:
         handlerStatus = handleRollCommand(msg, cmd, args, user);

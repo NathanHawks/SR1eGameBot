@@ -713,7 +713,7 @@ function validateNPCInput(msg, args) {
   }
   // abort if any errors
   if (errOutput !== '') {
-    msg.reply(addMaintenanceStatusMessage(`there was a problem.\n${errOutput}`))
+    msg.reply(addMaintenanceStatusMessage(msg, `There was a problem.\n${errOutput}`))
     .catch((e) => { logError(e); });
     return false;
   } else return true;
@@ -1028,14 +1028,46 @@ async function saveSceneList(msg, sceneList) {
   await setStringByNameAndParent(filename, userFolderID, content);
 }
 // conditionally add warning message
-function addMaintenanceStatusMessage(output) {
+function addMaintenanceStatusMessage(msg, output) {
   let r = "";
-  if (global.isMaintenanceModeBool == true)
+  let opt = getUserOption(msg.author, 'skipStatusMsg');
+  if (
+    global.isMaintenanceModeBool === true
+    && opt != global.maintenanceStatusMessage
+  )
     r = output + " " + global.maintenanceStatusMessage;
   else r = output;
   return r;
 }
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+async function getUserOption(user, optionName) {
+  await ensureFolderByName('options', global.folderID.UserData);
+  const optFolder = await findFolderByName(
+    'options', global.folderID.UserData
+  );
+  await ensureFolderByName(user.id, optFolder._id.toString());
+  const userOptFolder = await findFolderByName(
+    user.id, optFolder._id.toString()
+  );
+  const optValueID = await findStringIDByName(
+    optionName, userOptFolder._id.toString()
+  );
+  if (!optValueID) return;
+  return await getStringContent(optValueID);
+}
+async function setUserOption(user, optionName, optionValue) {
+  await ensureFolderByName('options', global.folderID.UserData);
+  const optFolder = await findFolderByName(
+    'options', global.folderID.UserData
+  );
+  await ensureFolderByName(user.id, optFolder._id.toString());
+  const userOptFolder = await findFolderByName(
+    user.id, optFolder._id.toString()
+  );
+  await setStringByNameAndParent(
+    optionName, userOptFolder._id.toString(), optionValue
+  );
+}
 
 module.exports = {
   doNothing, getConfig, resetCache, cacheHas, getCacheIndex,
@@ -1050,7 +1082,7 @@ module.exports = {
   rollDice, rollD10s, modifyNPCInput, validateNPCInput, getPlayChannel,
   getUserReminders, getActiveReminders, addReminders,
   getSceneList, updateSceneList, deleteSceneFromList, saveSceneList,
-  addMaintenanceStatusMessage, sleep,
+  addMaintenanceStatusMessage, sleep, getUserOption, setUserOption,
 
   _addRemindersSetTimeoutPayload, _makeReminderSaveString
 }
