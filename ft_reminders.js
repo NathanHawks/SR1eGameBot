@@ -20,7 +20,7 @@ async function handleListRemindersCommand(msg) {
   }
   addHourglass(msg);
   logWrite('\x1b[32m [ ==================== handleListRemindersCommand ======================= ]\x1b[0m');
-  await ensureTriplet();
+  await ensureTriplet(msg);
   const playChannelID = await getPlayChannel(msg);
   const userFolderID = await findUserFolderDBIDFromMsg(msg, true);
   if (userFolderID === -1) return -1;
@@ -85,7 +85,7 @@ async function handleAddReminderCommand(msg, args) {
     return;
   }
   // get play folder
-  await ensureTriplet();
+  await ensureTriplet(msg);
   let playChannelID = await getPlayChannel(msg);
   // get player list
   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
@@ -196,7 +196,7 @@ async function handleCancelReminderCommand(msg, args) {
   await setStringByNameAndParent(filename, global.folderID.reminders, saveString);
   // user folder last
   saveString = '';
-  await ensureTriplet();
+  await ensureTriplet(msg);
   const playChannelID = await getPlayChannel(msg);
   for (let x = 0; x < global.reminders.length; x++) {
     if (saveString !== '') saveString += '\n';

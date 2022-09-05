@@ -674,13 +674,13 @@ function modifyNPCInput(args) {
   for (let x = 0; x < args.length; x+=3) {
     if (args[x] && args[x].length) {
       let suspect = args[x].substring(args[x].length-2, args[x].length).toLowerCase();
-      if (suspect == 'd6' || suspect == 'D6') {
+      if (suspect === 'd6') {
         args[x] = args[x].substring(0, args[x].length-2);
       }
     }
     if (args[x+1] && args[x+1].length) {
       let suspect = args[x+1].substring(0, 1);
-      if (suspect == '+') {
+      if (suspect === '+') {
         args[x+1] = args[x+1].substring(1, args[x+1].length);
       }
     }
@@ -706,8 +706,8 @@ async function validateNPCInput(msg, args) {
       // loose comparison below is intentional DO NOT FIX
       && (Number(args[x]) != args[x] || Number(args[x+1]) != args[x+1]))
     {
-      errOutput += ':thinking: see ":dragon_face: Adding NPC\'s :dragon_face:" '
-        + 'in **!inithelp** for help.\n';
+      errOutput += ':thinking: See ":dragon_face: Adding NPC\'s :dragon_face:" '
+        + 'in **!help init** for help.\n';
       gotIt_Stop = true;
     }
   }
@@ -795,7 +795,7 @@ async function getActiveReminders() {
   let sysContent = '';
   const reminders = [];
   if (sysRemindersID !== -1) {
-    sysContent = await getStringContent(sysRemindersID, 'system');
+    sysContent = await getStringContent(sysRemindersID);
     if (sysContent !== '') {
       let sysFileArr = sysContent.split('\n');
       for (let x = 0; x < sysFileArr.length; x++) {
@@ -836,8 +836,8 @@ async function _deleteReminder(reminderID, userFolderID) {
       );
       // delete the element from the activeReminders file
       let sysFileID = await findStringIDByName('activeReminders',
-        global.folderID.reminders, 'system');
-      const sysFileContent = await getStringContent(sysFileID, 'system');
+        global.folderID.reminders);
+      const sysFileContent = await getStringContent(sysFileID);
       let sysFileArr = sysFileContent.split('\n');
       for (let z = 0; z < sysFileArr.length; z++) {
         const sysEntryArr = sysFileArr[z].split(',');
@@ -913,7 +913,7 @@ async function _addRemindersSetTimeoutPayload(reminder) {
   // upkeep system
   global.lastRemindersTime = Date.now();
   await _deleteReminder(reminder.id, reminder.userFolderID);
-  logSpam(`System reminders let has ${global.reminders.length} entries`);
+  logSpam(`System reminders var has ${global.reminders.length} entries`);
 }
 // Checked 9/1/22
 async function addReminders(msg, reminders) {
