@@ -74,7 +74,7 @@ async function handleAmmoAddGunSubcommand(msg, args) {
         + `already used the name **${gun.name}**.`;
     }
   }
-  msg.reply(addMaintenanceStatusMessage(msg, output)).catch((e)=>{console.error(e);});
+  msg.reply(await addMaintenanceStatusMessage(msg, output)).catch((e)=>{console.error(e);});
   removeHourglass(msg);
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
@@ -125,7 +125,7 @@ async function handleAmmoDelGunSubcommand(msg, args) {
       output = `Gun removed; you now have ${count} guns in channel <#${playChannelID}>.`;
     }
   }
-  msg.reply(addMaintenanceStatusMessage(msg, output)).catch((e)=>{console.error(e);});
+  msg.reply(await addMaintenanceStatusMessage(msg, output)).catch((e)=>{console.error(e);});
   removeHourglass(msg);
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
@@ -234,7 +234,7 @@ async function handleAmmoAddAmmoSubcommand(msg, args) {
       + `(${ammo.qtyRounds}/${ammo.maxRounds} ${ammo.roundType}s) in channel `
       + `<#${playChannelID}>.`;
   }
-  msg.reply(addMaintenanceStatusMessage(msg, output)).catch((e)=>{console.error(e);});
+  msg.reply(await addMaintenanceStatusMessage(msg, output)).catch((e)=>{console.error(e);});
   removeHourglass(msg);
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
@@ -297,7 +297,7 @@ async function handleAmmoDelAmmoSubcommand(msg, args) {
       }
     }
   }
-  msg.reply(addMaintenanceStatusMessage(msg, output)).catch((e)=>{console.error(e);});
+  msg.reply(await addMaintenanceStatusMessage(msg, output)).catch((e)=>{console.error(e);});
   removeHourglass(msg);
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
@@ -383,7 +383,7 @@ async function handleAmmoListSubcommand(msg) {
     }
     if (hasAmmo === false) output += `All your ammo containers are empty.\n`;
   }
-  msg.reply(addMaintenanceStatusMessage(msg, output)).catch((e)=>{console.error(e);});
+  msg.reply(await addMaintenanceStatusMessage(msg, output)).catch((e)=>{console.error(e);});
   removeHourglass(msg);
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
@@ -458,7 +458,7 @@ async function handleAmmoFireSubcommand(msg, args) {
       await setStringByNameAndParent(filename, parentFolderID, saveString);
     }
   }
-  msg.reply(addMaintenanceStatusMessage(msg, output)).catch((e)=>{console.error(e);});
+  msg.reply(await addMaintenanceStatusMessage(msg, output)).catch((e)=>{console.error(e);});
   removeHourglass(msg);
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
@@ -473,7 +473,7 @@ async function handleAmmoReloadSubcommand(msg, args) {
   let output = '';
   if (args[1] === undefined || args.length === 1) {
     output = ` you need to specify a weapon to reload.`
-    msg.reply(addMaintenanceStatusMessage(msg, output)).catch((e)=>{console.error(e);});
+    msg.reply(await addMaintenanceStatusMessage(msg, output)).catch((e)=>{console.error(e);});
     removeHourglass(msg);
     logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
     return;
@@ -646,7 +646,7 @@ async function handleAmmoReloadSubcommand(msg, args) {
       }
     }
   }
-  msg.reply(addMaintenanceStatusMessage(msg, output)).catch((e)=>{console.error(e);});
+  msg.reply(await addMaintenanceStatusMessage(msg, output)).catch((e)=>{console.error(e);});
   removeHourglass(msg);
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }

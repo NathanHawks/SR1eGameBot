@@ -7,7 +7,7 @@
  * Released as-is with no warranty or claim of usability for any purpose.
  */
  const {addMaintenanceStatusMessage} = require('./api');
- function handleHelpCommand(msg, cmd, args) {
+ async function handleHelpCommand(msg, cmd, args) {
    let whatToShow = 'main';
    // legacy help commands
    if (args.length && args[0] == 2 || cmd === 'inithelp') {
@@ -299,42 +299,42 @@
    ;
    switch (whatToShow) {
      case 'index':
-       index1 = addMaintenanceStatusMessage(msg, index1);
+       index1 = await addMaintenanceStatusMessage(msg, index1);
        msg.reply(index1).catch((e) => { logError(e); });
      break;
      case 'main':
-       main2 = addMaintenanceStatusMessage(msg, main2);
+       main2 = await addMaintenanceStatusMessage(msg, main2);
        msg.reply(main1).catch((e) => { logError(e); });
        msg.reply(main2, {embed: null}).catch((e) => { logError(e); });
      break;
      case 'init':
-       init2 = addMaintenanceStatusMessage(msg, init2);
+       init2 = await addMaintenanceStatusMessage(msg, init2);
        msg.reply(init1).catch((e) => { logError(e); });
        msg.reply(init2, {embed: null}).catch((e) => { logError(e); });
      break;
      case 'scene':
-       scene1 = addMaintenanceStatusMessage(msg, scene1);
+       scene1 = await addMaintenanceStatusMessage(msg, scene1);
        msg.reply(scene1, {embed: null}).catch((e) => { logError(e); });
      break;
      case 'macros':
-       macros1 = addMaintenanceStatusMessage(msg, macros1);
+       macros1 = await addMaintenanceStatusMessage(msg, macros1);
        msg.reply(macros1, {embed: null}).catch((e) => { logError(e); });
      break;
      case 'gmscreen':
-       gmscreen1 = addMaintenanceStatusMessage(msg, gmscreen1);
+       gmscreen1 = await addMaintenanceStatusMessage(msg, gmscreen1);
        msg.reply(gmscreen1, {embed: null}).catch((e) => { logError(e); });
      break;
      case 'reminders':
-       reminders1 = addMaintenanceStatusMessage(msg, reminders1);
+       reminders1 = await addMaintenanceStatusMessage(msg, reminders1);
        msg.reply(reminders1).catch((e) => {console.error(e);});
      break;
      case 'ammo':
-       ammo2 = addMaintenanceStatusMessage(msg, ammo2);
+       ammo2 = await addMaintenanceStatusMessage(msg, ammo2);
        msg.reply(ammo1).catch((e) => {console.error(e);});
        msg.reply(ammo2).catch((e) => {console.error(e);});
      break;
      case 'troubleshoot':
-       troubleshoot1 = addMaintenanceStatusMessage(msg, troubleshoot1);
+       troubleshoot1 = await addMaintenanceStatusMessage(msg, troubleshoot1);
        msg.reply(troubleshoot1).catch((e) => {console.error(e);});
      break;
    }

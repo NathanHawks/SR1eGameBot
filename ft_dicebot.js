@@ -11,7 +11,7 @@ const {
   addMaintenanceStatusMessage, prepRollNote, makeOpposedOutput
 } = require('./api');
 const {logError, logWrite} = require('./log');
-function handleRollCommand(msg, cmd, args, user, override=null) {
+async function handleRollCommand(msg, cmd, args, user, override=null) {
   let numDiceInt = 0;
   // allow multiple roll commands separated by semicolon
   let cmdArr = null;
@@ -55,7 +55,7 @@ function handleRollCommand(msg, cmd, args, user, override=null) {
     let opponentTNInt = retarr[2];
     let isOpposedTestBool = retarr[3];
     if (isOpposedTestBool === true && opponentTNInt === -1) {
-      msg.reply(addMaintenanceStatusMessage(msg, ":no_entry_sign: you ordered an opposed test without an "
+      msg.reply(await addMaintenanceStatusMessage(msg, ":no_entry_sign: you ordered an opposed test without an "
       + "opponent TN (the **otn** option).\nExample: **!6! tn4 vs5! *otn4***"))
       .catch((e) => { logError(e); });
       return;
@@ -101,7 +101,7 @@ function handleRollCommand(msg, cmd, args, user, override=null) {
   // avoid false positives e.g. when chatting about Astral Tabeltop dice formats
   if (numDiceInt > 0) {
     // modify output for maintenance mode status
-    output = addMaintenanceStatusMessage(msg, output);
+    output = await addMaintenanceStatusMessage(msg, output);
     // post results
     msg.channel.send(output).catch((e) => { logError(e); });
     // log activity

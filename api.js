@@ -687,7 +687,7 @@ function modifyNPCInput(args) {
   }
   return args;
 }
-function validateNPCInput(msg, args) {
+async function validateNPCInput(msg, args) {
   // some input validation
   let errOutput = '';
   if (args.length%3 !== 0) {
@@ -713,7 +713,7 @@ function validateNPCInput(msg, args) {
   }
   // abort if any errors
   if (errOutput !== '') {
-    msg.reply(addMaintenanceStatusMessage(msg, `There was a problem.\n${errOutput}`))
+    msg.reply(await addMaintenanceStatusMessage(msg, `There was a problem.\n${errOutput}`))
     .catch((e) => { logError(e); });
     return false;
   } else return true;
@@ -1028,9 +1028,9 @@ async function saveSceneList(msg, sceneList) {
   await setStringByNameAndParent(filename, userFolderID, content);
 }
 // conditionally add warning message
-function addMaintenanceStatusMessage(msg, output) {
+async function addMaintenanceStatusMessage(msg, output) {
   let r = "";
-  let opt = getUserOption(msg.author, 'skipStatusMsg');
+  let opt = await getUserOption(msg.author, 'skipStatusMsg');
   if (
     global.isMaintenanceModeBool === true
     && opt != global.maintenanceStatusMessage

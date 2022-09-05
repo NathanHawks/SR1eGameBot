@@ -23,7 +23,7 @@ async function handleCheckChannelCommand(msg) {
   addHourglass(msg);
   await ensureTriplet(msg);
   let gmPlayChannelID = await getPlayChannel(msg);
-  msg.reply(addMaintenanceStatusMessage(msg, `Your current play channel is set to <#${gmPlayChannelID}>.`))
+  msg.reply(await addMaintenanceStatusMessage(msg, `Your current play channel is set to <#${gmPlayChannelID}>.`))
   .catch((e) => { logError(e); });
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
   removeHourglass(msg);
@@ -55,18 +55,18 @@ async function handleSetChannelCommand(msg, args) {
         user: msg.author.id,
         playChannel: gmPlayChannelID
       }, 'playChannel');
-      msg.reply(addMaintenanceStatusMessage(msg, `Play channel is now set to `
+      msg.reply(await addMaintenanceStatusMessage(msg, `Play channel is now set to `
         + `<#${gmPlayChannelID}>. You can now issue commands for initiative and `
         + `scenes in this channel, and they will be saved to <#${gmPlayChannelID}>.`))
         .catch((e) => { logError(e); });
     }
     else {
-      msg.reply(addMaintenanceStatusMessage(msg, 'Error: make sure this command is followed only by a link to a channel.'))
+      msg.reply(await addMaintenanceStatusMessage(msg, 'Error: make sure this command is followed only by a link to a channel.'))
       .catch((e) => { logError(e); });
     }
   }
   else {
-    msg.reply(addMaintenanceStatusMessage(msg, 'This command requires one (and only one) argument, a channel link.'))
+    msg.reply(await addMaintenanceStatusMessage(msg, 'This command requires one (and only one) argument, a channel link.'))
     .catch((e) => { logError(e); });
   }
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);

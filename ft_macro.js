@@ -20,7 +20,7 @@ async function handleSaveMacroCommand(msg, args) {
     return;
   }
   if (args.length < 2)
-    return msg.reply(addMaintenanceStatusMessage(msg, 
+    return msg.reply(await addMaintenanceStatusMessage(msg, 
       ':no_entry_sign: Not enough options. Needs a name followed by any valid dice roll command.'
     )).catch((e) => { logError(e); });
   logWrite('\x1b[32m [ ==================== handleSaveMacroCommand ================== ]\x1b[0m');
@@ -72,7 +72,7 @@ async function handleSaveMacroCommand(msg, args) {
     await setStringByNameAndParent(filename, parentFolderID, savedRollsStr);
   }
   removeHourglass(msg);
-  msg.reply(addMaintenanceStatusMessage(msg, 
+  msg.reply(await addMaintenanceStatusMessage(msg, 
     `You now have ${savedRollsArr.length} roll macros saved.`
   )).catch((e) => { logError(e); });
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
@@ -92,7 +92,7 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
     return;
   }
   if (args.length < 1)
-    return msg.reply(addMaintenanceStatusMessage(msg, 
+    return msg.reply(await addMaintenanceStatusMessage(msg, 
       ':no_entry_sign: You didn\'t specify which macro I should roll.'
     )).catch((e) => { logError(e); });
   logWrite('\x1b[32m [ ==================== handleRollMacroCommand ================== ]\x1b[0m');
@@ -135,7 +135,7 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
   }
   else {
     // savedRolls file didn't exist
-    msg.reply(addMaintenanceStatusMessage(msg, " you don't have any saved macros in this channel yet."))
+    msg.reply(await addMaintenanceStatusMessage(msg, " you don't have any saved macros in this channel yet."))
     .catch((e) => { logError(e); });
   }
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
@@ -148,7 +148,7 @@ async function handleRemoveMacroCommand(msg, args) {
     return;
   }
   if (args.length < 1)
-    return msg.reply(addMaintenanceStatusMessage(msg, 
+    return msg.reply(await addMaintenanceStatusMessage(msg, 
       ':no_entry_sign: You didn\'t specify which macro I should remove.'
     )).catch((e) => { logError(e); });
   logWrite('\x1b[32m [ ==================== handleRemoveMacroCommand ================ ]\x1b[0m');
@@ -178,25 +178,25 @@ async function handleRemoveMacroCommand(msg, args) {
         savedRollsStr = savedRollsArr.join("\n");
         await setStringByNameAndParent(filename, parentFolderID, savedRollsStr);
 
-        msg.reply(addMaintenanceStatusMessage(msg, `Removed the macro; `
+        msg.reply(await addMaintenanceStatusMessage(msg, `Removed the macro; `
           + `you now have ${savedRollsArr.length} macros saved in this channel.`))
           .catch((e) => { logError(e); });
         removeHourglass(msg);
       } else
-        msg.reply(addMaintenanceStatusMessage(msg, 
+        msg.reply(await addMaintenanceStatusMessage(msg, 
           'That name didn\'t match any of your saved macros in this channel.'
         )).catch((e) => { logError(e); });
     }
     else {
       // file exists but is empty
-      msg.reply(addMaintenanceStatusMessage(msg, 
+      msg.reply(await addMaintenanceStatusMessage(msg, 
         "You don't have any saved macros in this channel yet."
       )).catch((e) => { logError(e); });
     }
   }
   else {
     // savedRolls file didn't exist
-    msg.reply(addMaintenanceStatusMessage(msg, 
+    msg.reply(await addMaintenanceStatusMessage(msg, 
       "You don't have any saved macros in this channel yet."
     )).catch((e) => { logError(e); });
   }
@@ -234,20 +234,20 @@ async function handleListMacrosCommand(msg) {
         let tmpStr = tmpArr.join(" ");
         output += `***${name}*** :arrow_right: ${tmpStr}\n`;
       });
-      msg.reply(addMaintenanceStatusMessage(msg, 
+      msg.reply(await addMaintenanceStatusMessage(msg, 
         `You have the following macros in this channel:\n${output}`
       )).catch((e) => { logError(e); });
     }
     else {
       // file exists but is empty
-      msg.reply(addMaintenanceStatusMessage(msg, 
+      msg.reply(await addMaintenanceStatusMessage(msg, 
         "You don't have any saved macros in this channel yet."
       )).catch((e) => { logError(e); });
     }
   }
   else {
     // savedRolls file didn't exist
-    msg.reply(addMaintenanceStatusMessage(msg, 
+    msg.reply(await addMaintenanceStatusMessage(msg, 
       "You don't have any saved macros in this channel yet."
     )).catch((e) => { logError(e); });
   }

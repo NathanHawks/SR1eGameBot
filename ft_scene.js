@@ -42,7 +42,7 @@ async function handleSetSceneCommand(msg, args) {
   await setStringByNameAndParent(filename, userFolderID, content);
   newScene.dbID = await findStringIDByName(filename, userFolderID);
   let countOfScenes = await updateSceneList(msg, newScene);
-  msg.reply(addMaintenanceStatusMessage(msg, 
+  msg.reply(await addMaintenanceStatusMessage(msg, 
     `You now have ${countOfScenes} scenes in channel <#${gmPlayChannelID}>.`
   )).catch((e) => { logError(e); });
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
@@ -72,7 +72,7 @@ async function handleDelSceneCommand(msg, args) {
         await deleteSceneFromList(msg, arg);
       }
       else {
-        msg.reply(addMaintenanceStatusMessage(msg, 
+        msg.reply(await addMaintenanceStatusMessage(msg, 
           `The scene named ${arg} wasn't found.`
         )).catch((e) => { logError(e); });
       }
@@ -82,12 +82,12 @@ async function handleDelSceneCommand(msg, args) {
     let sceneList = await getSceneList(msg);
     logSpam(`handleDelSceneCommand got sceneList ${sceneList}`);
     const count = sceneList.length;
-    msg.reply(addMaintenanceStatusMessage(msg, 
+    msg.reply(await addMaintenanceStatusMessage(msg, 
       `You now have ${count} scenes in channel <#${gmPlayChannelID}>.`
     )).catch((e) => { logError(e); });
   }
   else {
-    msg.reply(addMaintenanceStatusMessage(msg, 
+    msg.reply(await addMaintenanceStatusMessage(msg, 
       'This command requires one or more names of scenes.'
     )).catch((e) => { logError(e); });
   }
@@ -110,7 +110,7 @@ async function handleGetSceneCommand(msg, args) {
     const fileID = await findStringIDByName(filename, userFolderID);
     const content = await getStringContent(fileID);
     if (!content || content === '')
-      return msg.reply(addMaintenanceStatusMessage(msg, 
+      return msg.reply(await addMaintenanceStatusMessage(msg, 
         `That scene wasn't found.`
       )).catch((e) => { logError(e); })
     const contentArray = content.split("\n|||\n");
@@ -124,12 +124,12 @@ async function handleGetSceneCommand(msg, args) {
       musicText = `\n\nSoundtrack:\n${scene.music}`;
     }
     playChannel.send(`${scene.text}${musicText}`);
-    msg.reply(addMaintenanceStatusMessage(msg, 
+    msg.reply(await addMaintenanceStatusMessage(msg, 
       `Scene "${scene.name}" was just deployed in channel <#${gmPlayChannelID}>.`
     )).catch((e) => { logError(e); });
   }
   else {
-    msg.reply(addMaintenanceStatusMessage(msg, 
+    msg.reply(await addMaintenanceStatusMessage(msg, 
       'Error: this command requires a single argument, '
       + 'the name of the scene. Try !listscenes for a list of your scenes in '
       + `channel ${gmPlayChannelID}.`)).catch((e) => { logError(e); });
@@ -154,12 +154,12 @@ async function handleListScenesCommand(msg) {
     sceneList.forEach((scene) => {
       output += `${scene.name}\n`;
     });
-    msg.reply(addMaintenanceStatusMessage(msg, 
+    msg.reply(await addMaintenanceStatusMessage(msg, 
       "Your scene names in channel <#" + gmPlayChannelID +
       "> are: ```\n" + output + "\n```")).catch((e) => { logError(e); });
   }
   else {
-    msg.reply(addMaintenanceStatusMessage(msg, 
+    msg.reply(await addMaintenanceStatusMessage(msg, 
       `You have no scenes yet in channel <#${gmPlayChannelID}>.`
     )).catch((e) => { logError(e); });
   }
