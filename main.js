@@ -97,7 +97,9 @@ catch (e) {
 
 global.bot.on('ready', () => {
   logWrite('Connected to Discord as ['+ bot.user.tag + ']');
-  global.bot.user.setActivity(`Listening to !help`);
+  global.bot.user.setActivity(`!help`, {
+    type: 2
+  });
 });
 
 // Setup reaction handler (when 🎲 UI for triggering re-roll is clicked)
