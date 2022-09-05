@@ -233,7 +233,7 @@
      + 'The bot can DM reminders of your upcoming game sessions to your players.\n\n'
      + '**!addreminder** sessionDate&Time timer1 timer2 etc\n'
      + '*sessionDate&Time* needs the format **YYYY-MM-DD*T*HH:MM** *(note the "T" separating date from time)*\n'
-     + '**sessionDate&Time* is now GMT+0 time zone.*\n'
+     + '***sessionDate&Time*** **is now GMT+0 time zone.**\n'
      + 'Note the hour of the session must be in 24-hour format; e.g. for 6pm, you enter 18:00\n'
      + 'Each *timer* needs a format of minutes, hours, or days, such as **10m**, **3h**, **7d** etc\n'
      + '**Example:** !addreminder 2022-05-04T18:00 30m 6h 1d 3d 7d\n'
