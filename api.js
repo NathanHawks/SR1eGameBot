@@ -332,7 +332,8 @@ async function findUserDBIDFromDiscordID(msg, userID, usePlayChannel=false) {
 // Rewritten 9/1/22
 async function ensureFolderByName(name, parentID=null) {
   const folder = await findFolderByName(name, parentID);
-  if ((!folder || folder === -1) && parentID !== -1) createFolder(name, parentID);
+  if ((!folder || folder === -1) && parentID !== -1)
+    await createFolder(name, parentID);
 }
 // Rewritten 9/1/22
 async function findFolderByName(
