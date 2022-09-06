@@ -1041,32 +1041,44 @@ async function addMaintenanceStatusMessage(msg, output) {
 }
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 async function getUserOption(user, optionName) {
-  await ensureFolderByName('options', global.folderID.UserData);
-  const optFolder = await findFolderByName(
-    'options', global.folderID.UserData
-  );
-  await ensureFolderByName(user.id, optFolder._id.toString());
-  const userOptFolder = await findFolderByName(
-    user.id, optFolder._id.toString()
-  );
-  const optValueID = await findStringIDByName(
-    optionName, userOptFolder._id.toString()
-  );
-  if (!optValueID) return;
-  return await getStringContent(optValueID);
+  try {
+    await ensureFolderByName('options', global.folderID.UserData);
+    const optFolder = await findFolderByName(
+      'options', global.folderID.UserData
+    );
+    await ensureFolderByName(user.id, optFolder._id.toString());
+    const userOptFolder = await findFolderByName(
+      user.id, optFolder._id.toString()
+    );
+    const optValueID = await findStringIDByName(
+      optionName, userOptFolder._id.toString()
+    );
+    if (!optValueID) return;
+    return await getStringContent(optValueID);
+  }
+  catch (e) {
+    logError(e);
+    return undefined;
+  }
 }
 async function setUserOption(user, optionName, optionValue) {
-  await ensureFolderByName('options', global.folderID.UserData);
-  const optFolder = await findFolderByName(
-    'options', global.folderID.UserData
-  );
-  await ensureFolderByName(user.id, optFolder._id.toString());
-  const userOptFolder = await findFolderByName(
-    user.id, optFolder._id.toString()
-  );
-  await setStringByNameAndParent(
-    optionName, userOptFolder._id.toString(), optionValue
-  );
+  try {
+    await ensureFolderByName('options', global.folderID.UserData);
+    const optFolder = await findFolderByName(
+      'options', global.folderID.UserData
+    );
+    await ensureFolderByName(user.id, optFolder._id.toString());
+    const userOptFolder = await findFolderByName(
+      user.id, optFolder._id.toString()
+    );
+    await setStringByNameAndParent(
+      optionName, userOptFolder._id.toString(), optionValue
+    );
+  }
+  catch (e) {
+    logError(e);
+    return false;
+  }
 }
 
 module.exports = {

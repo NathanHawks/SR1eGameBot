@@ -43,7 +43,7 @@ async function handleListRemindersCommand(msg) {
     }
     if (output === '\n') output = `You have no reminders set in channel <#${playChannelID}>.`;
     else {
-      if (output.length < 1900) msg.reply(output).catch((err)=>{console.error(err);});
+      if (output.length < 1900) msg.reply(output).catch((err)=>{logError(err);});
       else {
         let items = output.split('\n\n');
         for (let x = 0; x < items.length; x++) {
@@ -62,7 +62,7 @@ async function handleListRemindersCommand(msg) {
 async function handleAddReminderCommand(msg, args) {
   if (msg.channel.guild === undefined) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
-    .catch((e)=>{error.log(e);});
+    .catch((e)=>{logError(e);});
     return;
   }
   addHourglass(msg);
@@ -81,7 +81,7 @@ async function handleAddReminderCommand(msg, args) {
   logSpam(`sessionTimestamp ${sessionTimestamp}`);
   if (isNaN(Date.parse(sessionTimestamp))) {
     msg.reply(`The session date & time you entered was invalid. Check it carefully and try again.`)
-    .catch((err)=>{console.error(err);});
+    .catch((err)=>{logError(err);});
     return;
   }
   // get play folder
@@ -91,11 +91,11 @@ async function handleAddReminderCommand(msg, args) {
   let userFolderID = await findUserFolderDBIDFromMsg(msg, true);
   if (userFolderID === -1) return -1;
   let filename = 'gmPlayers';
-  playersFileID = await findStringIDByName(filename, userFolderID, playChannelID);
-  let playersString = await getStringContent(playersFileID, playChannelID);
+  playersFileID = await findStringIDByName(filename, userFolderID);
+  let playersString = await getStringContent(playersFileID);
   if (playersString.length === 0) {
     await msg.reply(`You have no players in channel <#${playChannelID}> yet to send reminders to.`)
-    .catch((err) => {console.error(err)});
+    .catch((err) => {logError(err)});
     return;
   }
   // parse list of timings
@@ -150,15 +150,15 @@ async function handleAddReminderCommand(msg, args) {
     count++
   }
   await addReminders(msg, reminders);
-  msg.reply(` ${count} reminders added.`)
-  .catch((err)=>{console.error(err);});
+  msg.reply(`${count} reminders added.`)
+  .catch((err)=>{logError(err);});
   removeHourglass(msg);
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleCancelReminderCommand(msg, args) {
   if (msg.channel.guild === undefined) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
-    .catch((e)=>{error.log(e);});
+    .catch((e)=>{logError(e);});
     return;
   }
   addHourglass(msg);
@@ -168,7 +168,7 @@ async function handleCancelReminderCommand(msg, args) {
   logSpam(shortIDs);
   if (shortIDs.length === 0) {
     msg.reply(`This command needs one or more ID's. You'll find the ID's by using \`!listreminders\`.`)
-    .catch((err)=>{console.error(err);});
+    .catch((err)=>{logError(err);});
     return;
   }
   // loop thru shortIDs

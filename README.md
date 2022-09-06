@@ -240,6 +240,7 @@ The bot can DM reminders of your upcoming game sessions to your players.
 
 **!addreminder** sessionDate&Time timer1 timer2 etc<br/>
 * *sessionDate&Time* needs the format **YYYY-MM-DD*T*HH:MM** *(note the "T" separating date from time)*
+* ***sessionDate&Time*** **is now based on the GMT+0 time zone**
 * Note the hour of the session must be in 24-hour format; e.g. for 6pm, you enter 18:00
 * Each *timer* needs a format of minutes, hours, or days, such as **10m**, **3h**, **7d** etc
 * **Example:** `!addreminder 2022-05-04T18:00 30m 6h 1d 3d 7d`

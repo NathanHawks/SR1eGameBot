@@ -286,7 +286,7 @@ function handleMessage(msg, user=msg.author) {
         `Something went wrong. Please report it at `
         + `<https://github.com/NathanHawks/SR1eGameBot/issues>\n`
         + `Include the following in your report:\n\n`
-        + `\`\`\`\ncmd:${cmd}\nargs:${args}\`\`\`\n`
+        + `\`\`\`\ncmd:${cmd}\nargs:${args}\n${new Date()}\`\`\`\n`
       )
       .catch((e) => { logError(e); });
       logError(`Something went wrong; asking for a bug report.`)
