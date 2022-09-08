@@ -15,7 +15,7 @@ const {
   sortCPRTiebreaker, rollD10s, setStringByNameAndParent
 } = require('./api');
 async function handleInitCommand(msg, cmd, user) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -508,7 +508,7 @@ async function handleInitCommand(msg, cmd, user) {
 async function handleSetGMCommand(msg, args, user) {
   // serverID.channelID.userID.gmWhoIsGM STRING
   // without flag: set self as GM
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -547,7 +547,7 @@ async function handleSetGMCommand(msg, args, user) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleSetPlayersCommand(msg, args) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -573,7 +573,7 @@ async function handleSetPlayersCommand(msg, args) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleAddPlayersCommand(msg, args) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -632,7 +632,7 @@ async function handleAddPlayersCommand(msg, args) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleListPlayersCommand(msg) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -684,7 +684,7 @@ async function handleListPlayersCommand(msg) {
   removeHourglass(msg);
 }
 async function handleRemovePlayersCommand(msg, args) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -744,7 +744,7 @@ async function handleRemovePlayersCommand(msg, args) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleClearPlayersCommand(msg) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -767,7 +767,7 @@ async function handleClearPlayersCommand(msg) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleSetInitCommand(msg, args) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -837,7 +837,7 @@ async function handleSetInitCommand(msg, args) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleSetNPCInitCommand(msg, args) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{ logError(e); });
     return;
@@ -869,7 +869,7 @@ async function handleSetNPCInitCommand(msg, args) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleAddNPCInitCommand(msg, args) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -917,7 +917,7 @@ async function handleAddNPCInitCommand(msg, args) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleRemoveNPCInitCommand(msg, args) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -977,7 +977,7 @@ async function handleRemoveNPCInitCommand(msg, args) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${gmPlayChannelID})/${msg.author.id}`);
 }
 async function handleListNPCInitCommand(msg) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -1022,7 +1022,7 @@ async function handleListNPCInitCommand(msg) {
   removeHourglass(msg);
 }
 async function handleClearNPCInitCommand(msg) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;

@@ -14,7 +14,7 @@ const {
   setStringByNameAndParent, removeHourglass
 } = require('./api');
 async function handleSaveMacroCommand(msg, args) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -78,7 +78,7 @@ async function handleSaveMacroCommand(msg, args) {
   logWrite(`🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}/${msg.author.id}`);
 }
 async function handleRollMacroCommand(msg, cmd, args, user) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -142,7 +142,7 @@ async function handleRollMacroCommand(msg, cmd, args, user) {
   removeHourglass(msg);
 }
 async function handleRemoveMacroCommand(msg, args) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -204,7 +204,7 @@ async function handleRemoveMacroCommand(msg, args) {
   removeHourglass(msg);
 }
 async function handleListMacrosCommand(msg) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;

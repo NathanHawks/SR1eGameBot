@@ -13,7 +13,7 @@ const {
   _makeReminderSaveString, setStringByNameAndParent, ensureTriplet
 } = require('./api');
 async function handleListRemindersCommand(msg) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{logError(e);});
     return;
@@ -60,7 +60,7 @@ async function handleListRemindersCommand(msg) {
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleAddReminderCommand(msg, args) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{logError(e);});
     return;
@@ -156,7 +156,7 @@ async function handleAddReminderCommand(msg, args) {
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleCancelReminderCommand(msg, args) {
-  if (msg.channel.guild === null) {
+  if (!msg.channel.guild) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{logError(e);});
     return;
