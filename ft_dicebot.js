@@ -12,7 +12,6 @@ const {
 } = require('./api');
 const {logError, logWrite} = require('./log');
 async function handleRollCommand(msg, cmd, args, user, override=null) {
-  console.log('Got here');
   let numDiceInt = 0;
   // allow multiple roll commands separated by semicolon
   let cmdArr = null;
