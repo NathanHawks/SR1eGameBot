@@ -80,9 +80,7 @@ global.bot = new Discord.Client({
     Discord.GatewayIntentBits.DirectMessages,
     Discord.GatewayIntentBits.MessageContent
   ],
-  partials: [
-    Discord.Partials.Message
-  ]
+  partials: [ Discord.Partials.Channel ]
 });
 try {
   global.bot.login(token);

@@ -13,7 +13,7 @@ const {
   addMaintenanceStatusMessage, removeHourglass
 } = require('./api');
 async function handleAmmoAddGunSubcommand(msg, args) {
-  if (msg.channel.guild === undefined) {
+  if (msg.channel.guild === null) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{logError(e);});
     return;
@@ -79,7 +79,7 @@ async function handleAmmoAddGunSubcommand(msg, args) {
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleAmmoDelGunSubcommand(msg, args) {
-  if (msg.channel.guild === undefined) {
+  if (msg.channel.guild === null) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -192,7 +192,7 @@ function _makeAmmoSaveString(ammos) {
   return saveString;
 }
 async function handleAmmoAddAmmoSubcommand(msg, args) {
-  if (msg.channel.guild === undefined) {
+  if (msg.channel.guild === null) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -239,7 +239,7 @@ async function handleAmmoAddAmmoSubcommand(msg, args) {
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleAmmoDelAmmoSubcommand(msg, args) {
-  if (msg.channel.guild === undefined) {
+  if (msg.channel.guild === null) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -321,7 +321,7 @@ function _gunsContentAsObject(content) {
   return gunsArr;
 }
 async function handleAmmoListSubcommand(msg) {
-  if (msg.channel.guild === undefined) {
+  if (msg.channel.guild === null) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -400,7 +400,7 @@ function _makeGunSaveString(guns) {
   return gunData;
 }
 async function handleAmmoFireSubcommand(msg, args) {
-  if (msg.channel.guild === undefined) {
+  if (msg.channel.guild === null) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -463,7 +463,7 @@ async function handleAmmoFireSubcommand(msg, args) {
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
 }
 async function handleAmmoReloadSubcommand(msg, args) {
-  if (msg.channel.guild === undefined) {
+  if (msg.channel.guild === null) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;

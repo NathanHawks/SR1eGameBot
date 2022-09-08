@@ -14,7 +14,7 @@ const {
   addToCache
 } = require('./api');
 async function handleCheckChannelCommand(msg) {
-  if (msg.channel.guild === undefined) {
+  if (msg.channel.guild === null) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -31,7 +31,7 @@ async function handleCheckChannelCommand(msg) {
 // set the play channel so that commands can be entered in a secret channel
 // useful for NPC inits and scene content
 async function handleSetChannelCommand(msg, args) {
-  if (msg.channel.guild === undefined) {
+  if (msg.channel.guild === null) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;

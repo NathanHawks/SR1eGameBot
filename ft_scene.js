@@ -14,7 +14,7 @@ const {
   getStringContent, deleteStringByID, delFromCache, deleteSceneFromList
 } = require('./api');
 async function handleSetSceneCommand(msg, args) {
-  if (msg.channel.guild === undefined) {
+  if (msg.channel.guild === null) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -49,7 +49,7 @@ async function handleSetSceneCommand(msg, args) {
   removeHourglass(msg);
 }
 async function handleDelSceneCommand(msg, args) {
-  if (msg.channel.guild === undefined) {
+  if (msg.channel.guild === null) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -95,7 +95,7 @@ async function handleDelSceneCommand(msg, args) {
   removeHourglass(msg);
 }
 async function handleGetSceneCommand(msg, args) {
-  if (msg.channel.guild === undefined) {
+  if (msg.channel.guild === null) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
@@ -138,7 +138,7 @@ async function handleGetSceneCommand(msg, args) {
   removeHourglass(msg);
 }
 async function handleListScenesCommand(msg) {
-  if (msg.channel.guild === undefined) {
+  if (msg.channel.guild === null) {
     msg.reply(`This command doesn't work via DM. You must be in a server channel.`)
     .catch((e)=>{error.log(e);});
     return;
