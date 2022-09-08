@@ -25,7 +25,7 @@ const {handleListRemindersCommand, handleAddReminderCommand,
   handleCancelReminderCommand} = require('./ft_reminders');
 const {handleSetSceneCommand, handleDelSceneCommand, handleGetSceneCommand,
   handleListScenesCommand} = require('./ft_scene');
-const {handleSkipStatusCommand} = require('./ft_misc');
+const {handleSkipStatusCommand, handleLinkCodeCommand} = require('./ft_misc');
 const {initAll} = require('./init');
 // set true to activate warning messages
 global.isMaintenanceModeBool = true;
@@ -79,6 +79,9 @@ global.bot = new Discord.Client({
     Discord.GatewayIntentBits.GuildMessageReactions,
     Discord.GatewayIntentBits.DirectMessages,
     Discord.GatewayIntentBits.MessageContent
+  ],
+  partials: [
+    Discord.Partials.Message
   ]
 });
 try {
@@ -98,9 +101,7 @@ catch (e) {
 
 global.bot.on('ready', () => {
   logWrite('Connected to Discord as ['+ bot.user.tag + ']');
-  global.bot.user.setActivity(`!help`, {
-    type: 2
-  });
+  global.bot.user.setActivity(`!help`, { type: 2 });
 });
 
 // Setup reaction handler (when 🎲 UI for triggering re-roll is clicked)
@@ -276,6 +277,9 @@ function handleMessage(msg, user=msg.author) {
       break;
       case 'skipstatus':
         handlerStatus = handleSkipStatusCommand(msg);
+      break;
+      case 'link':
+        handlerStatus = handleLinkCodeCommand(msg, args);
       break;
       default:
         handlerStatus = handleRollCommand(msg, cmd, args, user);

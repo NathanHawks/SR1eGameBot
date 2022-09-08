@@ -1043,14 +1043,7 @@ async function addMaintenanceStatusMessage(msg, output) {
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 async function getUserOption(user, optionName) {
   try {
-    await ensureFolderByName('options', global.folderID.UserData);
-    const optFolder = await findFolderByName(
-      'options', global.folderID.UserData
-    );
-    await ensureFolderByName(user.id, optFolder._id.toString());
-    const userOptFolder = await findFolderByName(
-      user.id, optFolder._id.toString()
-    );
+    const userOptFolder = await getUserOptionFolder(user.id);
     const optValueID = await findStringIDByName(
       optionName, userOptFolder._id.toString()
     );
@@ -1064,14 +1057,7 @@ async function getUserOption(user, optionName) {
 }
 async function setUserOption(user, optionName, optionValue) {
   try {
-    await ensureFolderByName('options', global.folderID.UserData);
-    const optFolder = await findFolderByName(
-      'options', global.folderID.UserData
-    );
-    await ensureFolderByName(user.id, optFolder._id.toString());
-    const userOptFolder = await findFolderByName(
-      user.id, optFolder._id.toString()
-    );
+    const userOptFolder = await getUserOptionFolder(user.id);
     await setStringByNameAndParent(
       optionName, userOptFolder._id.toString(), optionValue
     );
@@ -1080,6 +1066,30 @@ async function setUserOption(user, optionName, optionValue) {
     logError(e);
     return false;
   }
+}
+async function getUserOptionFolder(userID) {
+  await ensureFolderByName('options', global.folderID.UserData);
+  const optFolder = await findFolderByName(
+    'options', global.folderID.UserData
+  );
+  await ensureFolderByName(userID, optFolder._id.toString());
+  return await findFolderByName(
+    userID, optFolder._id.toString()
+  );
+}
+async function findDiscordUserIDByLinkCode(code) {
+  try {
+    const c = await Database.getTable("strings").findOne({ $and: [
+      {name: 'webLinkCode'}, {content: code}
+    ]});
+    if (!c) return undefined;
+    const folder = await Database.getTable("folders").findOne({
+      _id: ObjectId(c.parent.toString())
+    });
+    if (!folder) return undefined;
+    return folder.name;
+  }
+  catch (e) { logError(e); }
 }
 
 module.exports = {
@@ -1096,6 +1106,7 @@ module.exports = {
   getUserReminders, getActiveReminders, addReminders,
   getSceneList, updateSceneList, deleteSceneFromList, saveSceneList,
   addMaintenanceStatusMessage, sleep, getUserOption, setUserOption,
+  findDiscordUserIDByLinkCode, getUserOptionFolder,
 
   _addRemindersSetTimeoutPayload, _makeReminderSaveString
 }
