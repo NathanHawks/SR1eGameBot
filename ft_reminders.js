@@ -150,7 +150,7 @@ async function handleAddReminderCommand(msg, args) {
     count++
   }
   await addReminders(msg, reminders);
-  msg.reply(`${count} reminders added.`)
+  msg.reply(`${count} reminders added. **NOTE:** Reminders are now based on GMT+0.`)
   .catch((err)=>{logError(err);});
   removeHourglass(msg);
   logWrite(`🎲🎲🎲 ${msg.channel.guild.id}/${msg.channel.id}(${playChannelID})/${msg.author.id}`);
