@@ -24,7 +24,7 @@ async function handleListRemindersCommand(msg) {
   const playChannelID = await getPlayChannel(msg);
   const userFolderID = await findUserFolderDBIDFromMsg(msg, true);
   if (userFolderID === -1) return -1;
-  const reminders = await getUserReminders(userFolderID, playChannelID);
+  const reminders = await getUserReminders(userFolderID);
   if (reminders.length > 0) {
     let output = '\n';
     for (let x = 0; x < reminders.length; x++) {

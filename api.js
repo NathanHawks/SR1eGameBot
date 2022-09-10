@@ -782,13 +782,13 @@ async function getPlayChannel(msg) {
   }
 }
 // Checked 9/1/22
-async function getUserReminders(userFolderID, playChannelID) {
+async function getUserReminders(userFolderID, useCache=true) {
   const filename = 'gmReminders';
   const gmRemindersID = await findStringIDByName(filename, userFolderID);
   let gmContent = '';
   const reminders = [];
   if (gmRemindersID !== -1) {
-    gmContent = await getStringContent(gmRemindersID);
+    gmContent = await getStringContent(gmRemindersID, useCache);
     if (gmContent !== '') {
       let gmFileArr = gmContent.split('\n');
       for (let x = 0; x < gmFileArr.length; x++) {
@@ -1098,7 +1098,7 @@ async function getUserOptionFolder(userID) {
 async function findDiscordUserIDByLinkCode(code) {
   try {
     const c = await Database.getTable("strings").findOne({ $and: [
-      {name: 'webLinkCode'}, {content: code}
+      {name: 'webLinkCode'}, {content: encrypt(code)}
     ]});
     if (!c) return undefined;
     const folder = await Database.getTable("folders").findOne({
