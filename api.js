@@ -330,10 +330,10 @@ async function findUserDBIDFromDiscordID(msg, userID, usePlayChannel=false) {
   return -1;
 }
 // Rewritten 9/1/22
-async function ensureFolderByName(name, parentID=null, encrypt=true) {
+async function ensureFolderByName(name, parentID=null, encrypted=true) {
   const folder = await findFolderByName(name, parentID, doNothing, encrypt);
   if ((!folder || folder === -1) && parentID !== -1)
-    await createFolder(name, parentID, doNothing, encrypt);
+    await createFolder(name, parentID, doNothing, encrypted);
 }
 // Rewritten 9/1/22
 async function findFolderByName(
@@ -363,11 +363,11 @@ async function createFolder(
   folderName,
   parentID=null,
   callback=doNothing,
-  encrypt=true
+  encrypted=true
 ) {
   try {
     const doc = {};
-    if (encrypt) {
+    if (encrypted) {
       doc.name = encrypt(folderName);
       doc.encrypted = true;
     }
