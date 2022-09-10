@@ -55,7 +55,7 @@ async function handleRollCommand(msg, cmd, args, user, override=null) {
     let opponentTNInt = retarr[2];
     let isOpposedTestBool = retarr[3];
     if (isOpposedTestBool === true && opponentTNInt === -1) {
-      msg.reply(await addMaintenanceStatusMessage(msg, ":no_entry_sign: you ordered an opposed test without an "
+      msg.reply(await addMaintenanceStatusMessage(msg, ":no_entry_sign: You ordered an opposed test without an "
       + "opponent TN (the **otn** option).\nExample: **!6! tn4 vs5! *otn4***"))
       .catch((e) => { logError(e); });
       return;

@@ -330,23 +330,26 @@ async function findUserDBIDFromDiscordID(msg, userID, usePlayChannel=false) {
   return -1;
 }
 // Rewritten 9/1/22
-async function ensureFolderByName(name, parentID=null) {
-  const folder = await findFolderByName(name, parentID);
+async function ensureFolderByName(name, parentID=null, encrypt=true) {
+  const folder = await findFolderByName(name, parentID, doNothing, encrypt);
   if ((!folder || folder === -1) && parentID !== -1)
-    await createFolder(name, parentID);
+    await createFolder(name, parentID, doNothing, encrypt);
 }
 // Rewritten 9/1/22
 async function findFolderByName(
   folderName,
   parentID=null,
   callback=doNothing,
+  encrypted=true
 ) {
   if (parentID === -1) {
     logWrite(`findFolderByName: parentID was -1, `
       + `folderName was ${folderName}`);
     return -1;
   }
-  const query = { $and: [{name: folderName}] };
+  const query = { $and: [] };
+  if (encrypted) query['$and'].push({name: encrypt(folderName)})
+  else query['$and'].push({name: folderName});
   try {
     if (parentID !== null) query.$and.push({parent: ObjectId(parentID)});
     const c = await Database.getTable("folders").findOne(query);
@@ -359,10 +362,19 @@ async function findFolderByName(
 async function createFolder(
   folderName,
   parentID=null,
-  callback=doNothing
+  callback=doNothing,
+  encrypt=true
 ) {
   try {
-    const doc = { name: folderName };
+    const doc = {};
+    if (encrypt) {
+      doc.name = encrypt(folderName);
+      doc.encrypted = true;
+    }
+    else {
+      doc.name = folderName;
+      doc.encrypted = false;
+    }
     if (parentID !== null) doc.parent = ObjectId(parentID);
     await Database.getTable("folders").insertOne(doc);
     callback();
@@ -390,22 +402,25 @@ async function findStringIDByName(filename, parentID) {
   catch (e) { logError(e); return -1; }
 }
 // Rewritten 9/1/22
-async function getStringContent(fileID) {
+async function getStringContent(fileID, useCache=true) {
   if (fileID === -1) return "";
   let fileContents = '';
-  let q = {id: fileID};
-  if (cacheHas(q, 'fileContent')) {
-    let c = getFromCache(q, 'fileContent');
-    if (c.hasOwnProperty('content')) {
-      logSpam("Found in cache: " + c.content);
-      return c.content;
+  if (useCache) {
+    let q = {id: fileID};
+    if (cacheHas(q, 'fileContent')) {
+      let c = getFromCache(q, 'fileContent');
+      if (c.hasOwnProperty('content')) {
+        logSpam("Found in cache: " + c.content);
+        return c.content;
+      }
     }
   }
   try {
     const c = await Database.getTable("strings").findOne({ _id: ObjectId(fileID) });
     if (c && c.content && c.content !== '') {
-      fileContents=c.content;
-      addToCache({id: fileID, content: fileContents}, 'fileContent');
+      if (c.encrypted) fileContents = decrypt(c.content);
+      else fileContents=c.content;
+      if (useCache) addToCache({id: fileID, content: fileContents}, 'fileContent');
     }
     return fileContents;
   }
@@ -416,7 +431,12 @@ async function setStringByNameAndParent(filename, parentFolderID, contents) {
   try {
     await Database.getTable("strings").updateOne(
       {$and: [ {name: filename, parent: ObjectId(parentFolderID)} ]},
-      {$set: { content: contents, name: filename, parent: ObjectId(parentFolderID) }},
+      {$set: {
+        content: encrypt(contents),
+        name: filename,
+        parent: ObjectId(parentFolderID),
+        encrypted: true
+      }},
       {upsert: true}
     );
     const id = await findStringIDByName(filename, parentFolderID);
@@ -764,13 +784,11 @@ async function getPlayChannel(msg) {
 // Checked 9/1/22
 async function getUserReminders(userFolderID, playChannelID) {
   const filename = 'gmReminders';
-  const gmRemindersID = await findStringIDByName(filename, userFolderID, playChannelID);
-
+  const gmRemindersID = await findStringIDByName(filename, userFolderID);
   let gmContent = '';
   const reminders = [];
   if (gmRemindersID !== -1) {
-    gmContent = await getStringContent(gmRemindersID, playChannelID);
-
+    gmContent = await getStringContent(gmRemindersID);
     if (gmContent !== '') {
       let gmFileArr = gmContent.split('\n');
       for (let x = 0; x < gmFileArr.length; x++) {
@@ -1068,9 +1086,9 @@ async function setUserOption(user, optionName, optionValue) {
   }
 }
 async function getUserOptionFolder(userID) {
-  await ensureFolderByName('options', global.folderID.UserData);
+  await ensureFolderByName('options', global.folderID.UserData, false);
   const optFolder = await findFolderByName(
-    'options', global.folderID.UserData
+    'options', global.folderID.UserData, doNothing, false
   );
   await ensureFolderByName(userID, optFolder._id.toString());
   return await findFolderByName(
@@ -1087,11 +1105,24 @@ async function findDiscordUserIDByLinkCode(code) {
       _id: ObjectId(c.parent.toString())
     });
     if (!folder) return undefined;
-    return folder.name;
+    return decrypt(folder.name);
   }
   catch (e) { logError(e); }
 }
-
+function encrypt(string) {
+  const key = getConfig().cryptoKey;
+  const vector = getConfig().cryptoVector;
+  const algo = "aes-256-cbc";
+  const cipher = crypto.createCipheriv(algo, key, vector);
+  return cipher.update(string, "utf-8", "hex") + cipher.final('hex');
+}
+function decrypt(cipherText) {
+  const key = getConfig().cryptoKey;
+  const vector = getConfig().cryptoVector;
+  const algo = "aes-256-cbc";
+  const decipher = crypto.createDecipheriv(algo, key, vector);
+  return decipher.update(cipherText, "hex", "utf-8") + decipher.final("utf8");
+}
 module.exports = {
   doNothing, getConfig, resetCache, cacheHas, getCacheIndex,
   addToCache, delFromCache, getFromCache, ensureTriplet,
@@ -1106,7 +1137,7 @@ module.exports = {
   getUserReminders, getActiveReminders, addReminders,
   getSceneList, updateSceneList, deleteSceneFromList, saveSceneList,
   addMaintenanceStatusMessage, sleep, getUserOption, setUserOption,
-  findDiscordUserIDByLinkCode, getUserOptionFolder,
+  findDiscordUserIDByLinkCode, getUserOptionFolder, encrypt, decrypt,
 
   _addRemindersSetTimeoutPayload, _makeReminderSaveString
 }

@@ -9,7 +9,7 @@
 const { logSpam, logWrite } = require('./log');
 const {
   findFolderByName, _addRemindersSetTimeoutPayload, getActiveReminders,
-  createFolder, ensureFolderByName
+  createFolder, ensureFolderByName, doNothing
 } = require('./api');
 // Checked 9/1/22
 async function initAll() {
@@ -20,28 +20,29 @@ async function initAll() {
 async function initInitiative() {
   // initial startup payload depends on whether UserData folder exists
   const folderName = 'UserData';
-  const c = await findFolderByName(folderName);
+  const c = await findFolderByName(folderName, null, doNothing, false);
   const findAndSetFolderID = function (c, folderName) {
     if (c.name === folderName) global.folderID[folderName] = c._id.toString();
   }
   // INSTALL/SETUP determine if we've already been installed; if not, do install
   if (c) {
     // SETUP =======================================================
+    logWrite(`Found ${folderName} folder.`)
     findAndSetFolderID(c, folderName);
   } else {
     // INSTALL =====================================================
     logWrite(`Installing ${folderName} folder.`);
-    await createFolder(folderName);
-    const folder = await findFolderByName(folderName);
+    await createFolder(folderName, null, doNothing, false);
+    const folder = await findFolderByName(folderName, null, doNothing, false);
     findAndSetFolderID(folder, folderName);
   }
 }
 // Checked 9/1/22
 async function initReminders() {
-  const userDataFolder = await findFolderByName('UserData');
-  await ensureFolderByName('reminders', userDataFolder._id.toString());
+  const userDataFolder = await findFolderByName('UserData', null, doNothing, false);
+  await ensureFolderByName('reminders', userDataFolder._id.toString(), false);
   let reminderFolder = await findFolderByName(
-    'reminders', userDataFolder._id.toString()
+    'reminders', userDataFolder._id.toString(), doNothing, false
   );
 
   global.folderID.reminders = reminderFolder._id.toString();

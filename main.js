@@ -32,7 +32,7 @@ global.isMaintenanceModeBool = true;
 // set status message to send as warning when isMaintenanceModeBool is true
 global.maintenanceStatusMessage = '\n**Bzzt. Hoi!** '
 //+ 'See `!help` for **new features!** See `!help troubleshoot` if you suspect a bug.'
-+ `See \`!help troubleshoot\` if you suspect a bug!`
++ `Encryption is go! \`!skipstatus\` to hide this message! See \`!help troubleshoot\` if you suspect a bug!`
 ;
 // internal setup
 // for reminders
