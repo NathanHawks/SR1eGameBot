@@ -32,7 +32,10 @@ async function logWrite(msg) {
   let d = getColorCurrentDateNY().padEnd(36, ' ');
   let line = callee.getLineNumber();
   let file = callee.getFileName();
-  file = file.split('\\');
+  if (file) {
+    file = file.split('\\');
+  }
+  else file = [''];
   file = file[file.length-1].padEnd(25, ' ');
   line = new String(line);
   line = line.padEnd(6);
@@ -54,7 +57,10 @@ async function logSpam(msg) {
   let d = getColorCurrentDateNY().padEnd(36, ' ');
   let line = callee.getLineNumber();
   let file = callee.getFileName();
-  file = file.split('\\');
+  if (file) {
+    file = file.split('\\');
+  }
+  else file = [''];
   file = file[file.length-1].padEnd(25, ' ');
   line = new String(line);
   line = line.padEnd(6);
@@ -77,7 +83,10 @@ async function logError(msg) {
   let d = getColorCurrentDateNY().padEnd(36, ' ');
   let line = callee.getLineNumber();
   let file = callee.getFileName();
-  file = file.split('\\');
+  if (file) {
+    file = file.split('\\');
+  }
+  else file = [''];
   file = file[file.length-1].padEnd(25, ' ');
   line = new String(line);
   line = line.padEnd(6);
