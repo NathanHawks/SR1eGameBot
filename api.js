@@ -331,7 +331,7 @@ async function findUserDBIDFromDiscordID(msg, userID, usePlayChannel=false) {
 }
 // Rewritten 9/1/22
 async function ensureFolderByName(name, parentID=null, encrypted=true) {
-  const folder = await findFolderByName(name, parentID, doNothing, encrypt);
+  const folder = await findFolderByName(name, parentID, doNothing, encrypted);
   if ((!folder || folder === -1) && parentID !== -1)
     await createFolder(name, parentID, doNothing, encrypted);
 }
@@ -382,9 +382,9 @@ async function createFolder(
   catch (e) { logError(e); }
 }
 // Rewritten 9/1/22
-async function findStringIDByName(filename, parentID) {
+async function findStringIDByName(filename, parentID, useCache=true) {
   let q = {name: filename, parents: [parentID]};
-  if (cacheHas(q, 'file')) {
+  if (useCache && cacheHas(q, 'file')) {
     return getFromCache(q, 'file').dbID;
   }
   try {
@@ -392,9 +392,10 @@ async function findStringIDByName(filename, parentID) {
       $and: [ {name: filename}, {parent: ObjectId(parentID)} ]
     });
     if (c) {
-      addToCache({
-        id: c._id.toString(), name: c.name, parents: [ c.parent.toString() ]
-      }, 'file');
+      if (useCache)
+        addToCache({
+          id: c._id.toString(), name: c.name, parents: [ c.parent.toString() ]
+        }, 'file');
       return c._id.toString();
     }
     else return -1;
@@ -784,7 +785,7 @@ async function getPlayChannel(msg) {
 // Checked 9/1/22
 async function getUserReminders(userFolderID, useCache=true) {
   const filename = 'gmReminders';
-  const gmRemindersID = await findStringIDByName(filename, userFolderID);
+  const gmRemindersID = await findStringIDByName(filename, userFolderID, useCache);
   let gmContent = '';
   const reminders = [];
   if (gmRemindersID !== -1) {
@@ -1113,15 +1114,146 @@ function encrypt(string) {
   const key = getConfig().cryptoKey;
   const vector = getConfig().cryptoVector;
   const algo = "aes-256-cbc";
-  const cipher = crypto.createCipheriv(algo, key, vector);
-  return cipher.update(string, "utf-8", "hex") + cipher.final('hex');
+  try {
+    const cipher = crypto.createCipheriv(algo, key, vector);
+    return cipher.update(string, "utf-8", "hex") + cipher.final('hex');
+  }
+  catch (e) { logError(e); return undefined; }
 }
 function decrypt(cipherText) {
   const key = getConfig().cryptoKey;
   const vector = getConfig().cryptoVector;
   const algo = "aes-256-cbc";
-  const decipher = crypto.createDecipheriv(algo, key, vector);
-  return decipher.update(cipherText, "hex", "utf-8") + decipher.final("utf8");
+  try {
+    const decipher = crypto.createDecipheriv(algo, key, vector);
+    return decipher.update(cipherText, "hex", "utf-8") + decipher.final("utf8");
+  }
+  catch(e) { logError(e); return undefined; }
+}
+async function fetchLabel(type, serverID, channelID=null, userID=null) {
+  let label;
+  switch (type) {
+    case "server":
+      if (!serverID) return undefined;
+      global.bot.guilds.fetch(serverID).then((g) => {
+        label = g.name;
+      }).catch(logError);
+    break;
+    case "channel":
+      if (!serverID || !channelID) return undefined;
+      global.bot.guilds.fetch(serverID).then((g) => {
+        g.channels.fetch(channelID).then((c) => {
+          label = c.name;
+        }).catch(logError);
+      }).catch(logError);
+    break;
+    case "user":
+      if (!serverID || !userID) return undefined;
+      global.bot.guilds.fetch(serverID).then((g) => {
+        g.members.fetch(userID).then((u) => {
+          label = u.displayName;
+        }).catch(logError);
+      }).catch(logError);
+    break;
+    default:
+      return undefined;
+  }
+  while (label === undefined) { await sleep(15); }
+  return label;
+}
+async function fetchAndStoreAllLabels() {
+  // get servers
+  const serverCTexts = await Database.getTable("folders").distinct(
+    'name', {parent: ObjectId(global.folderID.UserData)}
+  );
+  serverCTexts.forEach(async (serverCText) => {
+    // skip system folders
+    if (['UserData', 'reminders', 'options'].indexOf(serverCText) > -1) return;
+    // get cleartext snowflake
+    const serverID = decrypt(serverCText);
+    // skip if we failed to decrypt
+    if (!serverID) return;
+    // get label
+    const serverLabel = await fetchLabel("server", serverID);
+    // encrypt label
+    const serverLabelCText = encrypt(serverLabel);
+    // now we need the folder id
+    const server = await Database.getTable("folders").findOne(
+      {name: serverCText}
+    );
+    // skip if failed to query
+    if (!server) return;
+    // add label to database
+    await Database.getTable("folders").updateOne(
+      {_id: ObjectId(server._id.toString())},
+      {$set: { label: serverLabelCText }},
+      {upsert: false}
+    );
+    // get channels in server
+    const channelCTexts = await Database.getTable("folders").distinct(
+      'name', {parent: ObjectId(server._id.toString())}
+    );
+    channelCTexts.forEach(async (channelCText) => {
+      // get cleartext snowflake
+      const channelID = decrypt(channelCText);
+      // skip if we failed to decrypt
+      if (!channelID) return;
+      // get label
+      const channelLabel = await fetchLabel("channel", serverID, channelID);
+      // encrypt label
+      const channelLabelCText = encrypt(channelLabel);
+      // get folder id
+      const channel = await Database.getTable("folders").findOne(
+        {$and: [{name: channelCText}, {parent: ObjectId(server._id.toString())}]}
+      )
+      // skip if failed to query
+      if (!channel) return;
+      // add label to database
+      await Database.getTable("folders").updateOne(
+        {_id: ObjectId(channel._id.toString())},
+        {$set: { label: channelLabelCText}},
+        {upsert: false}
+      );
+      // get users in channel
+      const count = await Database.getTable("folders").countDocuments(
+        {parent: ObjectId(channel._id.toString())}
+      );
+      if (count === 0) return;
+      else logWrite(`${count} users in ${serverLabel}/${channelLabel}`);
+      const userCTexts = await Database.getTable("folders").distinct(
+        'name', {parent: ObjectId(channel._id.toString())}
+      );
+      userCTexts.forEach(async (userCText) => {
+        // get cleartext snowflake
+        const userID = decrypt(userCText);
+        // skip if we failed to decrypt
+        if (!userID) return;
+        // get label
+        const userLabel = await fetchLabel("user", serverID, null, userID);
+        // encrypt label
+        const userLabelCText = encrypt(userLabel);
+        // get folder id
+        const user = await Database.getTable("folders").findOne(
+          {$and: [{name: userCText}, {parent: ObjectId(channel._id.toString())}]}
+        );
+        // skip if we failed to query
+        if (!user) return;
+        // add label to database
+        await Database.getTable("folders").updateOne(
+          {_id: ObjectId(user._id.toString())},
+          {$set: {label: userLabelCText}},
+          {upsert: false}
+        );
+      });
+    });
+  });
+}
+async function getParentFolder(id) {
+  const folder = await Database.getTable("folders").findOne({_id: ObjectId(id)});
+  if (!folder || !folder.parent) return null;
+  return await Database.getTable("folders").findOne({
+    _id: ObjectId(folder.parent.toString())
+  })
 }
 module.exports = {
   doNothing, getConfig, resetCache, cacheHas, getCacheIndex,
@@ -1138,6 +1270,7 @@ module.exports = {
   getSceneList, updateSceneList, deleteSceneFromList, saveSceneList,
   addMaintenanceStatusMessage, sleep, getUserOption, setUserOption,
   findDiscordUserIDByLinkCode, getUserOptionFolder, encrypt, decrypt,
+  fetchAndStoreAllLabels, fetchLabel, getParentFolder,
 
   _addRemindersSetTimeoutPayload, _makeReminderSaveString
 }
