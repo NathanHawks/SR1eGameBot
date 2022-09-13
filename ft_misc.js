@@ -15,7 +15,6 @@ async function handleSkipStatusCommand(msg) {
 }
 async function handleLinkCodeCommand(msg, args) {
   try {
-    logError('Got here');
     const code = await getUserOption(msg.author, 'webLinkCode');
     if (code) {
       msg.reply(`You've already linked this account to the website.`)

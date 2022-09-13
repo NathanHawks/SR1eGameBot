@@ -42,8 +42,6 @@ global.lastRemindersTime = '';
 global.filesFound = [];
 // system folder(s)
 global.folderID = {UserData: null, reminders: null};
-// google drive API lock per channel id, to avoid race conditions
-global.lock = { };
 // config (debugging flags, etc)
 global.config = {
   // debugging options
@@ -61,7 +59,7 @@ initAll();
 // @ ============== DISCORD SETUP SCRIPT ==============
 const Discord = require('discord.js');
 
-// load auth & other tokens
+// load auth token
 let token = null;
 if (process.env.hasOwnProperty('TOKEN')) {
   token = process.env.TOKEN;
@@ -265,9 +263,11 @@ function handleMessage(msg, user=msg.author) {
         handlerStatus = handleListRemindersCommand(msg);
       break;
       case 'addreminder':
+      case 'addreminders':
         handlerStatus = handleAddReminderCommand(msg, args);
       break;
       case 'cancelreminder':
+      case 'cancelreminders':
         handlerStatus = handleCancelReminderCommand(msg, args);
       break;
       case 'ammo':
